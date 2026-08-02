@@ -222,35 +222,33 @@ export const RetirementChart: React.FC<Props> = ({
               }}
             />
 
-            {/* Shaded Confidence Band between 10th and 95th Percentile */}
+            {/* Shaded Confidence Band & Percentile Lines (95th & 10th) */}
             {showConfidenceBand && (
-              <Area
-                type="monotone"
-                dataKey="netWorth95"
-                stroke="none"
-                fill="url(#confidenceBand)"
-              />
+              <>
+                <Area
+                  type="monotone"
+                  dataKey="netWorth95"
+                  stroke="none"
+                  fill="url(#confidenceBand)"
+                />
+                <Line
+                  type="monotone"
+                  dataKey="netWorth95"
+                  stroke="#10b981"
+                  strokeWidth={1.5}
+                  strokeDasharray="3 3"
+                  dot={false}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="netWorth10"
+                  stroke="#f59e0b"
+                  strokeWidth={1.5}
+                  strokeDasharray="3 3"
+                  dot={false}
+                />
+              </>
             )}
-
-            {/* 95th Percentile (Conservative) Line */}
-            <Line
-              type="monotone"
-              dataKey="netWorth95"
-              stroke="#10b981"
-              strokeWidth={1.5}
-              strokeDasharray="3 3"
-              dot={false}
-            />
-
-            {/* 10th Percentile (Stress Test) Line */}
-            <Line
-              type="monotone"
-              dataKey="netWorth10"
-              stroke="#f59e0b"
-              strokeWidth={1.5}
-              strokeDasharray="3 3"
-              dot={false}
-            />
 
             {/* Main 50th Percentile (Target Case) Line & Area */}
             <Area
