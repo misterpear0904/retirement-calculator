@@ -5,6 +5,7 @@ import { decodeStateFromUrl } from './utils/urlEncoder';
 import { exportToPdf } from './utils/pdfExport';
 
 import { Header } from './components/Header';
+import { Toast } from './components/Toast';
 import { DemographicsSection } from './components/Accordions/DemographicsSection';
 import { BaselineAssetsSection } from './components/Accordions/BaselineAssetsSection';
 import { IncomeGrowthSection } from './components/Accordions/IncomeGrowthSection';
@@ -91,6 +92,8 @@ const DEFAULT_STATE: RetirementState = {
 
 export function App() {
   const [state, setState] = useState<RetirementState>(DEFAULT_STATE);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isDark, setIsDark] = useState<boolean>(true);
 
   // Accordion Section Open/Close States
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
@@ -110,6 +113,7 @@ export function App() {
     const urlState = decodeStateFromUrl();
     if (urlState) {
       setState((prev) => ({ ...prev, ...urlState }));
+      setToastMessage('Loaded shared scenario from URL hash!');
     }
   }, []);
 
@@ -119,6 +123,10 @@ export function App() {
 
   const toggleSection = (key: string) => {
     setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const openSpecificSection = (key: string) => {
+    setOpenSections((prev) => ({ ...prev, [key]: true }));
   };
 
   const setAllSections = (open: boolean) => {
@@ -188,21 +196,28 @@ export function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
+    <div className={`min-h-screen ${isDark ? 'dark bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'} flex flex-col font-sans transition-colors duration-300`}>
       <Header
         state={state}
         onExportPdf={handleExportPdf}
         onLoadPreset={handleLoadPreset}
         onResetDefault={() => setState(DEFAULT_STATE)}
+        onTriggerToast={(msg) => setToastMessage(msg)}
+        isDark={isDark}
+        onToggleTheme={() => setIsDark(!isDark)}
       />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        {/* Top Summary Cards KPI Bar */}
-        <SummaryCards result={simulationResult} />
+        {/* Bento Grid Executive Dashboard with Inline Editing */}
+        <SummaryCards
+          result={simulationResult}
+          state={state}
+          onChange={handleChange}
+        />
 
-        {/* Main Grid: Left Collapsible Accordion Form, Right Dynamic Visual Dashboard */}
+        {/* Main Dual-Pane Split Screen Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Left Column: Progressive Disclosure Accordions (5 cols on large screens) */}
+          {/* Left Column: Progressive Disclosure Accordions (5 cols) */}
           <div className="lg:col-span-5 space-y-4">
             <div className="flex items-center justify-between px-1">
               <h2 className="text-sm font-extrabold uppercase tracking-wider text-slate-300 flex items-center gap-2">
@@ -280,7 +295,7 @@ export function App() {
             </div>
           </div>
 
-          {/* Right Column: Interactive Dashboard & Visualizations (7 cols on large screens) */}
+          {/* Right Column: Sticky Visual Anchor Pane (7 cols) */}
           <div className="lg:col-span-7 space-y-5 lg:sticky lg:top-20" id="dashboard-export-container">
             {/* Dashboard Tab Controls */}
             <div className="flex items-center justify-between bg-slate-900/80 p-1.5 rounded-xl border border-slate-800 backdrop-blur-md">
@@ -294,11 +309,10 @@ export function App() {
                     key={tab.id}
                     type="button"
                     onClick={() => setActiveTab(tab.id as any)}
-                    className={`px-3.5 py-1.5 rounded-lg font-bold transition-all ${
-                      activeTab === tab.id
+                    className={`px-3.5 py-1.5 rounded-lg font-bold transition-all ${activeTab === tab.id
                         ? 'bg-blue-600 text-white shadow-glow'
                         : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
-                    }`}
+                      }`}
                   >
                     {tab.label}
                   </button>
@@ -315,11 +329,15 @@ export function App() {
               <RetirementChart
                 yearlyProjections={simulationResult.yearlyProjections}
                 targetRetirementAge={state.targetRetirementAge}
+                onSelectSection={openSpecificSection}
               />
             )}
 
             {activeTab === 'timeline' && (
-              <MilestoneTimeline yearlyProjections={simulationResult.yearlyProjections} />
+              <MilestoneTimeline
+                yearlyProjections={simulationResult.yearlyProjections}
+                onSelectSection={openSpecificSection}
+              />
             )}
 
             {activeTab === 'table' && (
@@ -329,8 +347,10 @@ export function App() {
         </div>
       </main>
 
+      <Toast message={toastMessage} onClose={() => setToastMessage(null)} />
+
       <footer className="border-t border-slate-900 bg-slate-950 py-6 mt-12 text-center text-xs text-slate-500">
-        ApexRetire Pro — Educational Financial Modeling Tool. Not formal financial advice.
+        ApexRetire Pro — Modern Financial Modeling Engine.
       </footer>
     </div>
   );

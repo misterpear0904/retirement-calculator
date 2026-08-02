@@ -17,13 +17,25 @@ import { Info, Eye, EyeOff } from 'lucide-react';
 interface Props {
   yearlyProjections: YearlyProjection[];
   targetRetirementAge: number;
+  onSelectSection?: (sectionId: string) => void;
 }
+
+// Map milestone category to accordion section id
+const getSectionIdForCategory = (category: string) => {
+  switch (category) {
+    case 'education': return 'dependents';
+    case 'housing': return 'housing';
+    case 'retirement': return 'demographics';
+    case 'income': return 'location';
+    default: return 'demographics';
+  }
+};
 
 const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
     const data: YearlyProjection = payload[0].payload;
     return (
-      <div className="bg-slate-900/95 border border-slate-700/80 p-3.5 rounded-xl shadow-2xl backdrop-blur-md text-xs space-y-2 min-w-[240px]">
+      <div className="bg-slate-900/95 border border-slate-700/80 p-3.5 rounded-xl shadow-2xl backdrop-blur-md text-xs space-y-2 min-w-[250px]">
         <div className="flex justify-between items-center border-b border-slate-800 pb-2">
           <span className="font-extrabold text-slate-100">
             Age {data.age} ({data.year})
@@ -65,24 +77,24 @@ const CustomTooltip = ({ active, payload }: any) => {
 
         <div className="border-t border-slate-800/80 pt-2 space-y-1 text-[11px]">
           <div className="flex justify-between text-slate-400">
-            <span>Liquid Cash:</span>
-            <span className="text-slate-200">${data.liquidCash.toLocaleString()}</span>
+            <span>Living Expenses:</span>
+            <span className="text-slate-200">${data.livingExpenses.toLocaleString()}</span>
           </div>
-          <div className="flex justify-between text-slate-400">
-            <span>Taxable Stocks:</span>
-            <span className="text-slate-200">${data.taxableInvestments.toLocaleString()}</span>
-          </div>
-          <div className="flex justify-between text-slate-400">
-            <span>Pre-Tax 401k/IRA:</span>
-            <span className="text-slate-200">${data.preTaxAccount.toLocaleString()}</span>
-          </div>
-          <div className="flex justify-between text-slate-400">
-            <span>Roth / HSA:</span>
-            <span className="text-slate-200">${data.postTaxAccount.toLocaleString()}</span>
-          </div>
+          {data.housingExpenses > 0 && (
+            <div className="flex justify-between text-slate-400">
+              <span>Housing Payment:</span>
+              <span className="text-slate-200">${data.housingExpenses.toLocaleString()}</span>
+            </div>
+          )}
+          {data.childEducationExpenses > 0 && (
+            <div className="flex justify-between text-blue-300 font-semibold">
+              <span>Child Tuition:</span>
+              <span>${data.childEducationExpenses.toLocaleString()}</span>
+            </div>
+          )}
           {data.totalDebtBalance > 0 && (
             <div className="flex justify-between text-red-400 font-medium">
-              <span>Remaining Debt:</span>
+              <span>Mortgage / Debt Left:</span>
               <span>-${data.totalDebtBalance.toLocaleString()}</span>
             </div>
           )}
@@ -96,6 +108,7 @@ const CustomTooltip = ({ active, payload }: any) => {
 export const RetirementChart: React.FC<Props> = ({
   yearlyProjections,
   targetRetirementAge,
+  onSelectSection,
 }) => {
   const [showConfidenceBand, setShowConfidenceBand] = useState(true);
 
@@ -110,6 +123,15 @@ export const RetirementChart: React.FC<Props> = ({
   const milestoneProjections = yearlyProjections.filter(
     (p) => p.milestones && p.milestones.length > 0
   );
+
+  const handleBadgeClick = (category: string) => {
+    const secId = getSectionIdForCategory(category);
+    if (onSelectSection) onSelectSection(secId);
+    const elem = document.getElementById(secId);
+    if (elem) {
+      elem.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   return (
     <div className="glass-panel p-5 rounded-2xl space-y-4">
@@ -264,18 +286,20 @@ export const RetirementChart: React.FC<Props> = ({
       {milestoneProjections.length > 0 && (
         <div className="pt-2 border-t border-slate-800">
           <h4 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">
-            Timeline Event Badges
+            Clickable Timeline Event Badges (Scrolls to Input Section)
           </h4>
           <div className="flex flex-wrap gap-2">
             {milestoneProjections.map((p) =>
               p.milestones.map((m, idx) => (
-                <div
+                <button
                   key={`${p.age}_${idx}`}
-                  className="flex items-center gap-1.5 text-xs bg-slate-800/80 px-2.5 py-1 rounded-lg border border-slate-700/60 text-slate-200"
+                  type="button"
+                  onClick={() => handleBadgeClick(m.category)}
+                  className="flex items-center gap-1.5 text-xs bg-slate-800/80 hover:bg-slate-700 px-2.5 py-1 rounded-lg border border-slate-700/60 hover:border-blue-500/50 text-slate-200 transition-all text-left"
                 >
                   <span className="font-bold text-blue-400">Age {p.age}:</span>
                   <span>{m.title}</span>
-                </div>
+                </button>
               ))
             )}
           </div>

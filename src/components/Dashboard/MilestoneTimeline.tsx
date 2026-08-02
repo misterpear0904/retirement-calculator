@@ -4,9 +4,10 @@ import { Calendar, GraduationCap, Home, Palmtree, Landmark } from 'lucide-react'
 
 interface Props {
   yearlyProjections: YearlyProjection[];
+  onSelectSection?: (sectionId: string) => void;
 }
 
-export const MilestoneTimeline: React.FC<Props> = ({ yearlyProjections }) => {
+export const MilestoneTimeline: React.FC<Props> = ({ yearlyProjections, onSelectSection }) => {
   const allMilestones: { age: number; year: number; milestone: TimelineMilestone }[] = [];
 
   yearlyProjections.forEach((p) => {
@@ -16,6 +17,27 @@ export const MilestoneTimeline: React.FC<Props> = ({ yearlyProjections }) => {
       });
     }
   });
+
+  const getSectionIdForCategory = (category: string) => {
+    switch (category) {
+      case 'education': return 'dependents';
+      case 'housing': return 'housing';
+      case 'retirement': return 'demographics';
+      case 'income': return 'location';
+      default: return 'demographics';
+    }
+  };
+
+  const handleMilestoneClick = (category: string) => {
+    const sectionId = getSectionIdForCategory(category);
+    if (onSelectSection) {
+      onSelectSection(sectionId);
+    }
+    const elem = document.getElementById(sectionId);
+    if (elem) {
+      elem.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   if (allMilestones.length === 0) {
     return (
@@ -54,9 +76,14 @@ export const MilestoneTimeline: React.FC<Props> = ({ yearlyProjections }) => {
               {getIconComponent(item.milestone.category)}
             </div>
 
-            <div className="bg-slate-900/60 p-3 rounded-xl border border-slate-800 hover:border-slate-700 transition-colors">
+            <div
+              onClick={() => handleMilestoneClick(item.milestone.category)}
+              className="bg-slate-900/60 p-3 rounded-xl border border-slate-800 hover:border-blue-500/50 hover:bg-slate-900 cursor-pointer transition-all"
+            >
               <div className="flex items-center justify-between text-xs mb-1">
-                <span className="font-bold text-slate-200">{item.milestone.title}</span>
+                <span className="font-bold text-slate-200 group-hover:text-blue-400 transition-colors">
+                  {item.milestone.title}
+                </span>
                 <span className="text-[11px] font-semibold text-blue-400 px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20">
                   Age {item.age} ({item.year})
                 </span>
