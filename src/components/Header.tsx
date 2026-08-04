@@ -33,25 +33,25 @@ export const Header: React.FC<Props> = ({
   };
 
   return (
-    <header className="border-b border-slate-800 bg-slate-950/80 backdrop-blur-md sticky top-0 z-40 transition-colors">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-wrap items-center justify-between gap-4">
+    <header className="border-b border-slate-800 bg-slate-950/80 backdrop-blur-md sticky top-0 z-40 transition-colors shadow-sm">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-wrap items-center justify-between gap-4 sm:gap-6">
         {/* Brand Logo & Title */}
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-gradient-to-tr from-blue-600 to-emerald-500 shadow-glow">
+        <div className="flex items-center gap-3.5">
+          <div className="p-2.5 rounded-xl bg-gradient-to-tr from-blue-600 to-emerald-500 shadow-glow shrink-0">
             <Sparkles className="w-5 h-5 text-white" />
           </div>
           <div>
             <h1 className="text-lg font-extrabold tracking-tight text-white flex items-center gap-2">
-              ApexRetire <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 font-medium">Pro</span>
+              ApexRetire <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 font-semibold tracking-wide">Pro</span>
             </h1>
-            <p className="text-[11px] text-slate-400 hidden sm:block">
+            <p className="text-xs text-slate-400 hidden sm:block mt-0.5 leading-relaxed">
               Interactive Progressive Disclosure Retirement & FIRE Simulator
             </p>
           </div>
         </div>
 
         {/* Action Controls */}
-        <div className="flex flex-wrap items-center gap-2 text-xs">
+        <div className="flex flex-wrap items-center gap-2.5 text-xs">
           {/* Preset Selector Dropdown */}
           <select
             onChange={(e) => {
@@ -66,7 +66,7 @@ export const Header: React.FC<Props> = ({
               }
             }}
             defaultValue=""
-            className="dark:bg-slate-900 bg-slate-100 dark:border-slate-700 border-slate-300 dark:text-slate-300 text-slate-700 font-medium rounded-lg px-2.5 py-1.5 focus:border-blue-500 focus:outline-none"
+            className="dark:bg-slate-900 bg-slate-100 dark:border-slate-700 border-slate-300 dark:text-slate-300 text-slate-700 font-medium rounded-xl px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors max-w-xs cursor-pointer"
           >
             <option value="" disabled>⚡ Load Preset Scenario</option>
             <option value="tech_worker_sf">Tech Worker (SF → Portugal)</option>
@@ -78,21 +78,21 @@ export const Header: React.FC<Props> = ({
           <button
             type="button"
             onClick={onToggleTheme}
-            className="p-1.5 rounded-lg dark:bg-slate-900 bg-slate-100 dark:border-slate-700 border-slate-300 dark:text-slate-300 text-slate-700 hover:text-blue-600 border transition-colors flex items-center gap-1 font-medium"
+            className="px-3 py-2 rounded-xl dark:bg-slate-900 bg-slate-100 dark:border-slate-700 border-slate-300 dark:text-slate-300 text-slate-700 hover:text-blue-600 border transition-colors flex items-center gap-1.5 font-medium shadow-sm"
             title="Toggle Light / Dark Mode"
           >
-            {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-blue-500" />}
-            <span className="text-[11px] px-1">{isDark ? 'Dark' : 'Light'}</span>
+            {isDark ? <Sun className="w-4 h-4 text-amber-400 shrink-0" /> : <Moon className="w-4 h-4 text-blue-500 shrink-0" />}
+            <span className="text-xs px-0.5">{isDark ? 'Dark' : 'Light'}</span>
           </button>
 
           {/* Share Scenario Button */}
           <button
             type="button"
             onClick={handleShareUrl}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg dark:bg-slate-900 bg-slate-100 dark:text-slate-200 text-slate-700 font-medium border dark:border-slate-700 border-slate-300 hover:border-blue-500 transition-colors"
+            className="flex items-center gap-2 px-3.5 py-2 rounded-xl dark:bg-slate-900 bg-slate-100 dark:text-slate-200 text-slate-700 font-medium border dark:border-slate-700 border-slate-300 hover:border-blue-500 transition-colors shadow-sm"
           >
-            {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Share2 className="w-3.5 h-3.5 text-blue-500" />}
-            {copied ? 'URL Copied!' : 'Share Scenario'}
+            {copied ? <Check className="w-4 h-4 text-emerald-500 shrink-0" /> : <Share2 className="w-4 h-4 text-blue-500 shrink-0" />}
+            <span>{copied ? 'URL Copied!' : 'Share Scenario'}</span>
           </button>
 
           {/* Export PDF Button */}
@@ -102,10 +102,10 @@ export const Header: React.FC<Props> = ({
               onExportPdf();
               onTriggerToast('Generating Executive Summary PDF...');
             }}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold shadow-glow hover:opacity-95 transition-opacity"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold shadow-glow hover:opacity-95 transition-opacity"
           >
-            <Download className="w-3.5 h-3.5" />
-            Export Summary PDF
+            <Download className="w-4 h-4 shrink-0" />
+            <span>Export Summary PDF</span>
           </button>
 
           {/* Reset Defaults */}
@@ -116,7 +116,7 @@ export const Header: React.FC<Props> = ({
               onTriggerToast('Reset all parameters to default.');
             }}
             title="Reset Inputs"
-            className="p-1.5 text-slate-400 hover:text-slate-200 rounded-lg hover:bg-slate-900 border border-transparent hover:border-slate-800 transition-colors"
+            className="p-2 text-slate-400 hover:text-slate-200 rounded-xl hover:bg-slate-900 border border-transparent hover:border-slate-800 transition-colors"
           >
             <RefreshCw className="w-4 h-4" />
           </button>

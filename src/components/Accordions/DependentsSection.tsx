@@ -56,12 +56,12 @@ export const DependentsSection: React.FC<Props> = ({
       onToggle={onToggle}
       badgeText={state.hasChildren ? `${state.children.length} Children Profiled` : 'No Children'}
     >
-      <div className="pt-2 space-y-4">
+      <div className="pt-2 space-y-5">
         {/* Toggle Children */}
-        <div className="flex items-center justify-between bg-slate-800/40 p-3 rounded-xl border border-slate-700/50">
+        <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
           <div>
             <span className="text-xs font-semibold text-slate-200 block">Have Dependents / Children?</span>
-            <span className="text-[11px] text-slate-400">Configure child age, K-12 schooling, and college tier</span>
+            <span className="text-xs text-slate-400 mt-0.5 leading-relaxed block">Configure child age, K-12 schooling, and college tier</span>
           </div>
 
           <div className="flex items-center gap-2">
@@ -75,10 +75,10 @@ export const DependentsSection: React.FC<Props> = ({
                   onChange({ hasChildren: nextVal });
                 }
               }}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all border shadow-sm ${
                 state.hasChildren
                   ? 'bg-blue-500/20 text-blue-400 border-blue-500/40'
-                  : 'bg-slate-900 text-slate-400 border-slate-700'
+                  : 'bg-slate-900 text-slate-400 border-slate-700 hover:text-slate-200'
               }`}
             >
               {state.hasChildren ? 'Yes (Children Added)' : 'No Children'}
@@ -88,7 +88,7 @@ export const DependentsSection: React.FC<Props> = ({
 
         {/* Dynamic Reveal: Children Profiles List */}
         {state.hasChildren && (
-          <div className="space-y-3 animate-fade-in">
+          <div className="space-y-4 animate-fade-in">
             <div className="flex justify-between items-center">
               <h4 className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
                 Child Profiles & Education Plans
@@ -96,57 +96,57 @@ export const DependentsSection: React.FC<Props> = ({
               <button
                 type="button"
                 onClick={handleAddChild}
-                className="flex items-center gap-1 text-xs font-medium text-blue-400 hover:text-blue-300 bg-blue-500/10 px-2.5 py-1 rounded-lg border border-blue-500/20"
+                className="flex items-center gap-1.5 text-xs font-medium text-blue-400 hover:text-blue-300 bg-blue-500/10 px-3 py-1.5 rounded-lg border border-blue-500/20 transition-colors shadow-sm"
               >
-                <Plus className="w-3.5 h-3.5" /> Add Child Profile
+                <Plus className="w-4 h-4" /> Add Child Profile
               </button>
             </div>
 
-            {state.children.map((child, index) => (
+            {state.children.map((child) => (
               <div
                 key={child.id}
-                className="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50 space-y-3"
+                className="bg-slate-800/40 p-4 sm:p-5 rounded-xl border border-slate-700/50 space-y-4"
               >
-                <div className="flex items-center justify-between border-b border-slate-700/60 pb-2">
+                <div className="flex items-center justify-between border-b border-slate-700/60 pb-3">
                   <div className="flex items-center gap-2">
-                    <Baby className="w-4 h-4 text-blue-400" />
+                    <Baby className="w-4.5 h-4.5 text-blue-400 shrink-0" />
                     <input
                       type="text"
                       value={child.name}
                       onChange={(e) => handleUpdateChild(child.id, 'name', e.target.value)}
-                      className="bg-slate-900 border border-slate-700 rounded-md px-2 py-0.5 text-xs font-bold text-slate-100"
+                      className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1 text-xs font-bold text-slate-100 focus:border-blue-500 focus:outline-none"
                     />
                   </div>
                   <button
                     type="button"
                     onClick={() => handleRemoveChild(child.id)}
-                    className="text-slate-500 hover:text-red-400 p-1 transition-colors"
+                    className="text-slate-400 hover:text-red-400 p-1.5 transition-colors rounded-lg hover:bg-red-500/10"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
                   {/* Current Age */}
                   <div>
-                    <label className="text-[10px] text-slate-400 block mb-1">Current Child Age</label>
+                    <label className="text-[11px] text-slate-400 block mb-1">Current Child Age</label>
                     <input
                       type="number"
                       min={0}
                       max={25}
                       value={child.currentAge}
                       onChange={(e) => handleUpdateChild(child.id, 'currentAge', parseInt(e.target.value) || 0)}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-100 font-semibold"
+                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 font-semibold focus:border-blue-500 focus:outline-none"
                     />
                   </div>
 
                   {/* K-12 School Type */}
                   <div>
-                    <label className="text-[10px] text-slate-400 block mb-1">K-12 Schooling</label>
+                    <label className="text-[11px] text-slate-400 block mb-1">K-12 Schooling</label>
                     <select
                       value={child.schoolType}
                       onChange={(e) => handleUpdateChild(child.id, 'schoolType', e.target.value as SchoolType)}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-slate-100"
+                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:border-blue-500 focus:outline-none cursor-pointer"
                     >
                       <option value="public">Public School ($0/yr)</option>
                       <option value="private_k12">Private K-12</option>
@@ -155,7 +155,7 @@ export const DependentsSection: React.FC<Props> = ({
 
                   {/* College Tier */}
                   <div>
-                    <label className="text-[10px] text-slate-400 block mb-1">Higher Ed Tier</label>
+                    <label className="text-[11px] text-slate-400 block mb-1">Higher Ed Tier</label>
                     <select
                       value={child.collegeTier}
                       onChange={(e) => {
@@ -166,7 +166,7 @@ export const DependentsSection: React.FC<Props> = ({
                         handleUpdateChild(child.id, 'collegeTier', tier);
                         handleUpdateChild(child.id, 'collegeAnnualCost', cost);
                       }}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-slate-100"
+                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:border-blue-500 focus:outline-none cursor-pointer"
                     >
                       <option value="in_state">Public In-State ($25k/yr)</option>
                       <option value="private">Private University ($55k/yr)</option>
@@ -177,16 +177,16 @@ export const DependentsSection: React.FC<Props> = ({
 
                 {/* Conditional Fields based on School / College selections */}
                 {child.schoolType === 'private_k12' && (
-                  <div className="bg-slate-900/60 p-2.5 rounded-lg border border-slate-800 flex items-center justify-between text-xs animate-fade-in">
-                    <span className="text-slate-400">Private K-12 Annual Cost:</span>
-                    <div className="flex items-center gap-1">
-                      <span className="text-slate-500">$</span>
+                  <div className="bg-slate-900/60 p-3 rounded-lg border border-slate-800 flex items-center justify-between text-xs animate-fade-in">
+                    <span className="text-slate-300">Private K-12 Annual Cost:</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-slate-500 font-bold">$</span>
                       <input
                         type="number"
                         step={1000}
                         value={child.privateAnnualCost}
                         onChange={(e) => handleUpdateChild(child.id, 'privateAnnualCost', parseFloat(e.target.value) || 0)}
-                        className="w-24 bg-slate-950 border border-slate-700 rounded px-2 py-1 text-slate-100 font-bold"
+                        className="w-28 bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-slate-100 font-bold"
                       />
                       <span className="text-slate-400">/yr</span>
                     </div>
@@ -194,18 +194,18 @@ export const DependentsSection: React.FC<Props> = ({
                 )}
 
                 {child.collegeTier !== 'none' && (
-                  <div className="bg-slate-900/60 p-2.5 rounded-lg border border-slate-800 flex items-center justify-between text-xs animate-fade-in">
-                    <span className="text-slate-400 flex items-center gap-1">
-                      <GraduationCap className="w-3.5 h-3.5 text-blue-400" /> College Annual Cost ({child.collegeYears} yrs):
+                  <div className="bg-slate-900/60 p-3 rounded-lg border border-slate-800 flex items-center justify-between text-xs animate-fade-in">
+                    <span className="text-slate-300 flex items-center gap-1.5">
+                      <GraduationCap className="w-4 h-4 text-blue-400 shrink-0" /> College Annual Cost ({child.collegeYears} yrs):
                     </span>
-                    <div className="flex items-center gap-1">
-                      <span className="text-slate-500">$</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-slate-500 font-bold">$</span>
                       <input
                         type="number"
                         step={2500}
                         value={child.collegeAnnualCost}
                         onChange={(e) => handleUpdateChild(child.id, 'collegeAnnualCost', parseFloat(e.target.value) || 0)}
-                        className="w-28 bg-slate-950 border border-slate-700 rounded px-2 py-1 text-slate-100 font-bold text-right"
+                        className="w-32 bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-slate-100 font-bold text-right"
                       />
                       <span className="text-slate-400">/yr</span>
                     </div>

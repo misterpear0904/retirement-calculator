@@ -34,22 +34,22 @@ export const MarketInflationSection: React.FC<Props> = ({
       onToggle={onToggle}
       badgeText={`${state.stockPct}% Stocks / ${state.bondPct}% Bonds`}
     >
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-2">
+      <div className="space-y-4 pt-2">
         {/* Asset Allocation Sliders */}
-        <div className="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50 space-y-4">
+        <div className="bg-slate-800/40 p-5 rounded-xl border border-slate-700/50 space-y-4">
           <div className="flex justify-between items-center">
-            <h4 className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-              <PieChart className="w-3.5 h-3.5 text-blue-400" /> Portfolio Asset Allocation
+            <h4 className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+              <PieChart className="w-4 h-4 text-blue-400 shrink-0" /> Portfolio Asset Allocation
             </h4>
             <span className="text-xs font-bold text-slate-400">
               Total: {state.stockPct + state.bondPct + state.cashPct}%
             </span>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-4">
             <div>
-              <div className="flex justify-between text-xs mb-1">
-                <span className="text-blue-400 font-medium">Equities / Stocks</span>
+              <div className="flex justify-between text-xs mb-1.5 font-medium">
+                <span className="text-blue-400">Equities / Stocks</span>
                 <span className="font-bold text-blue-400">{state.stockPct}%</span>
               </div>
               <input
@@ -59,13 +59,13 @@ export const MarketInflationSection: React.FC<Props> = ({
                 step={5}
                 value={state.stockPct}
                 onChange={(e) => handleStockPctChange(parseInt(e.target.value))}
-                className="w-full"
+                className="w-full cursor-pointer"
               />
             </div>
 
             <div>
-              <div className="flex justify-between text-xs mb-1">
-                <span className="text-emerald-400 font-medium">Fixed Income / Bonds</span>
+              <div className="flex justify-between text-xs mb-1.5 font-medium">
+                <span className="text-emerald-400">Fixed Income / Bonds</span>
                 <span className="font-bold text-emerald-400">{state.bondPct}%</span>
               </div>
               <input
@@ -78,13 +78,13 @@ export const MarketInflationSection: React.FC<Props> = ({
                   const b = parseInt(e.target.value);
                   onChange({ bondPct: b, cashPct: 100 - state.stockPct - b });
                 }}
-                className="w-full"
+                className="w-full cursor-pointer"
               />
             </div>
 
             <div>
-              <div className="flex justify-between text-xs mb-1">
-                <span className="text-purple-400 font-medium">Cash / Short-Term Treasury</span>
+              <div className="flex justify-between text-xs mb-1.5 font-medium">
+                <span className="text-purple-400">Cash / Short-Term Treasury</span>
                 <span className="font-bold text-purple-400">{state.cashPct}%</span>
               </div>
               <input
@@ -100,12 +100,12 @@ export const MarketInflationSection: React.FC<Props> = ({
         </div>
 
         {/* Inflation & Return Modes */}
-        <div className="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50 space-y-4">
-          <h4 className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-            <Flame className="w-3.5 h-3.5 text-amber-400" /> Inflation Settings
+        <div className="bg-slate-800/40 p-5 rounded-xl border border-slate-700/50 space-y-4">
+          <h4 className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+            <Flame className="w-4 h-4 text-amber-400 shrink-0" /> Inflation Settings
           </h4>
 
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-2.5">
             {[
               { id: 'fixed_3', label: 'Fixed 3.0%' },
               { id: 'custom', label: 'Custom Rate' },
@@ -115,10 +115,10 @@ export const MarketInflationSection: React.FC<Props> = ({
                 key={item.id}
                 type="button"
                 onClick={() => onChange({ inflationMode: item.id as InflationMode })}
-                className={`p-2 rounded-lg text-center transition-all text-xs border ${
+                className={`p-2.5 rounded-xl text-center transition-all text-xs border font-medium shadow-sm ${
                   state.inflationMode === item.id
-                    ? 'bg-amber-500/20 border-amber-500 text-amber-400 font-semibold'
-                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+                    ? 'bg-amber-500/20 border-amber-500/50 text-amber-400 font-semibold'
+                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
                 }`}
               >
                 {item.label}
@@ -128,7 +128,7 @@ export const MarketInflationSection: React.FC<Props> = ({
 
           {/* Dynamic Reveal based on Inflation Mode */}
           {state.inflationMode === 'custom' && (
-            <div className="space-y-1 bg-slate-900 p-2.5 rounded-lg border border-slate-800 animate-fade-in">
+            <div className="space-y-2 bg-slate-900/60 p-3.5 rounded-xl border border-slate-800 animate-fade-in">
               <div className="flex justify-between text-xs text-slate-300">
                 <span>Custom Annual Inflation</span>
                 <span className="font-bold text-amber-400">{state.customInflationRate}%</span>
@@ -140,20 +140,20 @@ export const MarketInflationSection: React.FC<Props> = ({
                 step={0.25}
                 value={state.customInflationRate}
                 onChange={(e) => onChange({ customInflationRate: parseFloat(e.target.value) })}
-                className="w-full"
+                className="w-full cursor-pointer"
               />
             </div>
           )}
 
           {state.inflationMode === 'historical_replay' && (
-            <div className="space-y-2 bg-slate-900 p-3 rounded-lg border border-slate-800 animate-fade-in">
-              <label className="text-[11px] font-medium text-slate-400 block">
+            <div className="space-y-2 bg-slate-900/60 p-3.5 rounded-xl border border-slate-800 animate-fade-in">
+              <label className="text-xs font-medium text-slate-400 block mb-1">
                 Select Multi-Decade Historical Sequence Preset
               </label>
               <select
                 value={state.historicalInflationPreset}
                 onChange={(e) => onChange({ historicalInflationPreset: e.target.value })}
-                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-100 focus:border-amber-500 focus:outline-none"
+                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:border-amber-500 focus:outline-none transition-colors"
               >
                 {HISTORICAL_PRESETS.map((preset) => (
                   <option key={preset.id} value={preset.id}>
@@ -165,11 +165,11 @@ export const MarketInflationSection: React.FC<Props> = ({
           )}
 
           {/* Return Mode Selection */}
-          <div className="pt-1">
-            <h4 className="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-              <Activity className="w-3.5 h-3.5 text-blue-400" /> Return Simulation Mode
+          <div className="pt-2 space-y-2">
+            <h4 className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+              <Activity className="w-4 h-4 text-blue-400 shrink-0" /> Return Simulation Mode
             </h4>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-2.5">
               {[
                 { id: 'deterministic', label: 'Deterministic' },
                 { id: 'historical_real', label: 'Hist. Real' },
@@ -179,10 +179,10 @@ export const MarketInflationSection: React.FC<Props> = ({
                   key={m.id}
                   type="button"
                   onClick={() => onChange({ returnMode: m.id as ReturnMode })}
-                  className={`p-2 rounded-lg text-center transition-all text-xs border ${
+                  className={`p-2.5 rounded-xl text-center transition-all text-xs border font-medium shadow-sm ${
                     state.returnMode === m.id
-                      ? 'bg-blue-500/20 border-blue-500 text-blue-400 font-semibold'
-                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+                      ? 'bg-blue-500/20 border-blue-500/50 text-blue-400 font-semibold'
+                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
                   }`}
                 >
                   {m.label}

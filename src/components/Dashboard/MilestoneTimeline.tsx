@@ -63,32 +63,32 @@ export const MilestoneTimeline: React.FC<Props> = ({ yearlyProjections, onSelect
   };
 
   return (
-    <div className="glass-panel p-5 rounded-2xl space-y-4">
-      <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-        <Calendar className="w-4 h-4 text-blue-400" /> Dynamic Milestone Event Timeline
+    <div className="glass-panel p-6 sm:p-7 rounded-2xl space-y-5">
+      <h3 className="text-base sm:text-lg font-bold text-slate-100 flex items-center gap-2">
+        <Calendar className="w-4.5 h-4.5 text-blue-400 shrink-0" /> Dynamic Milestone Event Timeline
       </h3>
 
-      <div className="relative border-l border-slate-800 ml-3 pl-5 space-y-4">
+      <div className="relative border-l border-slate-800 ml-4 pl-6 space-y-5">
         {allMilestones.map((item, idx) => (
           <div key={idx} className="relative group">
             {/* Timeline Dot Marker */}
-            <div className="absolute -left-[27px] top-1 p-1 rounded-full bg-slate-900 border border-slate-700">
+            <div className="absolute -left-[37px] top-1.5 p-1.5 rounded-full bg-slate-900 border border-slate-700 shadow-sm">
               {getIconComponent(item.milestone.category)}
             </div>
 
             <div
               onClick={() => handleMilestoneClick(item.milestone.category)}
-              className="bg-slate-900/60 p-3 rounded-xl border border-slate-800 hover:border-blue-500/50 hover:bg-slate-900 cursor-pointer transition-all"
+              className="bg-slate-900/60 p-4 sm:p-5 rounded-xl border border-slate-800 hover:border-blue-500/50 hover:bg-slate-900 cursor-pointer transition-all space-y-2"
             >
-              <div className="flex items-center justify-between text-xs mb-1">
-                <span className="font-bold text-slate-200 group-hover:text-blue-400 transition-colors">
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                <span className="font-bold text-slate-100 text-sm group-hover:text-blue-400 transition-colors">
                   {item.milestone.title}
                 </span>
-                <span className="text-[11px] font-semibold text-blue-400 px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20">
+                <span className="text-xs font-semibold text-blue-400 px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 shrink-0">
                   Age {item.age} ({item.year})
                 </span>
               </div>
-              <p className="text-xs text-slate-400">{item.milestone.description}</p>
+              <p className="text-xs text-slate-400 leading-relaxed">{item.milestone.description}</p>
             </div>
           </div>
         ))}

@@ -29,12 +29,12 @@ export const DemographicsSection: React.FC<Props> = ({
       onToggle={onToggle}
       badgeText={`${yearsToRetire} yrs to retire`}
     >
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 pt-2">
+      <div className="space-y-4 pt-2">
         {/* Current Age */}
-        <div className="space-y-2 bg-slate-800/40 p-3.5 rounded-xl border border-slate-700/50">
+        <div className="space-y-3 bg-slate-800/40 p-4 sm:p-5 rounded-xl border border-slate-700/50">
           <div className="flex justify-between items-center text-xs font-medium text-slate-300">
-            <span className="flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5 text-blue-400" /> Current Age
+            <span className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-blue-400 shrink-0" /> Current Age
             </span>
             <span className="text-sm font-bold text-blue-400">{state.currentAge} yrs</span>
           </div>
@@ -50,20 +50,20 @@ export const DemographicsSection: React.FC<Props> = ({
                 targetRetirementAge: Math.max(val + 1, state.targetRetirementAge),
               });
             }}
-            className="w-full"
+            className="w-full cursor-pointer"
           />
-          <div className="flex justify-between text-[10px] text-slate-500">
-            <span>18</span>
-            <span>50</span>
-            <span>80</span>
+          <div className="flex justify-between text-xs text-slate-500 font-medium pt-0.5">
+            <span>18 yrs</span>
+            <span>50 yrs</span>
+            <span>80 yrs</span>
           </div>
         </div>
 
         {/* Target Retirement Age */}
-        <div className="space-y-2 bg-slate-800/40 p-3.5 rounded-xl border border-slate-700/50">
+        <div className="space-y-3 bg-slate-800/40 p-4 sm:p-5 rounded-xl border border-slate-700/50">
           <div className="flex justify-between items-center text-xs font-medium text-slate-300">
-            <span className="flex items-center gap-1.5">
-              <Calendar className="w-3.5 h-3.5 text-emerald-400" /> Target Retirement Age
+            <span className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-emerald-400 shrink-0" /> Target Retirement Age
             </span>
             <span className="text-sm font-bold text-emerald-400">{state.targetRetirementAge} yrs</span>
           </div>
@@ -79,20 +79,20 @@ export const DemographicsSection: React.FC<Props> = ({
                 lifeExpectancy: Math.max(val + 5, state.lifeExpectancy),
               });
             }}
-            className="w-full"
+            className="w-full cursor-pointer"
           />
-          <div className="flex justify-between text-[10px] text-slate-500">
-            <span>{state.currentAge + 1}</span>
-            <span>65</span>
-            <span>85</span>
+          <div className="flex justify-between text-xs text-slate-500 font-medium pt-0.5">
+            <span>{state.currentAge + 1} yrs</span>
+            <span>65 yrs</span>
+            <span>85 yrs</span>
           </div>
         </div>
 
         {/* Life Expectancy */}
-        <div className="space-y-2 bg-slate-800/40 p-3.5 rounded-xl border border-slate-700/50">
+        <div className="space-y-3 bg-slate-800/40 p-4 sm:p-5 rounded-xl border border-slate-700/50">
           <div className="flex justify-between items-center text-xs font-medium text-slate-300">
-            <span className="flex items-center gap-1.5">
-              <User className="w-3.5 h-3.5 text-purple-400" /> Life Expectancy
+            <span className="flex items-center gap-2">
+              <User className="w-4 h-4 text-purple-400 shrink-0" /> Life Expectancy
             </span>
             <span className="text-sm font-bold text-purple-400">{state.lifeExpectancy} yrs</span>
           </div>
@@ -102,17 +102,17 @@ export const DemographicsSection: React.FC<Props> = ({
             max={110}
             value={state.lifeExpectancy}
             onChange={(e) => onChange({ lifeExpectancy: parseInt(e.target.value) })}
-            className="w-full"
+            className="w-full cursor-pointer"
           />
-          <div className="flex justify-between text-[10px] text-slate-500">
-            <span>{state.targetRetirementAge + 1}</span>
-            <span>90</span>
-            <span>110</span>
+          <div className="flex justify-between text-xs text-slate-500 font-medium pt-0.5">
+            <span>{state.targetRetirementAge + 1} yrs</span>
+            <span>90 yrs</span>
+            <span>110 yrs</span>
           </div>
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl text-xs text-slate-300 mt-2">
+      <div className="flex flex-wrap items-center justify-between gap-3 p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl text-xs text-slate-300 mt-3 leading-relaxed">
         <div>
           Accumulation Window: <strong className="text-blue-400">{yearsToRetire} years</strong> (Age {state.currentAge} → {state.targetRetirementAge})
         </div>

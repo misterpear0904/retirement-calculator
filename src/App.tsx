@@ -207,7 +207,7 @@ export function App() {
         onToggleTheme={() => setIsDark(!isDark)}
       />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 space-y-8 sm:space-y-10">
         {/* Bento Grid Executive Dashboard with Inline Editing */}
         <SummaryCards
           result={simulationResult}
@@ -216,34 +216,34 @@ export function App() {
         />
 
         {/* Main Dual-Pane Split Screen Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
           {/* Left Column: Progressive Disclosure Accordions (5 cols) */}
-          <div className="lg:col-span-5 space-y-4">
-            <div className="flex items-center justify-between px-1">
-              <h2 className="text-sm font-extrabold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+          <div className="lg:col-span-5 space-y-5">
+            <div className="flex items-center justify-between px-1 mb-1">
+              <h2 className="text-xs font-extrabold uppercase tracking-wider text-slate-400 flex items-center gap-2">
                 <Layers className="w-4 h-4 text-blue-400" /> Plan Parameters
               </h2>
 
-              <div className="flex items-center gap-2 text-[11px]">
+              <div className="flex items-center gap-2 text-xs">
                 <button
                   type="button"
                   onClick={() => setAllSections(true)}
-                  className="text-blue-400 hover:underline flex items-center gap-0.5"
+                  className="text-blue-400 hover:underline flex items-center gap-1 font-medium"
                 >
-                  <ChevronDown className="w-3 h-3" /> Expand All
+                  <ChevronDown className="w-3.5 h-3.5" /> Expand All
                 </button>
                 <span className="text-slate-600">|</span>
                 <button
                   type="button"
                   onClick={() => setAllSections(false)}
-                  className="text-slate-400 hover:underline flex items-center gap-0.5"
+                  className="text-slate-400 hover:underline flex items-center gap-1 font-medium"
                 >
-                  <ChevronUp className="w-3 h-3" /> Collapse All
+                  <ChevronUp className="w-3.5 h-3.5" /> Collapse All
                 </button>
               </div>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-4">
               <DemographicsSection
                 state={state}
                 onChange={handleChange}

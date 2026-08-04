@@ -134,13 +134,13 @@ export const RetirementChart: React.FC<Props> = ({
   };
 
   return (
-    <div className="glass-panel p-5 rounded-2xl space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="glass-panel p-6 sm:p-7 rounded-2xl space-y-5">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
+          <h3 className="text-base sm:text-lg font-bold text-slate-100 flex items-center gap-2">
             Multi-Scenario Net Worth Simulation
           </h3>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-slate-400 mt-1 leading-relaxed">
             Confidence bands: 95th Percentile (Conservative), 50th Percentile (Target), 10th Percentile (Stress Test)
           </p>
         </div>
@@ -149,30 +149,30 @@ export const RetirementChart: React.FC<Props> = ({
           <button
             type="button"
             onClick={() => setShowConfidenceBand(!showConfidenceBand)}
-            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white border border-slate-700 transition-colors"
+            className="flex items-center gap-2 text-xs font-semibold px-3.5 py-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white border border-slate-700 transition-colors shadow-sm"
           >
-            {showConfidenceBand ? <EyeOff className="w-3.5 h-3.5 text-blue-400" /> : <Eye className="w-3.5 h-3.5 text-blue-400" />}
+            {showConfidenceBand ? <EyeOff className="w-4 h-4 text-blue-400" /> : <Eye className="w-4 h-4 text-blue-400" />}
             {showConfidenceBand ? 'Hide Bands' : 'Show Confidence Bands'}
           </button>
         </div>
       </div>
 
       {/* Legend Badge Bar */}
-      <div className="flex flex-wrap items-center gap-4 text-xs bg-slate-900/60 p-2.5 rounded-xl border border-slate-800">
-        <div className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded-full bg-cyan-400 shadow-glow"></span>
+      <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-xs bg-slate-900/60 p-3.5 rounded-xl border border-slate-800">
+        <div className="flex items-center gap-2">
+          <span className="w-3 h-3 rounded-full bg-cyan-400 shadow-glow shrink-0"></span>
           <span className="text-slate-200 font-semibold">Target Case (50th %)</span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded-full bg-emerald-400"></span>
+        <div className="flex items-center gap-2">
+          <span className="w-3 h-3 rounded-full bg-emerald-400 shrink-0"></span>
           <span className="text-slate-300">Conservative (95th %)</span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded-full bg-amber-400"></span>
+        <div className="flex items-center gap-2">
+          <span className="w-3 h-3 rounded-full bg-amber-400 shrink-0"></span>
           <span className="text-slate-300">Stress Test (10th %)</span>
         </div>
-        <div className="flex items-center gap-1.5 border-l border-slate-800 pl-3">
-          <span className="w-2.5 h-2.5 rounded-full bg-purple-500 animate-pulse"></span>
+        <div className="flex items-center gap-2 border-l border-slate-800 pl-4">
+          <span className="w-2.5 h-2.5 rounded-full bg-purple-500 animate-pulse shrink-0"></span>
           <span className="text-slate-400">Target Retirement Age ({targetRetirementAge})</span>
         </div>
       </div>
@@ -180,7 +180,7 @@ export const RetirementChart: React.FC<Props> = ({
       {/* Chart Canvas Container */}
       <div className="min-h-[380px] h-[380px] w-full pt-2">
         <ResponsiveContainer width="100%" height={360} minHeight={360}>
-          <ComposedChart data={yearlyProjections} margin={{ top: 10, right: 20, left: 10, bottom: 20 }}>
+          <ComposedChart data={yearlyProjections} margin={{ top: 15, right: 25, left: 25, bottom: 20 }}>
             <defs>
               <linearGradient id="targetGradient" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.4} />
@@ -202,6 +202,7 @@ export const RetirementChart: React.FC<Props> = ({
             />
             <YAxis
               stroke="#64748b"
+              width={70}
               tickLine={false}
               tickFormatter={formatYAxis}
               tick={{ fontSize: 11, fill: '#94a3b8' }}
