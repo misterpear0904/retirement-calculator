@@ -38,7 +38,7 @@ export const Header: React.FC<Props> = ({
 
   return (
     <header className="border-b border-slate-800 bg-slate-950/80 backdrop-blur-md sticky top-0 z-40 transition-colors shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-wrap items-center justify-between gap-4 sm:gap-6">
+      <div className="max-w-[1920px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-wrap items-center justify-between gap-4 sm:gap-6">
         {/* Brand Logo & Title */}
         <div className="flex items-center gap-3.5">
           <div className="p-2.5 rounded-xl bg-gradient-to-tr from-blue-600 to-emerald-500 shadow-glow shrink-0">

@@ -34,9 +34,9 @@ export const SummaryCards: React.FC<Props> = ({ result, state, onChange }) => {
   const status = getSuccessStatus(successRate);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-      {/* Bento Tile 1: Featured Large Tile - Success Confidence Score (5 Cols) */}
-      <div className="md:col-span-5 glass-panel p-6 sm:p-7 rounded-2xl relative overflow-hidden flex flex-col justify-between border-blue-500/30 shadow-glow">
+    <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 w-full">
+      {/* Bento Tile 1: Featured Large Tile - Success Confidence Score (5 Cols on xl) */}
+      <div className="xl:col-span-4 2xl:col-span-4 glass-panel p-6 sm:p-7 rounded-2xl relative overflow-hidden flex flex-col justify-between border-blue-500/30 shadow-glow">
         <div>
           <div className="flex justify-between items-start mb-3 gap-2">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
@@ -72,8 +72,8 @@ export const SummaryCards: React.FC<Props> = ({ result, state, onChange }) => {
         </p>
       </div>
 
-      {/* Bento Tile 2: Estimated Retirement Age with Inline Quick Toggles (7 Cols grid layout) */}
-      <div className="md:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-5">
+      {/* 4 Supporting Metric Bento Tiles */}
+      <div className="xl:col-span-8 2xl:col-span-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         {/* Tile 2A: Estimated Retirement Age */}
         <div className="glass-panel p-5 sm:p-6 rounded-2xl flex flex-col justify-between group hover:border-emerald-500/40 transition-colors">
           <div>
