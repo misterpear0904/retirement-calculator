@@ -231,6 +231,7 @@ export function App() {
         onTriggerToast={(msg) => setToastMessage(msg)}
         isDark={isDark}
         onToggleTheme={() => setIsDark(!isDark)}
+        successRate={simulationResult.successRate}
       />
 
       <main className="flex-1 max-w-[1920px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 space-y-8 sm:space-y-10">

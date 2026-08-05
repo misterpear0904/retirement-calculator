@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Download, Share2, Sparkles, Check, RefreshCw, Sun, Moon, FileDown, FileUp } from 'lucide-react';
+import { Download, Share2, Sparkles, Check, RefreshCw, Sun, Moon, FileDown, FileUp, ShieldCheck } from 'lucide-react';
 import { RetirementState } from '../types/retirement';
 import { encodeStateToUrl } from '../utils/urlEncoder';
 
@@ -13,6 +13,7 @@ interface Props {
   onTriggerToast: (msg: string) => void;
   isDark: boolean;
   onToggleTheme: () => void;
+  successRate: number;
 }
 
 export const Header: React.FC<Props> = ({
@@ -25,6 +26,7 @@ export const Header: React.FC<Props> = ({
   onTriggerToast,
   isDark,
   onToggleTheme,
+  successRate,
 }) => {
   const [copied, setCopied] = useState(false);
 
@@ -35,6 +37,15 @@ export const Header: React.FC<Props> = ({
     onTriggerToast('Copied shareable scenario URL to clipboard!');
     setTimeout(() => setCopied(false), 2500);
   };
+
+  const getSuccessBadge = (rate: number) => {
+    if (rate >= 85) return { label: 'Very Safe', style: 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400' };
+    if (rate >= 70) return { label: 'On Track', style: 'bg-blue-500/15 border-blue-500/30 text-blue-400' };
+    if (rate >= 50) return { label: 'Moderate Risk', style: 'bg-amber-500/15 border-amber-500/30 text-amber-400' };
+    return { label: 'High Risk', style: 'bg-red-500/15 border-red-500/30 text-red-400' };
+  };
+
+  const badge = getSuccessBadge(successRate);
 
   return (
     <header className="border-b border-slate-800 bg-slate-950/80 backdrop-blur-md sticky top-0 z-40 transition-colors shadow-sm">
@@ -51,6 +62,18 @@ export const Header: React.FC<Props> = ({
             <p className="text-xs text-slate-400 hidden sm:block mt-0.5 leading-relaxed">
               Interactive Progressive Disclosure Retirement & FIRE Simulator
             </p>
+          </div>
+
+          {/* Sticky Success Confidence Score Badge */}
+          <div className="flex items-center gap-3 ml-3 px-4 py-2 rounded-xl bg-slate-900/80 border border-slate-700/60 shadow-sm">
+            <ShieldCheck className="w-5 h-5 text-blue-400 shrink-0" />
+            <div className="flex items-baseline gap-2">
+              <span className="text-xs font-semibold text-slate-400 hidden md:inline">Confidence:</span>
+              <span className="text-base font-black text-white tracking-tight">{successRate}%</span>
+            </div>
+            <span className={`text-[11px] font-extrabold px-2.5 py-1 rounded-full border ${badge.style}`}>
+              {badge.label}
+            </span>
           </div>
         </div>
 
