@@ -7,11 +7,42 @@ import {
 import { LOCATION_PRESETS } from '../data/colData';
 import { HISTORICAL_PRESETS, MONTE_CARLO_STATS } from '../data/historicalReturns';
 
-// Box-Muller transform for standard normal random numbers
-function randomNormal(mean: number, stdev: number): number {
+// Simple Mulberry32 seeded Pseudo-Random Number Generator for deterministic simulations
+function createPRNG(seed: number) {
+  let s = seed >>> 0;
+  return function () {
+    s = (s + 0x6d2b79f5) | 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// Simple hash function for state object to create seed
+function hashStateSeed(state: RetirementState): number {
+  const str = JSON.stringify({
+    a: state.currentAge,
+    r: state.targetRetirementAge,
+    l: state.lifeExpectancy,
+    c: state.liquidCash,
+    i: state.currentAnnualIncome,
+    s: state.stockPct,
+    b: state.bondPct,
+    m: state.returnMode,
+    t: state.targetLocationId,
+  });
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = (Math.imul(31, hash) + str.charCodeAt(i)) | 0;
+  }
+  return Math.abs(hash) || 123456789;
+}
+
+// Box-Muller transform for standard normal random numbers using PRNG
+function randomNormal(mean: number, stdev: number, prng: () => number): number {
   let u1 = 0, u2 = 0;
-  while (u1 === 0) u1 = Math.random();
-  while (u2 === 0) u2 = Math.random();
+  while (u1 === 0) u1 = prng();
+  while (u2 === 0) u2 = prng();
   const z0 = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
   return mean + z0 * stdev;
 }
@@ -347,6 +378,7 @@ export function runRetirementSimulation(state: RetirementState): SimulationResul
   // Calculate Success Rate via Monte Carlo Simulation (500 trials)
   let successfulTrials = 0;
   const totalTrials = 500;
+  const prng = createPRNG(hashStateSeed(state));
 
   for (let trial = 0; trial < totalTrials; trial++) {
     let simPortfolio = liquidCash + taxableInvestments + preTax401k + postTaxRothHsa;
@@ -357,12 +389,12 @@ export function runRetirementSimulation(state: RetirementState): SimulationResul
       const age = currentAge + i;
       const isRetired = age >= targetRetirementAge;
 
-      // Sample random market return and inflation for trial year
-      const sampledStock = randomNormal(MONTE_CARLO_STATS.stock.mean, MONTE_CARLO_STATS.stock.stdev);
-      const sampledBond = randomNormal(MONTE_CARLO_STATS.bond.mean, MONTE_CARLO_STATS.bond.stdev);
+      // Sample random market return and inflation for trial year using seeded PRNG
+      const sampledStock = randomNormal(MONTE_CARLO_STATS.stock.mean, MONTE_CARLO_STATS.stock.stdev, prng);
+      const sampledBond = randomNormal(MONTE_CARLO_STATS.bond.mean, MONTE_CARLO_STATS.bond.stdev, prng);
       const sampledInflation = Math.max(
         0.005,
-        randomNormal(MONTE_CARLO_STATS.inflation.mean, MONTE_CARLO_STATS.inflation.stdev)
+        randomNormal(MONTE_CARLO_STATS.inflation.mean, MONTE_CARLO_STATS.inflation.stdev, prng)
       );
 
       const trialPortfolioReturn =
