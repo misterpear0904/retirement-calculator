@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { Download, Share2, Sparkles, Check, RefreshCw, Sun, Moon } from 'lucide-react';
+import { Download, Share2, Sparkles, Check, RefreshCw, Sun, Moon, FileDown, FileUp } from 'lucide-react';
 import { RetirementState } from '../types/retirement';
 import { encodeStateToUrl } from '../utils/urlEncoder';
 
 interface Props {
   onExportPdf: () => void;
+  onExportInputs: () => void;
+  onImportInputs: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onLoadPreset: (presetName: string) => void;
   onResetDefault: () => void;
   state: RetirementState;
@@ -15,6 +17,8 @@ interface Props {
 
 export const Header: React.FC<Props> = ({
   onExportPdf,
+  onExportInputs,
+  onImportInputs,
   onLoadPreset,
   onResetDefault,
   state,
@@ -107,6 +111,31 @@ export const Header: React.FC<Props> = ({
             <Download className="w-4 h-4 shrink-0" />
             <span>Export Summary PDF</span>
           </button>
+
+          {/* Import / Export Inputs Dropdown or Buttons */}
+          <button
+            type="button"
+            onClick={onExportInputs}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl dark:bg-slate-900 bg-slate-100 dark:text-slate-200 text-slate-700 font-medium border dark:border-slate-700 border-slate-300 hover:border-blue-500 transition-colors shadow-sm"
+            title="Export all inputs to file"
+          >
+            <FileDown className="w-4 h-4 text-emerald-500 shrink-0" />
+            <span>Export Inputs</span>
+          </button>
+
+          <label
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl dark:bg-slate-900 bg-slate-100 dark:text-slate-200 text-slate-700 font-medium border dark:border-slate-700 border-slate-300 hover:border-blue-500 transition-colors shadow-sm cursor-pointer"
+            title="Import inputs from file"
+          >
+            <FileUp className="w-4 h-4 text-blue-500 shrink-0" />
+            <span>Import Inputs</span>
+            <input
+              type="file"
+              accept=".retire,.json,.txt"
+              className="hidden"
+              onChange={onImportInputs}
+            />
+          </label>
 
           {/* Reset Defaults */}
           <button

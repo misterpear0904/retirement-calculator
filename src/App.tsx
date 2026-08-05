@@ -3,6 +3,7 @@ import { RetirementState, SimulationResult } from './types/retirement';
 import { runRetirementSimulation } from './utils/calculatorEngine';
 import { decodeStateFromUrl } from './utils/urlEncoder';
 import { exportToPdf } from './utils/pdfExport';
+import { exportStateToFile, importStateFromFile } from './utils/fileExportImport';
 
 import { Header } from './components/Header';
 import { Toast } from './components/Toast';
@@ -150,6 +151,29 @@ export function App() {
     await exportToPdf('dashboard-export-container', state, simulationResult);
   };
 
+  const handleExportInputs = () => {
+    try {
+      exportStateToFile(state);
+      setToastMessage('Exported all inputs to encoded scenario file!');
+    } catch (err) {
+      setToastMessage('Failed to export inputs file.');
+    }
+  };
+
+  const handleImportInputs = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const importedData = await importStateFromFile(file);
+      setState((prev) => ({ ...prev, ...importedData }));
+      setToastMessage('Successfully imported inputs from file!');
+    } catch (err: any) {
+      setToastMessage(err.message || 'Error reading import file.');
+    }
+    // Reset file input value so re-importing same file works
+    e.target.value = '';
+  };
+
   const handleLoadPreset = (presetName: string) => {
     if (presetName === 'tech_worker_sf') {
       setState({
@@ -200,6 +224,8 @@ export function App() {
       <Header
         state={state}
         onExportPdf={handleExportPdf}
+        onExportInputs={handleExportInputs}
+        onImportInputs={handleImportInputs}
         onLoadPreset={handleLoadPreset}
         onResetDefault={() => setState(DEFAULT_STATE)}
         onTriggerToast={(msg) => setToastMessage(msg)}
