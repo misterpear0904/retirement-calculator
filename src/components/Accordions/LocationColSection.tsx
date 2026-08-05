@@ -1,5 +1,5 @@
 import React from 'react';
-import { MapPin, ShieldCheck, Landmark } from 'lucide-react';
+import { MapPin, ShieldCheck, Landmark, SlidersHorizontal } from 'lucide-react';
 import { RetirementState } from '../../types/retirement';
 import { LOCATION_PRESETS } from '../../data/colData';
 import { AccordionWrapper } from './AccordionWrapper';
@@ -74,6 +74,52 @@ export const LocationColSection: React.FC<Props> = ({
                 <span>Housing: <strong className="text-slate-200">{selectedLocation.housingIndex}%</strong></span>
                 <span>Healthcare: <strong className="text-slate-200">{selectedLocation.healthcareIndex}%</strong></span>
                 <span>State/Local Tax: <strong className="text-slate-200">{selectedLocation.stateTaxPct}%</strong></span>
+              </div>
+            </div>
+          </div>
+
+          {/* COL Percentile Adjustment Slider */}
+          <div className="bg-slate-900/60 p-4 rounded-xl border border-slate-700/40 space-y-2.5 mt-1">
+            <div className="flex justify-between items-center">
+              <h4 className="text-[11px] font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                <SlidersHorizontal className="w-3.5 h-3.5 text-cyan-400 shrink-0" /> Local COL Percentile Adjustment
+              </h4>
+              <span className={`text-xs font-bold px-2.5 py-1 rounded-lg shrink-0 ${
+                state.colAdjustmentPct === 0
+                  ? 'bg-slate-800 text-slate-400 border border-slate-700'
+                  : state.colAdjustmentPct > 0
+                  ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                  : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+              }`}>
+                {state.colAdjustmentPct > 0 ? '+' : ''}{state.colAdjustmentPct}% adjustment
+              </span>
+            </div>
+
+            <p className="text-[11px] text-slate-500 leading-relaxed">
+              Fine-tune your cost of living within {selectedLocation.name}. Slide left for more affordable neighborhoods, right for premium areas.
+            </p>
+
+            <div className="space-y-1.5">
+              <div className="flex justify-between text-[11px] text-slate-400 font-medium">
+                <span>Adjustment</span>
+                <span className="font-bold text-cyan-400">
+                  Effective COL: {Math.round(selectedLocation.colIndex * (1 + state.colAdjustmentPct / 100))}
+                  <span className="text-slate-500 font-normal ml-1">(base: {selectedLocation.colIndex})</span>
+                </span>
+              </div>
+              <input
+                type="range"
+                min={-50}
+                max={50}
+                step={5}
+                value={state.colAdjustmentPct}
+                onChange={(e) => onChange({ colAdjustmentPct: parseInt(e.target.value) })}
+                className="w-full cursor-pointer accent-cyan-500"
+              />
+              <div className="flex justify-between text-[10px] text-slate-500 font-medium">
+                <span>−50% (Budget)</span>
+                <span>Baseline</span>
+                <span>+50% (Premium)</span>
               </div>
             </div>
           </div>

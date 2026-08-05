@@ -85,6 +85,7 @@ const DEFAULT_STATE: RetirementState = {
   customCategories: [],
 
   targetLocationId: 'US_AVERAGE',
+  colAdjustmentPct: 0,
   socialSecurityMonthlyAt67: 2800,
   socialSecurityStartAge: 67,
   pensionMonthly: 0,

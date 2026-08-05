@@ -92,9 +92,10 @@ export function runRetirementSimulation(state: RetirementState): SimulationResul
     pensionStartAge,
   } = state;
 
-  // Resolve Cost of Living Multiplier
+  // Resolve Cost of Living Multiplier (with user percentile adjustment)
   const location = LOCATION_PRESETS.find((l) => l.id === targetLocationId) || LOCATION_PRESETS[0];
-  const colMultiplier = location.colIndex / 100.0;
+  const baseColMultiplier = location.colIndex / 100.0;
+  const colMultiplier = baseColMultiplier * (1 + (state.colAdjustmentPct || 0) / 100);
 
   // Resolve Real Income Growth Rate
   let incomeGrowthRate = 0.02;

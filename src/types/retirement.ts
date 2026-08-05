@@ -90,6 +90,7 @@ export interface RetirementState {
 
   // Section G: Retirement Location & COL
   targetLocationId: string;
+  colAdjustmentPct: number; // -50 to +50, adjusts COL within chosen location
   socialSecurityMonthlyAt67: number;
   socialSecurityStartAge: number;
   pensionMonthly: number;
