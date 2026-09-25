@@ -4,7 +4,7 @@ import {
   SimulationResult,
   TimelineMilestone,
 } from '../types/retirement';
-import { LOCATION_PRESETS } from '../data/colData';
+import { resolveLocation } from '../data/cityLocations';
 import { HISTORICAL_PRESETS, MONTE_CARLO_STATS } from '../data/historicalReturns';
 import { FINANCIAL_CONSTANTS } from './constants';
 
@@ -155,7 +155,7 @@ export function runRetirementSimulation(state: RetirementState): SimulationResul
   } = state;
 
   // Resolve Cost of Living Multiplier (with user percentile adjustment)
-  const location = LOCATION_PRESETS.find((l) => l.id === state.targetLocationId) || LOCATION_PRESETS[0];
+  const location = resolveLocation(state.targetLocationId);
   const baseColMultiplier = location.colIndex / 100.0;
   const colMultiplier = baseColMultiplier * (1 + (state.colAdjustmentPct || 0) / 100);
 

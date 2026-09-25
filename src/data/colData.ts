@@ -8,6 +8,11 @@ export interface LocationCOL {
   healthcareIndex: number;
   description: string;
   flagEmoji: string;
+  /** City-centre coordinates (generated 1M+ cities always have these). */
+  lat?: number;
+  lon?: number;
+  /** True for generated country-level estimates (vs hand-tuned presets). */
+  isEstimate?: boolean;
 }
 
 export const LOCATION_PRESETS: LocationCOL[] = [

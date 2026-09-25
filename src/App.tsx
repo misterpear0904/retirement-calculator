@@ -21,6 +21,7 @@ import { SummaryCards } from './components/Dashboard/SummaryCards';
 import { RetirementChart } from './components/Dashboard/RetirementChart';
 import { MilestoneTimeline } from './components/Dashboard/MilestoneTimeline';
 import { YearlyTable } from './components/Dashboard/YearlyTable';
+import { BenchmarkCompare } from './components/Dashboard/BenchmarkCompare';
 import { BasicModeInputs } from './components/BasicModeInputs';
 
 import { Layers, ChevronUp, ChevronDown, AlertTriangle } from 'lucide-react';
@@ -50,7 +51,7 @@ export function App() {
     location: false,
   });
 
-  const [activeTab, setActiveTab] = useState<'chart' | 'timeline' | 'table'>('chart');
+  const [activeTab, setActiveTab] = useState<'chart' | 'timeline' | 'table' | 'compare'>('chart');
 
   // Basic vs Advanced input mode. Basic is the default: 7 essentials only.
   const [mode, setMode] = useState<'basic' | 'advanced'>(() => {
@@ -322,6 +323,7 @@ export function App() {
                   { id: 'chart', label: 'Multi-Scenario Chart' },
                   { id: 'timeline', label: 'Milestone Timeline' },
                   { id: 'table', label: 'Yearly Schedule' },
+                  { id: 'compare', label: 'Global Compare' },
                 ].map((tab) => (
                   <button
                     key={tab.id}
@@ -363,6 +365,8 @@ export function App() {
             {activeTab === 'table' && (
               <YearlyTable yearlyProjections={simulationResult.yearlyProjections} />
             )}
+
+            {activeTab === 'compare' && <BenchmarkCompare state={state} />}
           </div>
         </div>
       </main>

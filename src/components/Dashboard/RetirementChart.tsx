@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -10,14 +10,20 @@ import {
   CartesianGrid,
   ReferenceLine,
   ReferenceDot,
+  Brush,
 } from 'recharts';
 import { YearlyProjection } from '../../types/retirement';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, ZoomIn, ZoomOut, Maximize2, Expand } from 'lucide-react';
+import { FullscreenModal } from '../FullscreenModal';
 
 interface Props {
   yearlyProjections: YearlyProjection[];
   targetRetirementAge: number;
   onSelectSection?: (sectionId: string) => void;
+  /** Chart canvas height in px (larger when rendered inside the fullscreen modal). */
+  height?: number;
+  /** Set false for the instance rendered inside the fullscreen modal (avoids nested modals). */
+  allowExpand?: boolean;
 }
 
 // Map milestone category to accordion section id
@@ -32,9 +38,11 @@ const getSectionIdForCategory = (category: string) => {
 };
 
 const formatYAxis = (num: number) => {
-  if (num >= 1000000) return `$${(num / 1000000).toFixed(1)}M`;
-  if (num >= 1000) return `$${(num / 1000).toFixed(0)}k`;
-  return `$${num}`;
+  const sign = num < 0 ? '-' : '';
+  const abs = Math.abs(num);
+  if (abs >= 1000000) return `${sign}$${(abs / 1000000).toFixed(1)}M`;
+  if (abs >= 1000) return `${sign}$${(abs / 1000).toFixed(0)}k`;
+  return `${sign}$${abs}`;
 };
 
 const fmt$ = (n: number) => `$${Math.round(n).toLocaleString()}`;
@@ -119,8 +127,105 @@ export const RetirementChart: React.FC<Props> = React.memo(({
   yearlyProjections,
   targetRetirementAge,
   onSelectSection,
+  height = 360,
+  allowExpand = true,
 }) => {
   const [showConfidenceBand, setShowConfidenceBand] = useState(true);
+  const [expanded, setExpanded] = useState(false);
+
+  // Zoom range as [startAge, endAge]; null = full horizon.
+  const [zoomRange, setZoomRange] = useState<[number, number] | null>(null);
+
+  const fullRange = useMemo<[number, number] | null>(() => {
+    if (yearlyProjections.length === 0) return null;
+    return [yearlyProjections[0].age, yearlyProjections[yearlyProjections.length - 1].age];
+  }, [yearlyProjections]);
+
+  // Reset zoom when the underlying horizon changes (new inputs).
+  useEffect(() => {
+    setZoomRange(null);
+  }, [fullRange?.[0], fullRange?.[1]]);
+
+  const viewRange: [number, number] | null = zoomRange ?? fullRange;
+  const isZoomed =
+    viewRange != null &&
+    fullRange != null &&
+    (viewRange[0] !== fullRange[0] || viewRange[1] !== fullRange[1]);
+
+  const zoomAround = useCallback(
+    (factor: number, center?: number | null) => {
+      if (!viewRange || !fullRange) return;
+      const [lo, hi] = viewRange;
+      const [fullLo, fullHi] = fullRange;
+      const fullSpan = Math.max(1, fullHi - fullLo);
+      const span = Math.max(1, hi - lo);
+      const next = Math.min(Math.max(5, span * factor), fullSpan);
+      // Anchor-preserving: keep the cursor (or view center) at the same
+      // relative position inside the new window.
+      const c = Math.min(fullHi, Math.max(fullLo, center ?? (lo + hi) / 2));
+      const ratio = span > 0 ? (c - lo) / span : 0.5;
+      let nextLo = Math.round(c - next * ratio);
+      let nextHi = nextLo + Math.round(next);
+      if (nextLo < fullLo) {
+        nextHi += fullLo - nextLo;
+        nextLo = fullLo;
+      }
+      if (nextHi > fullHi) {
+        nextLo -= nextHi - fullHi;
+        nextHi = fullHi;
+      }
+      nextLo = Math.max(fullLo, nextLo);
+      nextHi = Math.min(fullHi, nextHi);
+      setZoomRange(nextHi - nextLo >= fullSpan ? null : [nextLo, nextHi]);
+    },
+    [viewRange, fullRange]
+  );
+
+  const zoomIn = useCallback(() => zoomAround(0.7), [zoomAround]);
+  const zoomOut = useCallback(() => zoomAround(1.4), [zoomAround]);
+  // brushKey remounts the (uncontrolled) Brush so its travellers reset.
+  const [brushKey, setBrushKey] = useState(0);
+  const resetZoom = useCallback(() => {
+    setZoomRange(null);
+    setBrushKey((k) => k + 1);
+  }, []);
+
+  // Brush drives zoom in one direction only (brush -> chart). Feeding the
+  // zoom range back into the Brush as controlled props is what made dragging
+  // fight the cursor, so the Brush stays uncontrolled and only remounts on
+  // reset / horizon change.
+  const handleBrushChange = useCallback(
+    (range: { startIndex?: number; endIndex?: number } | null) => {
+      if (!fullRange || range?.startIndex == null || range?.endIndex == null) return;
+      const lo = fullRange[0] + range.startIndex;
+      const hi = fullRange[0] + range.endIndex;
+      if (hi - lo < 2) return;
+      if (lo === fullRange[0] && hi === fullRange[1]) setZoomRange(null);
+      else setZoomRange([lo, hi]);
+    },
+    [fullRange]
+  );
+
+  // Scroll-to-zoom anchored at the hovered age. A native non-passive wheel
+  // listener is required so the page doesn't scroll while zooming.
+  const chartBoxRef = useRef<HTMLDivElement>(null);
+  const anchorAgeRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const el = chartBoxRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      zoomAround(e.deltaY > 0 ? 1.18 : 0.85, anchorAgeRef.current);
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, [zoomAround]);
+
+  const trackAnchor = useCallback((s: any) => {
+    const label = s?.activeLabel;
+    anchorAgeRef.current = typeof label === 'number' ? label : null;
+  }, []);
 
   // Collect all milestone ages — memoized so hover re-renders don't recompute.
   const milestoneProjections = useMemo(
@@ -167,7 +272,39 @@ export const RetirementChart: React.FC<Props> = React.memo(({
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-800 border border-slate-700" role="group" aria-label="Chart zoom">
+            <button
+              type="button"
+              onClick={zoomIn}
+              disabled={!viewRange}
+              aria-label="Zoom chart in"
+              title="Zoom in"
+              className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 disabled:opacity-40 transition-colors"
+            >
+              <ZoomIn className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={zoomOut}
+              disabled={!isZoomed}
+              aria-label="Zoom chart out"
+              title="Zoom out"
+              className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 disabled:opacity-40 transition-colors"
+            >
+              <ZoomOut className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={resetZoom}
+              disabled={!isZoomed}
+              aria-label="Reset chart zoom"
+              title="Reset zoom"
+              className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 disabled:opacity-40 transition-colors"
+            >
+              <Maximize2 className="w-4 h-4" />
+            </button>
+          </div>
           <button
             type="button"
             onClick={toggleBands}
@@ -176,6 +313,17 @@ export const RetirementChart: React.FC<Props> = React.memo(({
             {showConfidenceBand ? <EyeOff className="w-4 h-4 text-blue-400" /> : <Eye className="w-4 h-4 text-blue-400" />}
             {showConfidenceBand ? 'Hide Bands' : 'Show Confidence Bands'}
           </button>
+          {allowExpand && (
+            <button
+              type="button"
+              onClick={() => setExpanded(true)}
+              aria-label="Expand chart fullscreen"
+              title="Expand fullscreen"
+              className="p-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 border border-slate-700 transition-colors"
+            >
+              <Expand className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -200,9 +348,22 @@ export const RetirementChart: React.FC<Props> = React.memo(({
       </div>
 
       {/* Chart Canvas Container */}
-      <div className="min-h-[380px] h-[380px] w-full pt-2">
-        <ResponsiveContainer width="100%" height={360} minHeight={360}>
-          <ComposedChart data={yearlyProjections} margin={{ top: 15, right: 25, left: 25, bottom: 20 }}>
+      <div
+        ref={chartBoxRef}
+        className="w-full pt-2"
+        style={{ height: height + 20, minHeight: height + 20 }}
+        onDoubleClick={resetZoom}
+        title="Scroll to zoom · double-click to reset"
+      >
+        <ResponsiveContainer width="100%" height={height} minHeight={height}>
+          <ComposedChart
+            data={yearlyProjections}
+            margin={{ top: 15, right: 25, left: 25, bottom: 20 }}
+            onMouseMove={trackAnchor}
+            onMouseLeave={() => {
+              anchorAgeRef.current = null;
+            }}
+          >
             <defs>
               <linearGradient id="targetGradient" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.4} />
@@ -217,12 +378,15 @@ export const RetirementChart: React.FC<Props> = React.memo(({
             <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.4} />
             <XAxis
               dataKey="age"
+              type="number"
+              domain={viewRange ?? ['dataMin', 'dataMax']}
+              allowDataOverflow
               stroke="#64748b"
               tickLine={false}
               tick={{ fontSize: 11, fill: '#94a3b8' }}
               unit=" yrs"
               interval="preserveStartEnd"
-              minTickGap={24}
+              minTickGap={16}
             />
             <YAxis
               stroke="#64748b"
@@ -306,9 +470,44 @@ export const RetirementChart: React.FC<Props> = React.memo(({
                 strokeWidth={2}
               />
             ))}
+            {/* Mini-overview zoom bar: drag the handles to zoom the main
+                view to specific dates. Uncontrolled by design (see above). */}
+            <Brush
+              key={`${fullRange?.[0] ?? 0}-${fullRange?.[1] ?? 0}-${brushKey}`}
+              dataKey="age"
+              height={28}
+              stroke="#38bdf8"
+              fill="#0f172a"
+              travellerWidth={12}
+              onChange={handleBrushChange}
+            >
+              <ComposedChart>
+                <Area
+                  type="monotone"
+                  dataKey="netWorth50"
+                  stroke="#38bdf8"
+                  fill="#38bdf8"
+                  fillOpacity={0.3}
+                  dot={false}
+                  isAnimationActive={false}
+                />
+              </ComposedChart>
+            </Brush>
           </ComposedChart>
         </ResponsiveContainer>
       </div>
+      <p className="text-[11px] text-slate-400">
+        Scroll over the chart to zoom{isZoomed && viewRange ? (
+          <>
+            {' '}· zoomed to ages {viewRange[0]}–{viewRange[1]} ·{' '}
+            <button type="button" onClick={resetZoom} className="text-blue-400 hover:underline font-semibold">
+              Show full horizon
+            </button>
+          </>
+        ) : (
+          ' · double-click to reset'
+        )}
+      </p>
 
       {/* Milestone Badges Timeline Strip Below Chart */}
       {milestoneProjections.length > 0 && (
@@ -332,6 +531,17 @@ export const RetirementChart: React.FC<Props> = React.memo(({
             )}
           </div>
         </div>
+      )}
+      {expanded && allowExpand && (
+        <FullscreenModal title="Net Worth Simulation" onClose={() => setExpanded(false)}>
+          <RetirementChart
+            yearlyProjections={yearlyProjections}
+            targetRetirementAge={targetRetirementAge}
+            onSelectSection={onSelectSection}
+            height={typeof window !== 'undefined' ? Math.max(480, window.innerHeight - 380) : 560}
+            allowExpand={false}
+          />
+        </FullscreenModal>
       )}
     </div>
   );

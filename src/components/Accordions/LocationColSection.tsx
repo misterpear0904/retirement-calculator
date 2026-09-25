@@ -1,8 +1,9 @@
 import React from 'react';
 import { MapPin, ShieldCheck, Landmark, SlidersHorizontal } from 'lucide-react';
 import { RetirementState } from '../../types/retirement';
-import { LOCATION_PRESETS } from '../../data/colData';
+import { resolveLocation } from '../../data/cityLocations';
 import { AccordionWrapper } from './AccordionWrapper';
+import { LocationMap } from './LocationMap';
 
 interface Props {
   state: RetirementState;
@@ -17,8 +18,7 @@ export const LocationColSection: React.FC<Props> = ({
   isOpen,
   onToggle,
 }) => {
-  const selectedLocation =
-    LOCATION_PRESETS.find((l) => l.id === state.targetLocationId) || LOCATION_PRESETS[0];
+  const selectedLocation = resolveLocation(state.targetLocationId);
 
   const colDelta = selectedLocation.colIndex - 100;
 
@@ -52,24 +52,26 @@ export const LocationColSection: React.FC<Props> = ({
             </span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-4">
             <div>
-              <label className="text-[11px] text-slate-400 block mb-1">Select Destination</label>
-              <select
-                value={state.targetLocationId}
-                onChange={(e) => onChange({ targetLocationId: e.target.value })}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs font-semibold text-slate-100 focus:border-red-500 focus:outline-none cursor-pointer"
-              >
-                {LOCATION_PRESETS.map((loc) => (
-                  <option key={loc.id} value={loc.id}>
-                    {loc.flagEmoji} {loc.name} — {loc.region}
-                  </option>
-                ))}
-              </select>
+              <span id="destination-map-label" className="text-[11px] text-slate-400 block mb-1">
+                Click a city pin — or anywhere — to use the nearest city&apos;s data
+              </span>
+              <LocationMap
+                selectedId={state.targetLocationId}
+                onSelect={(id) => onChange({ targetLocationId: id })}
+              />
             </div>
 
             <div className="bg-slate-900/70 p-3.5 rounded-xl border border-slate-800 flex flex-col justify-center text-xs space-y-1.5">
-              <span className="text-slate-200 font-medium leading-relaxed">{selectedLocation.description}</span>
+              <span className="text-slate-200 font-medium leading-relaxed">
+                {selectedLocation.description}
+                {selectedLocation.isEstimate && (
+                  <span className="ml-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 align-middle">
+                    Estimated country-level data
+                  </span>
+                )}
+              </span>
               <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-slate-400 pt-0.5">
                 <span>Housing: <strong className="text-slate-200">{selectedLocation.housingIndex}%</strong></span>
                 <span>Healthcare: <strong className="text-slate-200">{selectedLocation.healthcareIndex}%</strong></span>

@@ -13,6 +13,7 @@ interface AccordionWrapperProps {
 }
 
 export const AccordionWrapper: React.FC<AccordionWrapperProps> = ({
+  id,
   title,
   subtitle,
   icon,
@@ -23,6 +24,7 @@ export const AccordionWrapper: React.FC<AccordionWrapperProps> = ({
 }) => {
   return (
     <div
+      id={id}
       className={`rounded-2xl border transition-all duration-300 overflow-hidden ${
         isOpen
           ? 'dark:bg-slate-900/90 bg-white/95 dark:border-blue-500/40 border-blue-500/50 shadow-glow'
