@@ -21,6 +21,7 @@ import { SummaryCards } from './components/Dashboard/SummaryCards';
 import { RetirementChart } from './components/Dashboard/RetirementChart';
 import { MilestoneTimeline } from './components/Dashboard/MilestoneTimeline';
 import { YearlyTable } from './components/Dashboard/YearlyTable';
+import { BasicModeInputs } from './components/BasicModeInputs';
 
 import { Layers, ChevronUp, ChevronDown, AlertTriangle } from 'lucide-react';
 
@@ -50,6 +51,24 @@ export function App() {
   });
 
   const [activeTab, setActiveTab] = useState<'chart' | 'timeline' | 'table'>('chart');
+
+  // Basic vs Advanced input mode. Basic is the default: 7 essentials only.
+  const [mode, setMode] = useState<'basic' | 'advanced'>(() => {
+    try {
+      return window.localStorage.getItem('apexretire-mode') === 'advanced' ? 'advanced' : 'basic';
+    } catch {
+      return 'basic';
+    }
+  });
+
+  const handleModeChange = (next: 'basic' | 'advanced') => {
+    setMode(next);
+    try {
+      window.localStorage.setItem('apexretire-mode', next);
+    } catch {
+      // non-fatal
+    }
+  };
 
   // Load URL state if present
   useEffect(() => {
@@ -181,32 +200,66 @@ export function App() {
 
         {/* Main Dual-Pane Split Screen Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
-          {/* Left Column: Progressive Disclosure Accordions (5 cols) */}
+          {/* Left Column: Inputs (5 cols) */}
           <div className="lg:col-span-5 space-y-5">
-            <div className="flex items-center justify-between px-1 mb-1">
+            <div className="flex flex-wrap items-center justify-between gap-3 px-1 mb-1">
               <h2 className="text-xs font-extrabold uppercase tracking-wider dark:text-slate-400 text-slate-500 flex items-center gap-2">
                 <Layers className="w-4 h-4 text-blue-400" /> Plan Parameters
               </h2>
 
-              <div className="flex items-center gap-2 text-xs">
-                <button
-                  type="button"
-                  onClick={() => setAllSections(true)}
-                  className="text-blue-400 hover:underline flex items-center gap-1 font-medium"
+              <div className="flex items-center gap-3">
+                {/* Basic / Advanced segmented toggle */}
+                <div
+                  className="flex items-center gap-1 text-xs font-bold p-1 rounded-xl border dark:bg-slate-900/80 bg-white dark:border-slate-800 border-slate-200"
+                  role="group"
+                  aria-label="Input mode"
                 >
-                  <ChevronDown className="w-3.5 h-3.5" /> Expand All
-                </button>
-                <span className="dark:text-slate-600 text-slate-300">|</span>
-                <button
-                  type="button"
-                  onClick={() => setAllSections(false)}
-                  className="dark:text-slate-400 text-slate-500 hover:underline flex items-center gap-1 font-medium"
-                >
-                  <ChevronUp className="w-3.5 h-3.5" /> Collapse All
-                </button>
+                  {(['basic', 'advanced'] as const).map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      aria-pressed={mode === m}
+                      onClick={() => handleModeChange(m)}
+                      className={`px-3 py-1.5 rounded-lg capitalize transition-all ${
+                        mode === m
+                          ? 'bg-blue-600 text-white shadow-glow'
+                          : 'dark:text-slate-400 text-slate-500 hover:text-slate-200 dark:hover:bg-slate-800/60 hover:bg-slate-100'
+                      }`}
+                    >
+                      {m}
+                    </button>
+                  ))}
+                </div>
+
+                {mode === 'advanced' && (
+                  <div className="flex items-center gap-2 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setAllSections(true)}
+                      className="text-blue-400 hover:underline flex items-center gap-1 font-medium"
+                    >
+                      <ChevronDown className="w-3.5 h-3.5" /> Expand All
+                    </button>
+                    <span className="dark:text-slate-600 text-slate-300">|</span>
+                    <button
+                      type="button"
+                      onClick={() => setAllSections(false)}
+                      className="dark:text-slate-400 text-slate-500 hover:underline flex items-center gap-1 font-medium"
+                    >
+                      <ChevronUp className="w-3.5 h-3.5" /> Collapse All
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
+            {mode === 'basic' ? (
+              <BasicModeInputs
+                state={state}
+                onChange={handleChange}
+                onSwitchToAdvanced={() => handleModeChange('advanced')}
+              />
+            ) : (
             <div className="space-y-4">
               <DemographicsSection
                 state={state}
@@ -257,6 +310,7 @@ export function App() {
                 onToggle={() => toggleSection('location')}
               />
             </div>
+            )}
           </div>
 
           {/* Right Column: Sticky Visual Anchor Pane (7 cols) */}
