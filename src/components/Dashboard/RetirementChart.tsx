@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -9,9 +9,10 @@ import {
   Tooltip,
   CartesianGrid,
   ReferenceLine,
+  ReferenceDot,
 } from 'recharts';
-import { YearlyProjection, TimelineMilestone } from '../../types/retirement';
-import { Info, Eye, EyeOff } from 'lucide-react';
+import { YearlyProjection } from '../../types/retirement';
+import { Eye, EyeOff } from 'lucide-react';
 
 interface Props {
   yearlyProjections: YearlyProjection[];
@@ -30,11 +31,19 @@ const getSectionIdForCategory = (category: string) => {
   }
 };
 
-const CustomTooltip = ({ active, payload }: any) => {
+const formatYAxis = (num: number) => {
+  if (num >= 1000000) return `$${(num / 1000000).toFixed(1)}M`;
+  if (num >= 1000) return `$${(num / 1000).toFixed(0)}k`;
+  return `$${num}`;
+};
+
+const fmt$ = (n: number) => `$${Math.round(n).toLocaleString()}`;
+
+const CustomTooltip = React.memo(({ active, payload }: any) => {
   if (active && payload && payload.length) {
     const data: YearlyProjection = payload[0].payload;
     return (
-      <div className="bg-slate-900/95 border border-slate-700/80 p-3.5 rounded-xl shadow-2xl backdrop-blur-md text-xs space-y-2 min-w-[250px]">
+      <div className="bg-slate-900 border border-slate-700/80 p-3.5 rounded-xl shadow-2xl text-xs space-y-2 min-w-[250px]">
         <div className="flex justify-between items-center border-b border-slate-800 pb-2">
           <span className="font-extrabold text-slate-100">
             Age {data.age} ({data.year})
@@ -62,39 +71,39 @@ const CustomTooltip = ({ active, payload }: any) => {
         <div className="space-y-1 pt-1">
           <div className="flex justify-between font-bold text-slate-100">
             <span>Net Worth (Target):</span>
-            <span className="text-cyan-400">${data.netWorth50.toLocaleString()}</span>
+            <span className="text-cyan-400">{fmt$(data.netWorth50)}</span>
           </div>
           <div className="flex justify-between text-slate-400">
             <span>Conservative:</span>
-            <span className="text-emerald-400">${data.netWorth95.toLocaleString()}</span>
+            <span className="text-emerald-400">{fmt$(data.netWorth95)}</span>
           </div>
           <div className="flex justify-between text-slate-400">
             <span>Stress Test:</span>
-            <span className="text-amber-400">${data.netWorth10.toLocaleString()}</span>
+            <span className="text-amber-400">{fmt$(data.netWorth10)}</span>
           </div>
         </div>
 
         <div className="border-t border-slate-800/80 pt-2 space-y-1 text-[11px]">
           <div className="flex justify-between text-slate-400">
             <span>Living Expenses:</span>
-            <span className="text-slate-200">${data.livingExpenses.toLocaleString()}</span>
+            <span className="text-slate-200">{fmt$(data.livingExpenses)}</span>
           </div>
           {data.housingExpenses > 0 && (
             <div className="flex justify-between text-slate-400">
               <span>Housing Payment:</span>
-              <span className="text-slate-200">${data.housingExpenses.toLocaleString()}</span>
+              <span className="text-slate-200">{fmt$(data.housingExpenses)}</span>
             </div>
           )}
           {data.childEducationExpenses > 0 && (
             <div className="flex justify-between text-blue-300 font-semibold">
               <span>Child Tuition:</span>
-              <span>${data.childEducationExpenses.toLocaleString()}</span>
+              <span>{fmt$(data.childEducationExpenses)}</span>
             </div>
           )}
           {data.totalDebtBalance > 0 && (
             <div className="flex justify-between text-red-400 font-medium">
               <span>Mortgage / Debt Left:</span>
-              <span>-${data.totalDebtBalance.toLocaleString()}</span>
+              <span>-{fmt$(data.totalDebtBalance)}</span>
             </div>
           )}
         </div>
@@ -102,35 +111,49 @@ const CustomTooltip = ({ active, payload }: any) => {
     );
   }
   return null;
-};
+});
 
-export const RetirementChart: React.FC<Props> = ({
+CustomTooltip.displayName = 'RetirementChartTooltip';
+
+export const RetirementChart: React.FC<Props> = React.memo(({
   yearlyProjections,
   targetRetirementAge,
   onSelectSection,
 }) => {
   const [showConfidenceBand, setShowConfidenceBand] = useState(true);
 
-  // Format large numbers for Y Axis
-  const formatYAxis = (num: number) => {
-    if (num >= 1000000) return `$${(num / 1000000).toFixed(1)}M`;
-    if (num >= 1000) return `$${(num / 1000).toFixed(0)}k`;
-    return `$${num}`;
-  };
-
-  // Collect all milestone ages
-  const milestoneProjections = yearlyProjections.filter(
-    (p) => p.milestones && p.milestones.length > 0
+  // Collect all milestone ages — memoized so hover re-renders don't recompute.
+  const milestoneProjections = useMemo(
+    () => yearlyProjections.filter((p) => p.milestones && p.milestones.length > 0),
+    [yearlyProjections]
   );
 
-  const handleBadgeClick = (category: string) => {
-    const secId = getSectionIdForCategory(category);
-    if (onSelectSection) onSelectSection(secId);
-    const elem = document.getElementById(secId);
-    if (elem) {
-      elem.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
+  // Static milestone markers: a handful of ReferenceDots instead of a
+  // per-point custom `dot` renderer (which re-created ~60 SVG nodes with
+  // CSS pulse animations on every tooltip mousemove).
+  const milestoneDots = useMemo(
+    () =>
+      milestoneProjections.map((p) => ({
+        age: p.age,
+        value: p.netWorth50,
+        title: p.milestones.map((m) => m.title).join(', '),
+      })),
+    [milestoneProjections]
+  );
+
+  const handleBadgeClick = useCallback(
+    (category: string) => {
+      const secId = getSectionIdForCategory(category);
+      if (onSelectSection) onSelectSection(secId);
+      const elem = document.getElementById(secId);
+      if (elem) {
+        elem.scrollIntoView({ behavior: 'smooth' });
+      }
+    },
+    [onSelectSection]
+  );
+
+  const toggleBands = useCallback(() => setShowConfidenceBand((v) => !v), []);
 
   return (
     <div className="glass-panel p-6 sm:p-7 rounded-2xl space-y-5">
@@ -147,7 +170,7 @@ export const RetirementChart: React.FC<Props> = ({
         <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={() => setShowConfidenceBand(!showConfidenceBand)}
+            onClick={toggleBands}
             className="flex items-center gap-2 text-xs font-semibold px-3.5 py-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white border border-slate-700 transition-colors shadow-sm"
           >
             {showConfidenceBand ? <EyeOff className="w-4 h-4 text-blue-400" /> : <Eye className="w-4 h-4 text-blue-400" />}
@@ -171,7 +194,7 @@ export const RetirementChart: React.FC<Props> = ({
           <span className="text-slate-300">Stress Test</span>
         </div>
         <div className="flex items-center gap-2 border-l border-slate-800 pl-4">
-          <span className="w-2.5 h-2.5 rounded-full bg-purple-500 animate-pulse shrink-0"></span>
+          <span className="w-2.5 h-2.5 rounded-full bg-purple-500 shrink-0"></span>
           <span className="text-slate-400">Target Retirement Age ({targetRetirementAge})</span>
         </div>
       </div>
@@ -198,6 +221,8 @@ export const RetirementChart: React.FC<Props> = ({
               tickLine={false}
               tick={{ fontSize: 11, fill: '#94a3b8' }}
               unit=" yrs"
+              interval="preserveStartEnd"
+              minTickGap={24}
             />
             <YAxis
               stroke="#64748b"
@@ -222,7 +247,7 @@ export const RetirementChart: React.FC<Props> = ({
               }}
             />
 
-            {/* Shaded Confidence Band & Percentile Lines (95th & 10th) */}
+            {/* Shaded Confidence Band & Scenario Lines */}
             {showConfidenceBand && (
               <>
                 <Area
@@ -230,6 +255,9 @@ export const RetirementChart: React.FC<Props> = ({
                   dataKey="netWorth95"
                   stroke="none"
                   fill="url(#confidenceBand)"
+                  dot={false}
+                  activeDot={false}
+                  isAnimationActive={false}
                 />
                 <Line
                   type="monotone"
@@ -238,6 +266,8 @@ export const RetirementChart: React.FC<Props> = ({
                   strokeWidth={1.5}
                   strokeDasharray="3 3"
                   dot={false}
+                  activeDot={false}
+                  isAnimationActive={false}
                 />
                 <Line
                   type="monotone"
@@ -246,36 +276,36 @@ export const RetirementChart: React.FC<Props> = ({
                   strokeWidth={1.5}
                   strokeDasharray="3 3"
                   dot={false}
+                  activeDot={false}
+                  isAnimationActive={false}
                 />
               </>
             )}
 
-            {/* Main Target Case Line & Area */}
+            {/* Main Target Case Line & Area — no per-point dots; milestones
+                render as a few static ReferenceDots below. */}
             <Area
               type="monotone"
               dataKey="netWorth50"
               stroke="#38bdf8"
               strokeWidth={3}
               fill="url(#targetGradient)"
-              dot={(props: any) => {
-                const { payload, cx, cy } = props;
-                if (payload && payload.milestones && payload.milestones.length > 0) {
-                  return (
-                    <circle
-                      key={`dot_${payload.age}`}
-                      cx={cx}
-                      cy={cy}
-                      r={6}
-                      fill="#38bdf8"
-                      stroke="#ffffff"
-                      strokeWidth={2}
-                      className="animate-pulse cursor-pointer"
-                    />
-                  );
-                }
-                return <g key={`dot_empty_${payload?.age ?? props?.index ?? 'x'}`} />;
-              }}
+              dot={false}
+              activeDot={{ r: 5, fill: '#38bdf8', stroke: '#ffffff', strokeWidth: 2 }}
+              isAnimationActive={false}
             />
+
+            {milestoneDots.map((m) => (
+              <ReferenceDot
+                key={`milestone_${m.age}`}
+                x={m.age}
+                y={m.value}
+                r={6}
+                fill="#38bdf8"
+                stroke="#ffffff"
+                strokeWidth={2}
+              />
+            ))}
           </ComposedChart>
         </ResponsiveContainer>
       </div>
@@ -305,4 +335,6 @@ export const RetirementChart: React.FC<Props> = ({
       )}
     </div>
   );
-};
+});
+
+RetirementChart.displayName = 'RetirementChart';
