@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Download, Share2, Sparkles, Check, RefreshCw, Sun, Moon, FileDown, FileUp, ShieldCheck } from 'lucide-react';
 import { RetirementState } from '../types/retirement';
 import { encodeStateToUrl } from '../utils/urlEncoder';
+import { getRiskLabel, getRiskBadgeClasses } from '../utils/risk';
+import { PRESET_LABELS, PresetName } from '../data/presets';
 
 interface Props {
   onExportPdf: () => void;
@@ -29,26 +31,36 @@ export const Header: React.FC<Props> = ({
   successRate,
 }) => {
   const [copied, setCopied] = useState(false);
+  const [presetValue, setPresetValue] = useState('');
 
-  const handleShareUrl = () => {
+  const handleShareUrl = async () => {
     const url = encodeStateToUrl(state);
-    navigator.clipboard.writeText(url);
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      // Fallback for insecure contexts / older browsers.
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = url;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      } catch {
+        window.prompt('Copy scenario URL:', url);
+        return;
+      }
+    }
     setCopied(true);
     onTriggerToast('Copied shareable scenario URL to clipboard!');
     setTimeout(() => setCopied(false), 2500);
   };
 
-  const getSuccessBadge = (rate: number) => {
-    if (rate >= 85) return { label: 'Very Safe', style: 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400' };
-    if (rate >= 70) return { label: 'On Track', style: 'bg-blue-500/15 border-blue-500/30 text-blue-400' };
-    if (rate >= 50) return { label: 'Moderate Risk', style: 'bg-amber-500/15 border-amber-500/30 text-amber-400' };
-    return { label: 'High Risk', style: 'bg-red-500/15 border-red-500/30 text-red-400' };
-  };
-
-  const badge = getSuccessBadge(successRate);
+  const badgeLabel = getRiskLabel(successRate);
+  const badgeStyle = getRiskBadgeClasses(successRate);
 
   return (
-    <header className="border-b border-slate-800 bg-slate-950/80 backdrop-blur-md sticky top-0 z-40 transition-colors shadow-sm">
+    <header className="border-b dark:border-slate-800 border-slate-200 dark:bg-slate-950/80 bg-white/80 backdrop-blur-md sticky top-0 z-40 transition-colors shadow-sm">
       <div className="max-w-[1920px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-wrap items-center justify-between gap-4 sm:gap-6">
         {/* Brand Logo & Title */}
         <div className="flex items-center gap-3.5">
@@ -56,23 +68,23 @@ export const Header: React.FC<Props> = ({
             <Sparkles className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-lg font-extrabold tracking-tight text-white flex items-center gap-2">
+            <h1 className="text-lg font-extrabold tracking-tight dark:text-white text-slate-900 flex items-center gap-2">
               ApexRetire <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 font-semibold tracking-wide">Pro</span>
             </h1>
-            <p className="text-xs text-slate-400 hidden sm:block mt-0.5 leading-relaxed">
+            <p className="text-xs dark:text-slate-400 text-slate-500 hidden sm:block mt-0.5 leading-relaxed">
               Interactive Progressive Disclosure Retirement & FIRE Simulator
             </p>
           </div>
 
           {/* Sticky Success Confidence Score Badge */}
-          <div className="flex items-center gap-3 ml-3 px-4 py-2 rounded-xl bg-slate-900/80 border border-slate-700/60 shadow-sm">
+          <div className="flex items-center gap-3 ml-3 px-4 py-2 rounded-xl dark:bg-slate-900/80 bg-slate-100 border dark:border-slate-700/60 border-slate-200 shadow-sm">
             <ShieldCheck className="w-5 h-5 text-blue-400 shrink-0" />
             <div className="flex items-baseline gap-2">
-              <span className="text-xs font-semibold text-slate-400 hidden md:inline">Confidence:</span>
-              <span className="text-base font-black text-white tracking-tight">{successRate}%</span>
+              <span className="text-xs font-semibold dark:text-slate-400 text-slate-500 hidden md:inline">Confidence:</span>
+              <span className="text-base font-black dark:text-white text-slate-900 tracking-tight">{successRate}%</span>
             </div>
-            <span className={`text-[11px] font-extrabold px-2.5 py-1 rounded-full border ${badge.style}`}>
-              {badge.label}
+            <span className={`text-[11px] font-extrabold px-2.5 py-1 rounded-full border ${badgeStyle}`}>
+              {badgeLabel}
             </span>
           </div>
         </div>
@@ -80,19 +92,17 @@ export const Header: React.FC<Props> = ({
         {/* Action Controls */}
         <div className="flex flex-wrap items-center gap-2.5 text-xs">
           {/* Preset Selector Dropdown */}
+          <label className="sr-only" htmlFor="preset-select">Load preset scenario</label>
           <select
+            id="preset-select"
+            value={presetValue}
             onChange={(e) => {
               if (e.target.value) {
                 onLoadPreset(e.target.value);
-                const labels: Record<string, string> = {
-                  tech_worker_sf: 'Tech Worker (SF → Portugal)',
-                  family_texas: 'Young Family in Texas',
-                  fire_early: 'Aggressive FIRE at Age 45',
-                };
-                onTriggerToast(`Applied ${labels[e.target.value] || 'Preset'} Scenario!`);
+                onTriggerToast(`Applied ${PRESET_LABELS[e.target.value as PresetName] || 'Preset'} Scenario!`);
+                setPresetValue('');
               }
             }}
-            defaultValue=""
             className="dark:bg-slate-900 bg-slate-100 dark:border-slate-700 border-slate-300 dark:text-slate-300 text-slate-700 font-medium rounded-xl px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors max-w-xs cursor-pointer"
           >
             <option value="" disabled>⚡ Load Preset Scenario</option>

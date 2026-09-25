@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { YearlyProjection } from '../../types/retirement';
-import { Table, Download, Search } from 'lucide-react';
+import { Table } from 'lucide-react';
 
 interface Props {
   yearlyProjections: YearlyProjection[];
@@ -16,7 +16,7 @@ export const YearlyTable: React.FC<Props> = ({ yearlyProjections }) => {
   return (
     <div className="glass-panel p-6 sm:p-7 rounded-2xl space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h3 className="text-base sm:text-lg font-bold text-slate-100 flex items-center gap-2">
+        <h3 className="text-base sm:text-lg font-bold dark:text-slate-100 text-slate-900 flex items-center gap-2">
           <Table className="w-4.5 h-4.5 text-blue-400 shrink-0" /> Yearly Financial Cash Flow & Balance Schedule
         </h3>
 
@@ -39,13 +39,13 @@ export const YearlyTable: React.FC<Props> = ({ yearlyProjections }) => {
         <table className="w-full text-left text-xs border-collapse">
           <thead className="sticky top-0 bg-slate-900/95 backdrop-blur-md text-slate-300 font-semibold border-b border-slate-800">
             <tr>
-              <th className="px-4 py-3.5 whitespace-nowrap">Age (Year)</th>
-              <th className="px-4 py-3.5 whitespace-nowrap">Phase</th>
-              <th className="px-4 py-3.5 text-right whitespace-nowrap">Gross Income</th>
-              <th className="px-4 py-3.5 text-right whitespace-nowrap">Contributions</th>
-              <th className="px-4 py-3.5 text-right whitespace-nowrap">Total Expenses</th>
-              <th className="px-4 py-3.5 text-right whitespace-nowrap">Net Withdrawal</th>
-              <th className="px-4 py-3.5 text-right font-bold text-slate-100 whitespace-nowrap">Portfolio Net Worth</th>
+              <th scope="col" className="px-4 py-3.5 whitespace-nowrap">Age (Year)</th>
+              <th scope="col" className="px-4 py-3.5 whitespace-nowrap">Phase</th>
+              <th scope="col" className="px-4 py-3.5 text-right whitespace-nowrap">Gross Income</th>
+              <th scope="col" className="px-4 py-3.5 text-right whitespace-nowrap">Contributions</th>
+              <th scope="col" className="px-4 py-3.5 text-right whitespace-nowrap">Total Expenses</th>
+              <th scope="col" className="px-4 py-3.5 text-right whitespace-nowrap">Net Withdrawal</th>
+              <th scope="col" className="px-4 py-3.5 text-right font-bold text-slate-100 whitespace-nowrap">Portfolio Net Worth</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800/60 font-mono">

@@ -97,12 +97,14 @@ export interface RetirementState {
   pensionStartAge: number;
 }
 
+export type MilestoneIcon = 'Palmtree' | 'Landmark' | 'Home' | 'GraduationCap' | 'Calendar';
+
 export interface TimelineMilestone {
   age: number;
   year: number;
   title: string;
   description: string;
-  icon: string;
+  icon: MilestoneIcon | string;
   category: 'education' | 'housing' | 'retirement' | 'income' | 'debt';
 }
 
@@ -142,7 +144,8 @@ export interface SimulationResult {
   yearlyProjections: YearlyProjection[];
   successRate: number; // 0 - 100 percentage
   targetRetirementNetWorth: number;
-  finalNetWorthAge90: number;
+  /** Net worth at the end of the plan horizon (lifeExpectancy). */
+  finalNetWorth: number;
   fireAgeAchievable: number | null;
   safeWithdrawalRatePct: number;
   monthlyRetirementSpending: number;

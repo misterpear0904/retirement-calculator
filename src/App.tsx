@@ -1,9 +1,11 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { RetirementState, SimulationResult } from './types/retirement';
 import { runRetirementSimulation } from './utils/calculatorEngine';
-import { decodeStateFromUrl } from './utils/urlEncoder';
+import { decodeStateFromUrl, clearScenarioFromUrl } from './utils/urlEncoder';
 import { exportToPdf } from './utils/pdfExport';
 import { exportStateToFile, importStateFromFile } from './utils/fileExportImport';
+import { sanitizeRetirementState, validateRetirementState } from './utils/validation';
+import { DEFAULT_STATE, applyPreset } from './data/presets';
 
 import { Header } from './components/Header';
 import { Toast } from './components/Toast';
@@ -20,77 +22,16 @@ import { RetirementChart } from './components/Dashboard/RetirementChart';
 import { MilestoneTimeline } from './components/Dashboard/MilestoneTimeline';
 import { YearlyTable } from './components/Dashboard/YearlyTable';
 
-import { Layers, ChevronUp, ChevronDown } from 'lucide-react';
+import { Layers, ChevronUp, ChevronDown, AlertTriangle } from 'lucide-react';
 
-const DEFAULT_STATE: RetirementState = {
-  currentAge: 32,
-  targetRetirementAge: 60,
-  lifeExpectancy: 90,
-
-  liquidCash: 25000,
-  taxableInvestments: 65000,
-  preTax401k: 120000,
-  postTaxRothHsa: 35000,
-  debts: [],
-
-  currentAnnualIncome: 145000,
-  realIncomeGrowthMode: 'standard_2',
-  customIncomeGrowthRate: 2,
-  savingsRatePct: 22,
-  fixedAnnualContribution: 30000,
-  useFixedContribution: false,
-  contributionSplit: {
-    preTaxPct: 50,
-    postTaxPct: 30,
-    taxablePct: 20,
-  },
-
-  inflationMode: 'fixed_3',
-  customInflationRate: 3.0,
-  historicalInflationPreset: 'stagflation_1970s',
-
-  stockPct: 80,
-  bondPct: 15,
-  cashPct: 5,
-
-  returnMode: 'monte_carlo',
-  customStockReturn: 9.5,
-  customBondReturn: 4.5,
-
-  hasChildren: true,
-  children: [
-    {
-      id: 'child_1',
-      name: 'Maya',
-      currentAge: 4,
-      schoolType: 'public',
-      privateAnnualCost: 12000,
-      collegeTier: 'in_state',
-      collegeYears: 4,
-      collegeAnnualCost: 24000,
-    },
-  ],
-
-  housingType: 'mortgage',
-  rentMonthly: 2500,
-  rentInflationPct: 3.5,
-  mortgageBalance: 380000,
-  mortgageMonthly: 2450,
-  mortgageInterestRate: 6.2,
-  mortgageRemainingYears: 22,
-
-  lifestyleTier: 'moderate',
-  essentialExpensesMonthly: 3200,
-  discretionaryExpensesMonthly: 1500,
-  customCategories: [],
-
-  targetLocationId: 'US_AVERAGE',
-  colAdjustmentPct: 0,
-  socialSecurityMonthlyAt67: 2800,
-  socialSecurityStartAge: 67,
-  pensionMonthly: 0,
-  pensionStartAge: 65,
-};
+function useDebouncedValue<T>(value: T, delayMs: number): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(value), delayMs);
+    return () => clearTimeout(t);
+  }, [value, delayMs]);
+  return debounced;
+}
 
 export function App() {
   const [state, setState] = useState<RetirementState>(DEFAULT_STATE);
@@ -114,13 +55,26 @@ export function App() {
   useEffect(() => {
     const urlState = decodeStateFromUrl();
     if (urlState) {
-      setState((prev) => ({ ...prev, ...urlState }));
+      setState((prev) => sanitizeRetirementState({ ...prev, ...urlState }));
       setToastMessage('Loaded shared scenario from URL hash!');
+      clearScenarioFromUrl();
     }
   }, []);
 
+  // Keep Tailwind `dark` class in sync (index.html starts with class="dark").
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', isDark);
+  }, [isDark]);
+
+  // Auto-dismiss toast after a few seconds.
+  useEffect(() => {
+    if (!toastMessage) return;
+    const t = setTimeout(() => setToastMessage(null), 4000);
+    return () => clearTimeout(t);
+  }, [toastMessage]);
+
   const handleChange = (updates: Partial<RetirementState>) => {
-    setState((prev) => ({ ...prev, ...updates }));
+    setState((prev) => sanitizeRetirementState({ ...prev, ...updates }));
   };
 
   const toggleSection = (key: string) => {
@@ -143,20 +97,29 @@ export function App() {
     });
   };
 
-  // High performance real-time simulation (<50ms re-render)
+  // Debounce the expensive 500-trial Monte Carlo sim so slider drags stay smooth.
+  const debouncedState = useDebouncedValue(state, 150);
+
+  // High performance real-time simulation
   const simulationResult: SimulationResult = useMemo(() => {
-    return runRetirementSimulation(state);
-  }, [state]);
+    return runRetirementSimulation(debouncedState);
+  }, [debouncedState]);
+
+  const validationIssues = useMemo(() => validateRetirementState(state), [state]);
 
   const handleExportPdf = async () => {
-    await exportToPdf('dashboard-export-container', state, simulationResult);
+    try {
+      await exportToPdf('dashboard-export-container', state, simulationResult);
+    } catch {
+      setToastMessage('Failed to generate PDF. Please try again.');
+    }
   };
 
   const handleExportInputs = () => {
     try {
       exportStateToFile(state);
-      setToastMessage('Exported all inputs to encoded scenario file!');
-    } catch (err) {
+      setToastMessage('Exported all inputs to scenario file!');
+    } catch {
       setToastMessage('Failed to export inputs file.');
     }
   };
@@ -166,58 +129,17 @@ export function App() {
     if (!file) return;
     try {
       const importedData = await importStateFromFile(file);
-      setState((prev) => ({ ...prev, ...importedData }));
+      setState((prev) => sanitizeRetirementState({ ...prev, ...importedData }));
       setToastMessage('Successfully imported inputs from file!');
-    } catch (err: any) {
-      setToastMessage(err.message || 'Error reading import file.');
+    } catch (err: unknown) {
+      setToastMessage(err instanceof Error ? err.message : 'Error reading import file.');
     }
     // Reset file input value so re-importing same file works
     e.target.value = '';
   };
 
   const handleLoadPreset = (presetName: string) => {
-    if (presetName === 'tech_worker_sf') {
-      setState({
-        ...DEFAULT_STATE,
-        currentAge: 29,
-        targetRetirementAge: 52,
-        currentAnnualIncome: 240000,
-        savingsRatePct: 35,
-        liquidCash: 45000,
-        taxableInvestments: 180000,
-        preTax401k: 140000,
-        postTaxRothHsa: 50000,
-        targetLocationId: 'PT_LISBON',
-        housingType: 'rent',
-        rentMonthly: 3600,
-        essentialExpensesMonthly: 4500,
-        discretionaryExpensesMonthly: 2500,
-      });
-    } else if (presetName === 'family_texas') {
-      setState({
-        ...DEFAULT_STATE,
-        currentAge: 35,
-        targetRetirementAge: 62,
-        currentAnnualIncome: 160000,
-        savingsRatePct: 20,
-        targetLocationId: 'TX_AUSTIN',
-        mortgageBalance: 420000,
-        mortgageMonthly: 2800,
-        mortgageRemainingYears: 25,
-      });
-    } else if (presetName === 'fire_early') {
-      setState({
-        ...DEFAULT_STATE,
-        currentAge: 30,
-        targetRetirementAge: 45,
-        currentAnnualIncome: 180000,
-        savingsRatePct: 55,
-        lifestyleTier: 'minimalist',
-        essentialExpensesMonthly: 2200,
-        discretionaryExpensesMonthly: 800,
-        targetLocationId: 'CR_SAN_JOSE',
-      });
-    }
+    setState(applyPreset(DEFAULT_STATE, presetName));
   };
 
   return (
@@ -236,6 +158,20 @@ export function App() {
       />
 
       <main className="flex-1 max-w-[1920px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 space-y-8 sm:space-y-10">
+        {validationIssues.length > 0 && (
+          <div
+            role="alert"
+            className="flex items-start gap-3 text-xs dark:bg-amber-500/10 bg-amber-50 dark:border-amber-500/30 border-amber-300 dark:text-amber-300 text-amber-800 border rounded-xl px-4 py-3"
+          >
+            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+            <ul className="space-y-1">
+              {validationIssues.map((issue) => (
+                <li key={issue.field}>{issue.message}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         {/* Bento Grid Executive Dashboard with Inline Editing */}
         <SummaryCards
           result={simulationResult}
@@ -248,7 +184,7 @@ export function App() {
           {/* Left Column: Progressive Disclosure Accordions (5 cols) */}
           <div className="lg:col-span-5 space-y-5">
             <div className="flex items-center justify-between px-1 mb-1">
-              <h2 className="text-xs font-extrabold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+              <h2 className="text-xs font-extrabold uppercase tracking-wider dark:text-slate-400 text-slate-500 flex items-center gap-2">
                 <Layers className="w-4 h-4 text-blue-400" /> Plan Parameters
               </h2>
 
@@ -260,11 +196,11 @@ export function App() {
                 >
                   <ChevronDown className="w-3.5 h-3.5" /> Expand All
                 </button>
-                <span className="text-slate-600">|</span>
+                <span className="dark:text-slate-600 text-slate-300">|</span>
                 <button
                   type="button"
                   onClick={() => setAllSections(false)}
-                  className="text-slate-400 hover:underline flex items-center gap-1 font-medium"
+                  className="dark:text-slate-400 text-slate-500 hover:underline flex items-center gap-1 font-medium"
                 >
                   <ChevronUp className="w-3.5 h-3.5" /> Collapse All
                 </button>
@@ -326,8 +262,8 @@ export function App() {
           {/* Right Column: Sticky Visual Anchor Pane (7 cols) */}
           <div className="lg:col-span-7 space-y-5 lg:sticky lg:top-20" id="dashboard-export-container">
             {/* Dashboard Tab Controls */}
-            <div className="flex items-center justify-between bg-slate-900/80 p-1.5 rounded-xl border border-slate-800 backdrop-blur-md">
-              <div className="flex gap-1 text-xs">
+            <div className="flex items-center justify-between dark:bg-slate-900/80 bg-white p-1.5 rounded-xl border dark:border-slate-800 border-slate-200 backdrop-blur-md">
+              <div className="flex gap-1 text-xs" role="tablist" aria-label="Dashboard views">
                 {[
                   { id: 'chart', label: 'Multi-Scenario Chart' },
                   { id: 'timeline', label: 'Milestone Timeline' },
@@ -336,10 +272,12 @@ export function App() {
                   <button
                     key={tab.id}
                     type="button"
-                    onClick={() => setActiveTab(tab.id as any)}
+                    role="tab"
+                    aria-selected={activeTab === tab.id}
+                    onClick={() => setActiveTab(tab.id as typeof activeTab)}
                     className={`px-3.5 py-1.5 rounded-lg font-bold transition-all ${activeTab === tab.id
                         ? 'bg-blue-600 text-white shadow-glow'
-                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                        : 'dark:text-slate-400 text-slate-500 hover:text-slate-200 dark:hover:bg-slate-800/60 hover:bg-slate-100'
                       }`}
                   >
                     {tab.label}
@@ -347,8 +285,8 @@ export function App() {
                 ))}
               </div>
 
-              <div className="text-[11px] text-slate-400 pr-2 hidden sm:block">
-                Target: <strong className="text-slate-200">Age {state.targetRetirementAge}</strong>
+              <div className="text-[11px] dark:text-slate-400 text-slate-500 pr-2 hidden sm:block">
+                Target: <strong className="dark:text-slate-200 text-slate-800">Age {state.targetRetirementAge}</strong>
               </div>
             </div>
 
@@ -377,8 +315,8 @@ export function App() {
 
       <Toast message={toastMessage} onClose={() => setToastMessage(null)} />
 
-      <footer className="border-t border-slate-900 bg-slate-950 py-6 mt-12 text-center text-xs text-slate-500">
-        ApexRetire Pro — Modern Financial Modeling Engine.
+      <footer className="border-t dark:border-slate-900 border-slate-200 dark:bg-slate-950 bg-white py-6 mt-12 text-center text-xs dark:text-slate-500 text-slate-500">
+        ApexRetire Pro — Modern Financial Modeling Engine. Estimates only, not financial advice.
       </footer>
     </div>
   );

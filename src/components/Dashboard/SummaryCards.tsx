@@ -1,6 +1,8 @@
 import React from 'react';
 import { ShieldCheck, Calendar, DollarSign, Flame, MapPin, Plus, Minus, TrendingUp } from 'lucide-react';
 import { SimulationResult, RetirementState } from '../../types/retirement';
+import { getRiskLabel, getRiskCardClasses } from '../../utils/risk';
+import { FINANCIAL_CONSTANTS } from '../../utils/constants';
 
 interface Props {
   result: SimulationResult;
@@ -12,7 +14,6 @@ export const SummaryCards: React.FC<Props> = ({ result, state, onChange }) => {
   const {
     successRate,
     targetRetirementNetWorth,
-    finalNetWorthAge90,
     fireAgeAchievable,
     safeWithdrawalRatePct,
     monthlyRetirementSpending,
@@ -21,17 +22,11 @@ export const SummaryCards: React.FC<Props> = ({ result, state, onChange }) => {
     yearlyProjections,
   } = result;
 
-  // Wealth at age 65 projection
-  const projAt65 = yearlyProjections.find((p) => p.age === 65)?.totalPortfolio || targetRetirementNetWorth;
+  // Wealth at age 65 projection — null when 65 is outside the plan horizon.
+  const projAt65 = yearlyProjections.find((p) => p.age === 65)?.totalPortfolio ?? null;
 
-  const getSuccessStatus = (rate: number) => {
-    if (rate >= 85) return { label: 'Very Safe', color: 'text-emerald-400 border-emerald-500/40 bg-emerald-500/10' };
-    if (rate >= 70) return { label: 'On Track', color: 'text-blue-400 border-blue-500/40 bg-blue-500/10' };
-    if (rate >= 50) return { label: 'Moderate Risk', color: 'text-amber-400 border-amber-500/40 bg-amber-500/10' };
-    return { label: 'High Risk', color: 'text-red-400 border-red-500/40 bg-red-500/10' };
-  };
-
-  const status = getSuccessStatus(successRate);
+  const statusLabel = getRiskLabel(successRate);
+  const statusClasses = getRiskCardClasses(successRate);
 
   return (
     <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 w-full">
@@ -42,8 +37,8 @@ export const SummaryCards: React.FC<Props> = ({ result, state, onChange }) => {
             <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
               <ShieldCheck className="w-4.5 h-4.5 text-blue-400 shrink-0" /> Success Confidence Score
             </span>
-            <span className={`text-xs font-extrabold px-3 py-1 rounded-full border shrink-0 ${status.color}`}>
-              {status.label}
+            <span className={`text-xs font-extrabold px-3 py-1 rounded-full border shrink-0 ${statusClasses}`}>
+              {statusLabel}
             </span>
           </div>
 
@@ -68,7 +63,7 @@ export const SummaryCards: React.FC<Props> = ({ result, state, onChange }) => {
         </div>
 
         <p className="text-xs dark:text-slate-400 text-slate-500 border-t dark:border-slate-800/80 border-slate-200 pt-3 mt-3 leading-relaxed">
-          Calculated across 500 stochastic market return & inflation trials.
+          Calculated across {FINANCIAL_CONSTANTS.MONTE_CARLO_TRIALS} stochastic market return & inflation trials.
         </p>
       </div>
 
@@ -100,6 +95,7 @@ export const SummaryCards: React.FC<Props> = ({ result, state, onChange }) => {
             <div className="flex items-center gap-1.5">
               <button
                 type="button"
+                aria-label="Decrease target retirement age"
                 onClick={() =>
                   onChange({
                     targetRetirementAge: Math.max(state.currentAge + 1, state.targetRetirementAge - 1),
@@ -111,6 +107,7 @@ export const SummaryCards: React.FC<Props> = ({ result, state, onChange }) => {
               </button>
               <button
                 type="button"
+                aria-label="Increase target retirement age"
                 onClick={() =>
                   onChange({
                     targetRetirementAge: Math.min(85, state.targetRetirementAge + 1),
@@ -134,9 +131,15 @@ export const SummaryCards: React.FC<Props> = ({ result, state, onChange }) => {
             </div>
 
             <div className="my-3">
-              <span className="text-3xl font-extrabold text-purple-400 tracking-tight">
-                ${Math.round(projAt65).toLocaleString()}
-              </span>
+              {projAt65 != null ? (
+                <span className="text-3xl font-extrabold text-purple-400 tracking-tight">
+                  ${Math.round(projAt65).toLocaleString()}
+                </span>
+              ) : (
+                <span className="text-sm font-semibold text-slate-400">
+                  N/A — 65 is outside the plan horizon
+                </span>
+              )}
             </div>
           </div>
 
@@ -185,20 +188,22 @@ export const SummaryCards: React.FC<Props> = ({ result, state, onChange }) => {
           </div>
 
           {/* Inline Quick Savings Rate Adjuster */}
-          <div className="flex items-center justify-between bg-slate-900/80 p-2 rounded-xl border border-slate-800 text-xs mt-3">
-            <span className="text-slate-400 text-xs font-medium pl-1">Savings Rate</span>
+          <div className="flex items-center justify-between dark:bg-slate-900/80 bg-slate-100 p-2 rounded-xl border dark:border-slate-800 border-slate-200 text-xs mt-3">
+            <span className="dark:text-slate-400 text-slate-500 text-xs font-medium pl-1">Savings Rate</span>
             <div className="flex items-center gap-1.5">
               <button
                 type="button"
+                aria-label="Decrease savings rate"
                 onClick={() => onChange({ savingsRatePct: Math.max(0, state.savingsRatePct - 1) })}
-                className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold transition-colors"
+                className="w-8 h-8 flex items-center justify-center rounded-lg dark:bg-slate-800 bg-white hover:bg-blue-50 dark:hover:bg-slate-700 dark:text-slate-200 text-slate-700 font-bold border border-slate-200 dark:border-slate-700 transition-colors"
               >
                 <Minus className="w-4 h-4" />
               </button>
               <button
                 type="button"
+                aria-label="Increase savings rate"
                 onClick={() => onChange({ savingsRatePct: Math.min(75, state.savingsRatePct + 1) })}
-                className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold transition-colors"
+                className="w-8 h-8 flex items-center justify-center rounded-lg dark:bg-slate-800 bg-white hover:bg-blue-50 dark:hover:bg-slate-700 dark:text-slate-200 text-slate-700 font-bold border border-slate-200 dark:border-slate-700 transition-colors"
               >
                 <Plus className="w-4 h-4" />
               </button>

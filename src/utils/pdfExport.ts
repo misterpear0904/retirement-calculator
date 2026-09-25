@@ -38,7 +38,7 @@ export async function exportToPdf(
   const metrics = [
     ['Monte Carlo Success Rate:', `${result.successRate}% (${result.successRate >= 80 ? 'Safe' : 'High Risk'})`],
     ['Target Retirement Net Worth:', `$${result.targetRetirementNetWorth.toLocaleString()}`],
-    ['Projected Net Worth (Age 90):', `$${result.finalNetWorthAge90.toLocaleString()}`],
+    [`Projected Net Worth (Age ${state.lifeExpectancy}):`, `$${result.finalNetWorth.toLocaleString()}`],
     ['Monthly Spending in Retirement:', `$${result.monthlyRetirementSpending.toLocaleString()}`],
     ['Safe Withdrawal Rate (SWR):', `${result.safeWithdrawalRatePct}%`],
     ['Achievable Early FIRE Age:', result.fireAgeAchievable ? `Age ${result.fireAgeAchievable}` : 'N/A (Retires at Target Age)'],
@@ -53,7 +53,8 @@ export async function exportToPdf(
     startY += 6;
   });
 
-  // Capture Dashboard Visual Chart
+  // Capture Dashboard Visual Chart (best-effort: chart libs often use color
+  // functions html2canvas can't parse — fall back to text-only PDF).
   if (element) {
     try {
       const canvas = await html2canvas(element, {
@@ -70,6 +71,9 @@ export async function exportToPdf(
       pdf.addImage(imgData, 'PNG', 14, startY + 10, imgWidth, Math.min(imgHeight, 140));
     } catch (err) {
       console.error('Error capturing dashboard for PDF', err);
+      pdf.setFontSize(9);
+      pdf.setTextColor(100, 116, 139);
+      pdf.text('(Chart snapshot unavailable — key metrics above are complete.)', 14, startY + 8);
     }
   }
 

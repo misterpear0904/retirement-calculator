@@ -1,15 +1,14 @@
 import { RetirementState } from '../types/retirement';
 
 /**
- * Exports state object as a downloaded encoded file (.retire / .json) or text string.
+ * Exports state as human-readable JSON (.retire / .json).
+ * Import still accepts legacy base64-encoded files.
  */
 export function exportStateToFile(state: RetirementState, filename = 'retirement-inputs.retire') {
   try {
-    const jsonStr = JSON.stringify(state, null, 2);
-    // Base64 encode string to make it encoded/non-human-readable if desired
-    const encodedData = btoa(encodeURIComponent(jsonStr));
-    
-    const blob = new Blob([encodedData], { type: 'application/octet-stream' });
+    const jsonStr = JSON.stringify({ v: 1, exportedAt: new Date().toISOString(), state }, null, 2);
+
+    const blob = new Blob([jsonStr], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -25,26 +24,36 @@ export function exportStateToFile(state: RetirementState, filename = 'retirement
 }
 
 /**
- * Imports state from an encoded file or string.
+ * Imports state from an exported file. Accepts:
+ *  - current format: { v, state }
+ *  - raw RetirementState JSON
+ *  - legacy base64-encoded payloads
  */
 export function importStateFromFile(file: File): Promise<Partial<RetirementState>> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
-        const text = e.target?.result as string;
+        const text = (e.target?.result as string)?.trim();
         if (!text) {
           throw new Error('File is empty');
         }
         let parsedData: Partial<RetirementState>;
-        
-        // Attempt decoding base64 first (non-human-readable format)
+
+        const unwrap = (obj: unknown): Partial<RetirementState> => {
+          if (typeof obj !== 'object' || obj === null) throw new Error('Invalid state file content');
+          const o = obj as Record<string, unknown>;
+          if (o.state && typeof o.state === 'object') return o.state as Partial<RetirementState>;
+          return o as Partial<RetirementState>;
+        };
+
+        // Attempt decoding base64 first (legacy non-human-readable format)
         try {
-          const jsonStr = decodeURIComponent(atob(text.trim()));
-          parsedData = JSON.parse(jsonStr);
+          const maybeJson = decodeURIComponent(atob(text));
+          parsedData = unwrap(JSON.parse(maybeJson));
         } catch {
-          // Fallback to direct JSON parse if user imports raw JSON
-          parsedData = JSON.parse(text);
+          // Fallback to direct JSON parse
+          parsedData = unwrap(JSON.parse(text));
         }
 
         if (typeof parsedData !== 'object' || parsedData === null) {
