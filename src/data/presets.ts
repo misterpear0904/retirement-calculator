@@ -5,6 +5,16 @@ export const DEFAULT_STATE: RetirementState = {
   targetRetirementAge: 60,
   lifeExpectancy: 90,
 
+  hasPartner: false,
+  partner: {
+    enabled: false,
+    currentAge: 32,
+    annualIncome: 0,
+    lifeExpectancy: 90,
+    ssMonthlyAt67: 0,
+    ssStartAge: 67,
+  },
+
   liquidCash: 25000,
   taxableInvestments: 65000,
   preTax401k: 120000,
@@ -61,6 +71,18 @@ export const DEFAULT_STATE: RetirementState = {
   essentialExpensesMonthly: 3200,
   discretionaryExpensesMonthly: 1500,
   customCategories: [],
+
+  healthcareMonthlyAt65: 650,
+  healthcareInflationPct: 5.5,
+  healthcareStartAge: 65,
+
+  taxFilingStatus: 'single',
+  withdrawalStrategy: 'fixed_order',
+  guardrailCutPct: 15,
+  useRothConversions: false,
+  rothConversionAnnual: 25000,
+  rothConversionStartAge: 60,
+  rothConversionEndAge: 70,
 
   targetLocationId: 'US_AVERAGE',
   colAdjustmentPct: 0,

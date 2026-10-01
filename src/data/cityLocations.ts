@@ -55,6 +55,7 @@ export const GENERATED_CITY_LOCATIONS: LocationCOL[] = (() => {
       lat: m.lat,
       lon: m.lon,
       isEstimate: true,
+      population: m.p,
     });
   }
   return out;

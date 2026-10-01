@@ -3,6 +3,7 @@ import { BarChart3, Flame, PieChart, Activity } from 'lucide-react';
 import { RetirementState, InflationMode, ReturnMode } from '../../types/retirement';
 import { HISTORICAL_PRESETS } from '../../data/historicalReturns';
 import { AccordionWrapper } from './AccordionWrapper';
+import { InfoTip } from '../InfoTip';
 
 interface Props {
   state: RetirementState;
@@ -168,6 +169,7 @@ export const MarketInflationSection: React.FC<Props> = ({
           <div className="pt-2 space-y-2">
             <h4 className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2">
               <Activity className="w-4 h-4 text-blue-400 shrink-0" /> Return Simulation Mode
+              <InfoTip term="monteCarlo" />
             </h4>
             <div className="grid grid-cols-3 gap-2.5">
               {[

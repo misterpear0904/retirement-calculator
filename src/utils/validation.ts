@@ -64,6 +64,31 @@ export function sanitizeRetirementState(state: RetirementState): RetirementState
     discretionaryExpensesMonthly: money(state.discretionaryExpensesMonthly, MAX_MONTHLY),
     socialSecurityMonthlyAt67: money(state.socialSecurityMonthlyAt67, MAX_MONTHLY),
     pensionMonthly: money(state.pensionMonthly, MAX_MONTHLY),
+    // Section H: tax strategy & decumulation
+    taxFilingStatus: state.taxFilingStatus === 'joint' ? 'joint' : 'single',
+    withdrawalStrategy:
+      state.withdrawalStrategy === 'proportional' || state.withdrawalStrategy === 'guardrails'
+        ? state.withdrawalStrategy
+        : 'fixed_order',
+    guardrailCutPct: clamp(state.guardrailCutPct ?? 15, 0, 50, 15),
+    useRothConversions: !!state.useRothConversions,
+    rothConversionAnnual: money(state.rothConversionAnnual, MAX_YEARLY, 25000),
+    rothConversionStartAge: Math.round(clamp(state.rothConversionStartAge ?? 60, 50, 85, 60)),
+    rothConversionEndAge: Math.round(clamp(state.rothConversionEndAge ?? 70, 50, 85, 70)),
+    // Partner / household
+    hasPartner: !!state.hasPartner,
+    partner: {
+      enabled: !!(state.hasPartner && state.partner?.enabled),
+      currentAge: Math.round(clamp(state.partner?.currentAge ?? 32, VALIDATION_LIMITS.MIN_AGE, VALIDATION_LIMITS.MAX_AGE, 32)),
+      annualIncome: money(state.partner?.annualIncome, MAX_YEARLY),
+      lifeExpectancy: Math.round(clamp(state.partner?.lifeExpectancy ?? 90, 30, 110, 90)),
+      ssMonthlyAt67: money(state.partner?.ssMonthlyAt67, MAX_MONTHLY),
+      ssStartAge: Math.round(clamp(state.partner?.ssStartAge ?? 67, 62, 70, 67)),
+    },
+    // Healthcare costs (0 = feature off; preserves legacy saved plans exactly)
+    healthcareMonthlyAt65: money(state.healthcareMonthlyAt65 ?? 0, MAX_MONTHLY, 0),
+    healthcareInflationPct: clamp(state.healthcareInflationPct ?? 5.5, 0, 50, 5.5),
+    healthcareStartAge: Math.round(clamp(state.healthcareStartAge ?? 65, 40, 90, 65)),
     customInflationRate: clamp(state.customInflationRate ?? 3, -10, 50, 3),
     customIncomeGrowthRate: clamp(state.customIncomeGrowthRate ?? 2, -20, 50, 2),
     customStockReturn: clamp(state.customStockReturn ?? 9.5, -50, 100, 9.5),

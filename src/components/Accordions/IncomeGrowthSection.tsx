@@ -2,6 +2,7 @@ import React from 'react';
 import { TrendingUp, Percent, DollarSign } from 'lucide-react';
 import { RetirementState, RealIncomeGrowthMode } from '../../types/retirement';
 import { AccordionWrapper } from './AccordionWrapper';
+import { InfoTip } from '../InfoTip';
 
 interface Props {
   state: RetirementState;
@@ -112,6 +113,7 @@ export const IncomeGrowthSection: React.FC<Props> = ({
               <div className="flex justify-between items-center text-xs text-slate-300">
                 <span className="flex items-center gap-1.5">
                   <Percent className="w-4 h-4 text-emerald-400 shrink-0" /> Savings Rate (% of Income)
+                  <InfoTip term="savingsRate" />
                 </span>
                 <span className="text-base font-extrabold text-emerald-400">{state.savingsRatePct}%</span>
               </div>

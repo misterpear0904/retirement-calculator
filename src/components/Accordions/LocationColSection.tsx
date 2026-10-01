@@ -1,9 +1,11 @@
-import React from 'react';
-import { MapPin, ShieldCheck, Landmark, SlidersHorizontal } from 'lucide-react';
+import React, { useState } from 'react';
+import { MapPin, ShieldCheck, Landmark, SlidersHorizontal, Sparkles } from 'lucide-react';
 import { RetirementState } from '../../types/retirement';
 import { resolveLocation } from '../../data/cityLocations';
 import { AccordionWrapper } from './AccordionWrapper';
 import { LocationMap } from './LocationMap';
+import { InfoTip } from '../InfoTip';
+import { optimizeHousehold } from '../../utils/ssOptimizer';
 
 interface Props {
   state: RetirementState;
@@ -21,6 +23,9 @@ export const LocationColSection: React.FC<Props> = ({
   const selectedLocation = resolveLocation(state.targetLocationId);
 
   const colDelta = selectedLocation.colIndex - 100;
+
+  const [showOptimizer, setShowOptimizer] = useState(false);
+  const optimization = showOptimizer ? optimizeHousehold(state) : null;
 
   return (
     <AccordionWrapper
@@ -49,13 +54,14 @@ export const LocationColSection: React.FC<Props> = ({
               }`}
             >
               COL Index: {selectedLocation.colIndex} ({colDelta > 0 ? `+${colDelta}%` : `${colDelta}%`} vs US Baseline)
+              <InfoTip term="col" />
             </span>
           </div>
 
           <div className="space-y-4">
             <div>
               <span id="destination-map-label" className="text-[11px] text-slate-400 block mb-1">
-                Click a city pin — or anywhere — to use the nearest city&apos;s data
+                Click anywhere on the map — snaps to the nearest city of 1M+ people
               </span>
               <LocationMap
                 selectedId={state.targetLocationId}
@@ -138,6 +144,7 @@ export const LocationColSection: React.FC<Props> = ({
             <div className="space-y-3 bg-slate-900 p-4 rounded-xl border border-slate-800">
               <div className="flex items-center gap-2 font-semibold text-slate-200 text-sm">
                 <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" /> Social Security Benefit
+                <InfoTip term="ssClaim" />
               </div>
 
               <div>
@@ -170,7 +177,74 @@ export const LocationColSection: React.FC<Props> = ({
                   <span>70 (Bonus 24%)</span>
                 </div>
               </div>
+
+              {/* Claiming-age optimizer */}
+              <div className="pt-1">
+                <button
+                  type="button"
+                  onClick={() => setShowOptimizer((v) => !v)}
+                  className="flex items-center gap-2 text-xs font-bold px-3.5 py-2 rounded-xl bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/25 transition-colors"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  {showOptimizer ? 'Hide claiming optimizer' : 'Optimize claiming ages'}
+                </button>
+              </div>
             </div>
+
+            {showOptimizer && optimization && (
+              <div className="space-y-3 bg-slate-900 p-4 rounded-xl border border-emerald-500/30 animate-fade-in">
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Best household total:{' '}
+                  <strong className="text-emerald-400">
+                    ${(optimization.optimum.householdLifetimeTotal / 1000).toFixed(0)}k lifetime
+                  </strong>{' '}
+                  by claiming at <strong>age {optimization.optimum.primaryAge}</strong>
+                  {optimization.optimum.spouseAge != null &&
+                    ` (partner at ${optimization.optimum.spouseAge})`}
+                  .
+                </p>
+                <div className="grid grid-cols-9 gap-1 text-center">
+                  {optimization.primaryRows.map((r) => (
+                    <div
+                      key={r.claimAge}
+                      className={`rounded-lg py-1.5 px-0.5 border ${
+                        r.isBest
+                          ? 'bg-emerald-500/20 border-emerald-500/50'
+                          : r.isCurrent
+                            ? 'bg-blue-500/15 border-blue-500/40'
+                            : 'bg-slate-800/60 border-slate-700/60'
+                      }`}
+                      title={`Age ${r.claimAge}: $${r.monthlyBenefit.toLocaleString()}/mo, $${(r.lifetimeTotal / 1000).toFixed(0)}k lifetime`}
+                    >
+                      <div className={`text-[11px] font-extrabold ${r.isBest ? 'text-emerald-400' : 'text-slate-200'}`}>
+                        {r.claimAge}
+                      </div>
+                      <div className="text-[9px] text-slate-500">${(r.lifetimeTotal / 1000).toFixed(0)}k</div>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onChange({
+                        socialSecurityStartAge: optimization.optimum.primaryAge,
+                        ...(optimization.optimum.spouseAge != null
+                          ? { partner: { ...state.partner, ssStartAge: optimization.optimum.spouseAge as number } }
+                          : {}),
+                      });
+                      setShowOptimizer(false);
+                    }}
+                    className="text-xs font-bold px-3.5 py-2 rounded-xl bg-emerald-500 text-white hover:bg-emerald-400 transition-colors"
+                  >
+                    Apply age{optimization.optimum.spouseAge != null ? 's' : ''} to plan
+                  </button>
+                  <span className="text-[10px] text-slate-500 leading-relaxed">
+                    Nominal lifetime totals (no discounting); survivor top-up modeled separately in the plan.
+                  </span>
+                </div>
+              </div>
+            )}
 
             {/* Pension */}
             <div className="space-y-3 bg-slate-900 p-4 rounded-xl border border-slate-800">

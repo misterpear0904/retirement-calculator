@@ -13,6 +13,8 @@ export interface LocationCOL {
   lon?: number;
   /** True for generated country-level estimates (vs hand-tuned presets). */
   isEstimate?: boolean;
+  /** City population (generated 1M+ cities only). */
+  population?: number;
 }
 
 export const LOCATION_PRESETS: LocationCOL[] = [

@@ -15,6 +15,7 @@ import {
 import { YearlyProjection } from '../../types/retirement';
 import { Eye, EyeOff, ZoomIn, ZoomOut, Maximize2, Expand } from 'lucide-react';
 import { FullscreenModal } from '../FullscreenModal';
+import { InfoTip } from '../InfoTip';
 
 interface Props {
   yearlyProjections: YearlyProjection[];
@@ -266,6 +267,7 @@ export const RetirementChart: React.FC<Props> = React.memo(({
         <div>
           <h3 className="text-base sm:text-lg font-bold dark:text-slate-100 text-slate-900 flex items-center gap-2">
             Multi-Scenario Net Worth Simulation
+            <InfoTip term="bands" />
           </h3>
           <p className="text-xs dark:text-slate-400 text-slate-500 mt-1 leading-relaxed">
             Scenario bands: Conservative (optimistic returns), Target (expected), Stress Test (pessimistic). Monte Carlo success rate is shown above.

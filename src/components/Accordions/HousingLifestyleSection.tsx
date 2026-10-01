@@ -1,7 +1,8 @@
 import React from 'react';
-import { Home, ShoppingBag, Plus, Trash2 } from 'lucide-react';
+import { Home, ShoppingBag, Plus, Trash2, HeartPulse } from 'lucide-react';
 import { RetirementState, HousingType, LifestyleTier, CustomExpenseCategory } from '../../types/retirement';
 import { AccordionWrapper } from './AccordionWrapper';
+import { InfoTip } from '../InfoTip';
 
 interface Props {
   state: RetirementState;
@@ -237,6 +238,51 @@ export const HousingLifestyleSection: React.FC<Props> = ({
               ))}
             </div>
           )}
+        </div>
+
+        {/* Healthcare costs */}
+        <div className="bg-slate-800/40 p-5 rounded-xl border border-slate-700/50 space-y-4">
+          <h4 className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+            <HeartPulse className="w-4 h-4 text-rose-400 shrink-0" /> Healthcare Costs
+            <InfoTip term="healthcare" />
+          </h4>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+            <div>
+              <label className="text-[11px] text-slate-400 block mb-1">Monthly Cost at 65 ($)</label>
+              <input
+                type="number"
+                step={50}
+                value={state.healthcareMonthlyAt65}
+                onChange={(e) => onChange({ healthcareMonthlyAt65: parseFloat(e.target.value) || 0 })}
+                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 font-bold text-slate-100 focus:border-rose-500 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="text-[11px] text-slate-400 block mb-1">Medical Inflation (%/yr)</label>
+              <input
+                type="number"
+                step={0.5}
+                value={state.healthcareInflationPct}
+                onChange={(e) => onChange({ healthcareInflationPct: parseFloat(e.target.value) || 0 })}
+                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 font-bold text-slate-100 focus:border-rose-500 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="text-[11px] text-slate-400 block mb-1">Starts at Age</label>
+              <input
+                type="number"
+                min={40}
+                max={90}
+                value={state.healthcareStartAge}
+                onChange={(e) => onChange({ healthcareStartAge: parseInt(e.target.value) || 65 })}
+                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 font-bold text-slate-100 focus:border-rose-500 focus:outline-none"
+              />
+            </div>
+          </div>
+          <p className="text-[11px] text-slate-500 leading-relaxed">
+            Set to $0 to exclude. Costs grow at medical inflation from the start age and are weighted by
+            your destination&apos;s healthcare index.
+          </p>
         </div>
       </div>
     </AccordionWrapper>

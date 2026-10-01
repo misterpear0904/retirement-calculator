@@ -5,6 +5,17 @@ export type SchoolType = 'public' | 'private_k12';
 export type CollegeTier = 'in_state' | 'private' | 'none';
 export type HousingType = 'rent' | 'mortgage';
 export type LifestyleTier = 'minimalist' | 'moderate' | 'luxury' | 'custom';
+export type TaxFilingStatus = 'single' | 'joint';
+export type WithdrawalStrategy = 'fixed_order' | 'proportional' | 'guardrails';
+
+export interface PartnerInfo {
+  enabled: boolean;
+  currentAge: number;
+  annualIncome: number;
+  lifeExpectancy: number;
+  ssMonthlyAt67: number;
+  ssStartAge: number;
+}
 
 export interface DebtItem {
   id: string;
@@ -36,6 +47,10 @@ export interface RetirementState {
   currentAge: number;
   targetRetirementAge: number;
   lifeExpectancy: number;
+
+  // Section A2: Partner / household (optional second person)
+  hasPartner: boolean;
+  partner: PartnerInfo;
 
   // Section B: Current Financial Baseline
   liquidCash: number;
@@ -88,6 +103,20 @@ export interface RetirementState {
   discretionaryExpensesMonthly: number;
   customCategories: CustomExpenseCategory[];
 
+  // Section F2: Healthcare costs (age-graded, grow at medical inflation)
+  healthcareMonthlyAt65: number;
+  healthcareInflationPct: number;
+  healthcareStartAge: number;
+
+  // Section H: Tax strategy & decumulation
+  taxFilingStatus: TaxFilingStatus;
+  withdrawalStrategy: WithdrawalStrategy;
+  guardrailCutPct: number; // spending cut applied after a down year (guardrails strategy)
+  useRothConversions: boolean;
+  rothConversionAnnual: number;
+  rothConversionStartAge: number;
+  rothConversionEndAge: number;
+
   // Section G: Retirement Location & COL
   targetLocationId: string;
   colAdjustmentPct: number; // -50 to +50, adjusts COL within chosen location
@@ -132,10 +161,14 @@ export interface YearlyProjection {
   livingExpenses: number;
   housingExpenses: number;
   childEducationExpenses: number;
+  healthcareExpenses: number;
   debtPayments: number;
   totalExpenses: number;
   guaranteedRetirementIncome: number; // Social Security + Pension
   netWithdrawalNeeded: number;
+  taxPaid: number; // income + capital-gains + state tax settled that year
+  rothConverted: number; // pre-tax -> Roth amount moved that year
+  spendingCutApplied: boolean; // guardrails cut active that year
 
   milestones: TimelineMilestone[];
 }
@@ -152,4 +185,6 @@ export interface SimulationResult {
   baselineLocationName: string;
   targetLocationName: string;
   colMultiplier: number;
+  lifetimeTaxesPaid: number;
+  lifetimeRothConverted: number;
 }

@@ -3,6 +3,7 @@ import { ShieldCheck, Calendar, DollarSign, Flame, MapPin, Plus, Minus, Trending
 import { SimulationResult, RetirementState } from '../../types/retirement';
 import { getRiskLabel, getRiskCardClasses } from '../../utils/risk';
 import { FINANCIAL_CONSTANTS } from '../../utils/constants';
+import { InfoTip } from '../InfoTip';
 
 interface Props {
   result: SimulationResult;
@@ -36,6 +37,7 @@ export const SummaryCards: React.FC<Props> = ({ result, state, onChange }) => {
           <div className="flex justify-between items-start mb-3 gap-2">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
               <ShieldCheck className="w-4.5 h-4.5 text-blue-400 shrink-0" /> Success Confidence Score
+              <InfoTip term="successRate" />
             </span>
             <span className={`text-xs font-extrabold px-3 py-1 rounded-full border shrink-0 ${statusClasses}`}>
               {statusLabel}
@@ -79,6 +81,7 @@ export const SummaryCards: React.FC<Props> = ({ result, state, onChange }) => {
               {fireAgeAchievable && (
                 <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 shrink-0">
                   FIRE Age {fireAgeAchievable}
+                  <InfoTip term="fireAge" />
                 </span>
               )}
             </div>
@@ -175,6 +178,7 @@ export const SummaryCards: React.FC<Props> = ({ result, state, onChange }) => {
             <div className="flex justify-between items-start gap-2">
               <span className="text-xs font-semibold dark:text-slate-300 text-slate-600 flex items-center gap-2">
                 <Flame className="w-4 h-4 text-amber-400 shrink-0" /> Savings Rate & SWR
+                <InfoTip term="swr" />
               </span>
               <span className="text-[11px] font-bold text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded border border-amber-500/20 shrink-0">
                 SWR: {safeWithdrawalRatePct}%

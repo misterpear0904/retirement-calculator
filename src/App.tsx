@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { RetirementState, SimulationResult } from './types/retirement';
 import { runRetirementSimulation } from './utils/calculatorEngine';
 import { decodeStateFromUrl, clearScenarioFromUrl } from './utils/urlEncoder';
+import { saveStateToStorage, loadStateFromStorage } from './utils/storage';
 import { exportToPdf } from './utils/pdfExport';
 import { exportStateToFile, importStateFromFile } from './utils/fileExportImport';
 import { sanitizeRetirementState, validateRetirementState } from './utils/validation';
@@ -16,12 +17,15 @@ import { MarketInflationSection } from './components/Accordions/MarketInflationS
 import { DependentsSection } from './components/Accordions/DependentsSection';
 import { HousingLifestyleSection } from './components/Accordions/HousingLifestyleSection';
 import { LocationColSection } from './components/Accordions/LocationColSection';
+import { TaxStrategySection } from './components/Accordions/TaxStrategySection';
 
 import { SummaryCards } from './components/Dashboard/SummaryCards';
 import { RetirementChart } from './components/Dashboard/RetirementChart';
 import { MilestoneTimeline } from './components/Dashboard/MilestoneTimeline';
 import { YearlyTable } from './components/Dashboard/YearlyTable';
 import { BenchmarkCompare } from './components/Dashboard/BenchmarkCompare';
+import { ScenariosTab } from './components/Dashboard/ScenariosTab';
+import { SensitivityTab } from './components/Dashboard/SensitivityTab';
 import { BasicModeInputs } from './components/BasicModeInputs';
 
 import { Layers, ChevronUp, ChevronDown, AlertTriangle } from 'lucide-react';
@@ -49,9 +53,10 @@ export function App() {
     dependents: false,
     housing: false,
     location: false,
+    tax: false,
   });
 
-  const [activeTab, setActiveTab] = useState<'chart' | 'timeline' | 'table' | 'compare'>('chart');
+  const [activeTab, setActiveTab] = useState<'chart' | 'timeline' | 'table' | 'compare' | 'scenarios' | 'sensitivity'>('chart');
 
   // Basic vs Advanced input mode. Basic is the default: 7 essentials only.
   const [mode, setMode] = useState<'basic' | 'advanced'>(() => {
@@ -71,13 +76,20 @@ export function App() {
     }
   };
 
-  // Load URL state if present
+  // Load URL state if present, else restore the autosaved session.
+  // Priority: shared link > saved session > defaults.
   useEffect(() => {
     const urlState = decodeStateFromUrl();
     if (urlState) {
       setState((prev) => sanitizeRetirementState({ ...prev, ...urlState }));
       setToastMessage('Loaded shared scenario from URL hash!');
       clearScenarioFromUrl();
+      return;
+    }
+    const saved = loadStateFromStorage();
+    if (saved) {
+      setState((prev) => sanitizeRetirementState({ ...prev, ...saved }));
+      setToastMessage('Restored your last session from this browser.');
     }
   }, []);
 
@@ -93,7 +105,14 @@ export function App() {
     return () => clearTimeout(t);
   }, [toastMessage]);
 
+  // Set when the user (or an import/preset/reset) changes inputs. The autosave
+  // effect below only fires once dirty — without this, a fresh mount would
+  // save pristine defaults over a good saved session before the load effect
+  // applies (StrictMode double-mounts effects in dev, making the race certain).
+  const dirtyRef = React.useRef(false);
+
   const handleChange = (updates: Partial<RetirementState>) => {
+    dirtyRef.current = true;
     setState((prev) => sanitizeRetirementState({ ...prev, ...updates }));
   };
 
@@ -114,11 +133,23 @@ export function App() {
       dependents: open,
       housing: open,
       location: open,
+      tax: open,
     });
+  };
+
+  const handleLoadScenarioState = (s: RetirementState) => {
+    dirtyRef.current = true;
+    setState(sanitizeRetirementState({ ...s }));
   };
 
   // Debounce the expensive 500-trial Monte Carlo sim so slider drags stay smooth.
   const debouncedState = useDebouncedValue(state, 150);
+
+  // Autosave inputs locally so returning visits restore without import/export.
+  useEffect(() => {
+    if (!dirtyRef.current) return;
+    saveStateToStorage(debouncedState);
+  }, [debouncedState]);
 
   // High performance real-time simulation
   const simulationResult: SimulationResult = useMemo(() => {
@@ -149,6 +180,7 @@ export function App() {
     if (!file) return;
     try {
       const importedData = await importStateFromFile(file);
+      dirtyRef.current = true;
       setState((prev) => sanitizeRetirementState({ ...prev, ...importedData }));
       setToastMessage('Successfully imported inputs from file!');
     } catch (err: unknown) {
@@ -159,6 +191,7 @@ export function App() {
   };
 
   const handleLoadPreset = (presetName: string) => {
+    dirtyRef.current = true;
     setState(applyPreset(DEFAULT_STATE, presetName));
   };
 
@@ -170,7 +203,10 @@ export function App() {
         onExportInputs={handleExportInputs}
         onImportInputs={handleImportInputs}
         onLoadPreset={handleLoadPreset}
-        onResetDefault={() => setState(DEFAULT_STATE)}
+        onResetDefault={() => {
+          dirtyRef.current = true;
+          setState(DEFAULT_STATE);
+        }}
         onTriggerToast={(msg) => setToastMessage(msg)}
         isDark={isDark}
         onToggleTheme={() => setIsDark(!isDark)}
@@ -310,6 +346,13 @@ export function App() {
                 isOpen={openSections.location}
                 onToggle={() => toggleSection('location')}
               />
+
+              <TaxStrategySection
+                state={state}
+                onChange={handleChange}
+                isOpen={openSections.tax}
+                onToggle={() => toggleSection('tax')}
+              />
             </div>
             )}
           </div>
@@ -324,6 +367,8 @@ export function App() {
                   { id: 'timeline', label: 'Milestone Timeline' },
                   { id: 'table', label: 'Yearly Schedule' },
                   { id: 'compare', label: 'Global Compare' },
+                  { id: 'scenarios', label: 'Scenarios' },
+                  { id: 'sensitivity', label: 'What-If' },
                 ].map((tab) => (
                   <button
                     key={tab.id}
@@ -367,6 +412,17 @@ export function App() {
             )}
 
             {activeTab === 'compare' && <BenchmarkCompare state={state} />}
+
+            {activeTab === 'scenarios' && (
+              <ScenariosTab
+                state={state}
+                currentResult={simulationResult}
+                onLoadState={handleLoadScenarioState}
+                onTriggerToast={(msg) => setToastMessage(msg)}
+              />
+            )}
+
+            {activeTab === 'sensitivity' && <SensitivityTab state={debouncedState} />}
           </div>
         </div>
       </main>
