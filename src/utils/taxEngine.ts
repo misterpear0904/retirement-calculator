@@ -40,11 +40,23 @@ const GAINS_20_THRESHOLD: Record<TaxFilingStatus, number> = { single: 533400, jo
 /** Share of each taxable-account withdrawal assumed to be gain (rest is basis). */
 export const TAXABLE_GAIN_RATIO = 0.3;
 
-/** RMDs begin at 75 (SECURE 2.0). Divisor approximates the IRS Uniform Lifetime Table. */
+/** RMDs begin at 75 (SECURE 2.0). Uses actual IRS Uniform Lifetime Table divisors. */
 export const RMD_START_AGE = 75;
+
+const RMD_DIVISORS: Record<number, number> = {
+  75: 27.4, 76: 26.5, 77: 25.5, 78: 24.6, 79: 23.7, 80: 22.9,
+  81: 22.0, 82: 21.1, 83: 20.2, 84: 19.4, 85: 18.5, 86: 17.7,
+  87: 16.8, 88: 16.0, 89: 15.2, 90: 14.4, 91: 13.6, 92: 12.8,
+  93: 12.0, 94: 11.3, 95: 10.5, 96: 9.8, 97: 9.1, 98: 8.4,
+  99: 7.8, 100: 7.2, 101: 6.6, 102: 6.0, 103: 5.5, 104: 5.0,
+  105: 4.6, 106: 4.2, 107: 3.8, 108: 3.4, 109: 3.0, 110: 2.7,
+  111: 2.4, 112: 2.1, 113: 1.8, 114: 1.5, 115: 1.3, 116: 1.1,
+  117: 0.9, 118: 0.7, 119: 0.5, 120: 0.4,
+};
+
 export function rmdDivisor(age: number): number {
   if (age < RMD_START_AGE) return Infinity;
-  return Math.max(4.9, 27.4 - 0.9 * (age - 72));
+  return RMD_DIVISORS[age] ?? 4.9; // Floor at 4.9 for ages > 120
 }
 
 /** Social Security benefit factor vs full retirement age 67 (moved from calculatorEngine). */
@@ -58,6 +70,50 @@ export function ssClaimFactor(startAge: number): number {
         FINANCIAL_CONSTANTS.SS_LATE_BONUS_PER_YEAR
     );
   return 1.0;
+}
+
+/** Spousal benefit factor (proper SSA formula: 25/36% per month early for 36 months, then 5/12% per month) */
+export function spousalClaimFactor(startAge: number): number {
+  if (startAge >= 67) return 1.0; // No delayed credits on spousal
+  const monthsEarly = (67 - startAge) * 12;
+  if (monthsEarly <= 36) {
+    return 1.0 - monthsEarly * (25 / 36 / 100);
+  } else {
+    // 25/36% for first 36 months, then 5/12% for additional months
+    return 0.75 - (monthsEarly - 36) * (5 / 12 / 100);
+  }
+}
+
+/** Medicare IRMAA brackets (2025, modified adjusted gross income) */
+export const IRMAA_BRACKETS: Record<TaxFilingStatus, Array<[number, number]>> = {
+  single: [
+    [106000, 0],      // Base premium
+    [133000, 74.00],  // Part B increase
+    [167000, 185.00],
+    [200000, 296.10],
+    [500000, 407.20],
+    [Infinity, 443.90],
+  ],
+  joint: [
+    [212000, 0],
+    [266000, 74.00],
+    [334000, 185.00],
+    [400000, 296.10],
+    [750000, 407.20],
+    [Infinity, 443.90],
+  ],
+};
+
+/** Base Medicare Part B premium (2025) */
+export const MEDICARE_BASE_PREMIUM = 185.00;
+
+/** Calculate Medicare Part B premium based on MAGI */
+export function medicarePartBPremium(magi: number, filing: TaxFilingStatus): number {
+  const brackets = IRMAA_BRACKETS[filing];
+  for (const [threshold, premium] of brackets) {
+    if (magi <= threshold) return premium;
+  }
+  return IRMAA_BRACKETS[filing][IRMAA_BRACKETS[filing].length - 1][1];
 }
 
 function bracketTax(taxableIncome: number, brackets: Array<[number, number]>): number {

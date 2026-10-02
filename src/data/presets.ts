@@ -84,6 +84,10 @@ export const DEFAULT_STATE: RetirementState = {
   rothConversionStartAge: 60,
   rothConversionEndAge: 70,
 
+  spendingSmile: { early: 1.1, mid: 1.0, late: 1.15 },
+  spendingSmileStartAge: 70,
+  spendingSmileMidAge: 80,
+
   targetLocationId: 'US_AVERAGE',
   colAdjustmentPct: 0,
   socialSecurityMonthlyAt67: 2800,

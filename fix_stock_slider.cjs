@@ -1,0 +1,10 @@
+const fs = require('fs');
+const content = fs.readFileSync('src/components/BasicModeInputs.tsx', 'utf8');
+
+const oldStr = '<input\n              id="basic-mix"\n              type="range"\n              min={0}\n              max={95}\n              value={state.stockPct}\n              onChange={(e) => {\n                const stock = parseInt(e.target.value);\n                onChange({ stockPct: stock, bondPct: Math.max(0, 95 - stock), cashPct: 5 });\n              }}\n              className="w-full cursor-pointer"\n            />';
+
+const newStr = '<input\n              id="basic-mix"\n              type="range"\n              min={0}\n              max={95}\n              value={state.stockPct}\n              onChange={(e) => {\n                const stock = parseInt(e.target.value);\n                onChange({ stockPct: stock, bondPct: Math.max(0, 95 - stock), cashPct: 5 });\n              }}\n              onKeyDown={(e) => {\n                if (e.key === "ArrowRight" || e.key === "ArrowUp") {\n                  e.preventDefault();\n                  const stock = Math.min(95, state.stockPct + 5);\n                  onChange({ stockPct: stock, bondPct: Math.max(0, 95 - stock), cashPct: 5 });\n                } else if (e.key === "ArrowLeft" || e.key === "ArrowDown") {\n                  e.preventDefault();\n                  const stock = Math.max(0, state.stockPct - 5);\n                  onChange({ stockPct: stock, bondPct: Math.max(0, 95 - stock), cashPct: 5 });\n                }\n              }}\n              aria-valuetext={`$ {state.stockPct}% stocks`}\n              className="w-full cursor-pointer"\n            />';
+
+const newContent = content.replace(oldStr, newStr);
+fs.writeFileSync('src/components/BasicModeInputs.tsx', newContent);
+console.log('Done');

@@ -272,6 +272,18 @@ export const BasicModeInputs: React.FC<Props> = ({ state, onChange, onSwitchToAd
                 const stock = parseInt(e.target.value);
                 onChange({ stockPct: stock, bondPct: Math.max(0, 95 - stock), cashPct: 5 });
               }}
+              onKeyDown={(e) => {
+                if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+                  e.preventDefault();
+                  const stock = Math.min(95, state.stockPct + 5);
+                  onChange({ stockPct: stock, bondPct: Math.max(0, 95 - stock), cashPct: 5 });
+                } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+                  e.preventDefault();
+                  const stock = Math.max(0, state.stockPct - 5);
+                  onChange({ stockPct: stock, bondPct: Math.max(0, 95 - stock), cashPct: 5 });
+                }
+              }}
+              aria-valuetext={`${state.stockPct}% stocks`}
               className="w-full cursor-pointer"
             />
             <div className="flex justify-between text-[10px] text-slate-500 font-medium">

@@ -75,6 +75,15 @@ export function sanitizeRetirementState(state: RetirementState): RetirementState
     rothConversionAnnual: money(state.rothConversionAnnual, MAX_YEARLY, 25000),
     rothConversionStartAge: Math.round(clamp(state.rothConversionStartAge ?? 60, 50, 85, 60)),
     rothConversionEndAge: Math.round(clamp(state.rothConversionEndAge ?? 70, 50, 85, 70)),
+
+    // Spending smile
+    spendingSmile: {
+      early: clamp(state.spendingSmile?.early ?? 1.1, 0.5, 2.0, 1.1),
+      mid: clamp(state.spendingSmile?.mid ?? 1.0, 0.5, 2.0, 1.0),
+      late: clamp(state.spendingSmile?.late ?? 1.15, 0.5, 2.0, 1.15),
+    },
+    spendingSmileStartAge: Math.round(clamp(state.spendingSmileStartAge ?? 70, 60, 80, 70)),
+    spendingSmileMidAge: Math.round(clamp(state.spendingSmileMidAge ?? 80, 70, 90, 80)),
     // Partner / household
     hasPartner: !!state.hasPartner,
     partner: {

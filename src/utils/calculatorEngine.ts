@@ -92,15 +92,14 @@ function calcChildEducationForYear(
 /** Age-graded healthcare cost for the year (0 before the start age). */
 function calcHealthcareForYear(
   state: RetirementState,
-  primaryAge: number,
-  healthColMultiplier: number
+  primaryAge: number
 ): number {
   const base = state.healthcareMonthlyAt65 ?? 0;
   if (base <= 0) return 0;
   const startAge = state.healthcareStartAge ?? 65;
   if (primaryAge < startAge) return 0;
   const medInfl = (state.healthcareInflationPct ?? 5.5) / 100;
-  return base * 12 * Math.pow(1 + medInfl, primaryAge - startAge) * healthColMultiplier;
+  return base * 12 * Math.pow(1 + medInfl, primaryAge - startAge);
 }
 
 /** Amortized mortgage payment split using the user-provided interest rate. */
@@ -256,6 +255,15 @@ export function runRetirementSimulation(
   let lifetimeTaxesPaid = 0;
   let lifetimeRothConverted = 0;
 
+  // Peak portfolio value since retirement for guardrails
+  let peakPortfolioSinceRetirement = 0;
+  let retirementPeakSet = false;
+
+  // Spending smile multipliers (early / mid / late retirement)
+  const spendingSmile = state.spendingSmile ?? { early: 1.0, mid: 1.0, late: 1.0 };
+  const spendingSmileStartAge = state.spendingSmileStartAge ?? 70;
+  const spendingSmileMidAge = state.spendingSmileMidAge ?? 80;
+
   // Helper to run a single deterministic / sequence trajectory
   const runSingleTrajectory = (
     returnModifier: number = 0,
@@ -292,20 +300,31 @@ export function runRetirementSimulation(
       const year = new Date().getFullYear() + i;
       const isRetired = age >= targetRetirementAge;
 
+      // Calculate total portfolio at start of year
+      const totalPortfolio = currentLiquid + currentTaxable + currentPreTax + currentPostTax;
+
       // Determine year return & inflation
       let yearInflation = baseInflation + inflationModifier;
       let yearPortfolioReturn = expectedPortfolioReturn + returnModifier;
 
-      if (presetData && presetData.length > 0) {
-        const pYear = presetData[i % presetData.length];
-        yearInflation = pYear.inflation / 100.0;
-        const sRet = pYear.stock / 100.0;
-        const bRet = pYear.bond / 100.0;
-        yearPortfolioReturn = stockW * sRet + bondW * bRet + cashW * 0.02;
-      }
-
       if (returnMode === 'deterministic') {
         // Deterministic mode uses expected returns exactly (modifiers still apply for bands).
+      } else if (returnMode === 'historical_replay' && sequencePresetKey) {
+        // Historical replay: stop at preset end, don't cycle
+        if (presetData && i >= presetData.length) {
+          // Continue with last year's returns and inflation
+          const lastYear = presetData[presetData.length - 1];
+          yearInflation = lastYear.inflation / 100.0;
+          const sRet = lastYear.stock / 100.0;
+          const bRet = lastYear.bond / 100.0;
+          yearPortfolioReturn = stockW * sRet + bondW * bRet + cashW * 0.02;
+        } else if (presetData && presetData.length > 0) {
+          const pYear = presetData[i];
+          yearInflation = pYear.inflation / 100.0;
+          const sRet = pYear.stock / 100.0;
+          const bRet = pYear.bond / 100.0;
+          yearPortfolioReturn = stockW * sRet + bondW * bRet + cashW * 0.02;
+        }
       }
 
       // Milestones for this year
@@ -409,25 +428,49 @@ export function runRetirementSimulation(
         });
       }
 
-      // Healthcare (age-graded, medical inflation, location-weighted).
-      const healthExpenses = calcHealthcareForYear(state, age, healthColMultiplier);
+      // Healthcare (age-graded, medical inflation). Location COL already applied to living expenses.
+      const healthExpenses = calcHealthcareForYear(state, age);
 
       // Living expenses, with guardrails cut when active.
       let spendingCutApplied = false;
       let annualLivingExpenses = baseMonthlyLifestyle * 12 * cumulativeInflation;
+
+      // Apply spending smile multiplier based on age
+      let spendingSmileMultiplier = 1.0;
+      if (isRetired) {
+        if (age < spendingSmileStartAge) {
+          spendingSmileMultiplier = spendingSmile.early;
+        } else if (age < spendingSmileMidAge) {
+          spendingSmileMultiplier = spendingSmile.mid;
+        } else {
+          spendingSmileMultiplier = spendingSmile.late;
+        }
+        annualLivingExpenses *= spendingSmileMultiplier;
+      }
+
+      const totalPortfolioAfterGrowth = currentLiquid + currentTaxable + currentPreTax + currentPostTax;
+
       if (
         withdrawalStrategy === 'guardrails' &&
         isRetired &&
         i > 1 &&
-        prevYearEnd < prevPrevYearEnd &&
         guardrailCut > 0
       ) {
-        annualLivingExpenses *= 1 - guardrailCut;
-        spendingCutApplied = true;
+        // Update peak portfolio since retirement
+        if (!retirementPeakSet || totalPortfolioAfterGrowth > peakPortfolioSinceRetirement) {
+          peakPortfolioSinceRetirement = totalPortfolioAfterGrowth;
+          retirementPeakSet = true;
+        }
+        // Cut spending if portfolio drops below peak
+        if (peakPortfolioSinceRetirement > 0 && totalPortfolioAfterGrowth < peakPortfolioSinceRetirement * (1 - guardrailCut)) {
+          annualLivingExpenses *= 1 - guardrailCut;
+          spendingCutApplied = true;
+        }
       }
       if (isRetired) {
         annualLivingExpenses *= colMultiplier; // Apply location COL multiplier in retirement
       }
+      // Note: healthcare costs are NOT multiplied by colMultiplier - they're already handled separately
 
       const totalAnnualOutflow =
         annualLivingExpenses + annualHousingExpense + childEdExpenses + annualDebtExpense + healthExpenses;
@@ -526,6 +569,30 @@ export function runRetirementSimulation(
             preTaxDraw += pDraw;
             remainingToWithdraw -= pDraw / FINANCIAL_CONSTANTS.PRE_TAX_WITHDRAWAL_GROSS_UP;
           }
+        } else if (withdrawalStrategy === 'guardrails') {
+          // Guardrails uses fixed order but applies spending cut to outflow
+          drawCashFirst();
+          // 2. Draw from Taxable
+          if (remainingToWithdraw > 0 && currentTaxable > 0) {
+            const draw = Math.min(currentTaxable, remainingToWithdraw);
+            currentTaxable -= draw;
+            taxableDraw += draw;
+            remainingToWithdraw -= draw;
+          }
+          // 3. Draw from Pre-Tax (grossed up for income tax)
+          if (remainingToWithdraw > 0 && currentPreTax > 0) {
+            const grossedDraw = remainingToWithdraw * FINANCIAL_CONSTANTS.PRE_TAX_WITHDRAWAL_GROSS_UP;
+            const draw = Math.min(currentPreTax, grossedDraw);
+            currentPreTax -= draw;
+            preTaxDraw += draw;
+            remainingToWithdraw -= draw / FINANCIAL_CONSTANTS.PRE_TAX_WITHDRAWAL_GROSS_UP;
+          }
+          // 4. Draw from Post-Tax (Roth/HSA - tax-free)
+          if (remainingToWithdraw > 0 && currentPostTax > 0) {
+            const draw = Math.min(currentPostTax, remainingToWithdraw);
+            currentPostTax -= draw;
+            remainingToWithdraw -= draw;
+          }
         } else {
           // fixed_order and guardrails share the tax-efficient order.
           drawCashFirst();
@@ -595,10 +662,9 @@ export function runRetirementSimulation(
       currentPreTax = Math.max(0, currentPreTax * (1 + yearPortfolioReturn));
       currentPostTax = Math.max(0, currentPostTax * (1 + yearPortfolioReturn));
 
-      const totalPortfolio = currentLiquid + currentTaxable + currentPreTax + currentPostTax;
-      const netWorth = totalPortfolio - currentMortgageBal - otherDebtBal;
+      const netWorth = totalPortfolioAfterGrowth - currentMortgageBal - otherDebtBal;
       prevPrevYearEnd = prevYearEnd;
-      prevYearEnd = totalPortfolio;
+      prevYearEnd = totalPortfolioAfterGrowth;
 
       projections.push({
         year,
@@ -739,10 +805,9 @@ export function runRetirementSimulation(
         (state.healthcareMonthlyAt65 ?? 0) > 0 && age >= (state.healthcareStartAge ?? 65)
           ? (state.healthcareMonthlyAt65 ?? 0) *
             12 *
-            Math.pow(1 + (state.healthcareInflationPct ?? 5.5) / 100, age - (state.healthcareStartAge ?? 65)) *
-            healthColMultiplier
+            Math.pow(1 + (state.healthcareInflationPct ?? 5.5) / 100, age - (state.healthcareStartAge ?? 65))
           : 0;
-      const trialOutflow = annualLiving + annualHousing + childEdu + annualDebt + healthTrial;
+      let trialOutflow = annualLiving + annualHousing + childEdu + annualDebt + healthTrial;
 
       if (!isRetired) {
         if (i > 0) {
@@ -770,8 +835,101 @@ export function runRetirementSimulation(
         if (age >= pensionStartAge) trialGuaranteed += pensionMonthly * 12 * simCumInflation;
 
         const needed = Math.max(0, trialOutflow - trialGuaranteed);
-        const tax = estimateMcTax(needed, filing, stateTaxPct);
-        simPortfolio -= needed + tax;
+        
+        // Apply withdrawal strategy in MC
+        let simPreTaxDraw = 0;
+        let simTaxableDraw = 0;
+        let simPostTaxDraw = 0;
+        let simRothConverted = 0;
+        let simConversionTaxBase = 0;
+        let simRemaining = needed;
+        let simCurrentLiquid = simPortfolio * (liquidCash / (liquidCash + taxableInvestments + preTax401k + postTaxRothHsa));
+        let simCurrentTaxable = simPortfolio * (taxableInvestments / (liquidCash + taxableInvestments + preTax401k + postTaxRothHsa));
+        let simCurrentPreTax = simPortfolio * (preTax401k / (liquidCash + taxableInvestments + preTax401k + postTaxRothHsa));
+        let simCurrentPostTax = simPortfolio * (postTaxRothHsa / (liquidCash + taxableInvestments + preTax401k + postTaxRothHsa));
+        
+        const drawCashFirst = () => {
+          if (simRemaining > 0 && simCurrentLiquid > 0) {
+            const draw = Math.min(simCurrentLiquid, simRemaining);
+            simCurrentLiquid -= draw;
+            simRemaining -= draw;
+          }
+        };
+        
+        if (withdrawalStrategy === 'proportional') {
+          drawCashFirst();
+          const balTaxable = Math.max(0, simCurrentTaxable);
+          const balPreTax = Math.max(0, simCurrentPreTax);
+          const balPost = Math.max(0, simCurrentPostTax);
+          const balSum = Math.max(1e-9, balTaxable + balPreTax + balPost);
+          if (simRemaining > 0 && balSum > 0) {
+            const tDraw = Math.min(balTaxable, (simRemaining * balTaxable) / balSum);
+            simCurrentTaxable -= tDraw;
+            simTaxableDraw += tDraw;
+            simRemaining -= tDraw;
+            const rDraw = Math.min(simCurrentPostTax, (simRemaining * simCurrentPostTax) / balSum);
+            simCurrentPostTax -= rDraw;
+            simRemaining -= rDraw;
+            const pShare = (simRemaining * simCurrentPreTax) / balSum;
+            const grossed = pShare * FINANCIAL_CONSTANTS.PRE_TAX_WITHDRAWAL_GROSS_UP;
+            const pDraw = Math.min(simCurrentPreTax, grossed);
+            simCurrentPreTax -= pDraw;
+            simPreTaxDraw += pDraw;
+            simRemaining -= pDraw / FINANCIAL_CONSTANTS.PRE_TAX_WITHDRAWAL_GROSS_UP;
+          }
+        } else {
+          // fixed_order and guardrails share the tax-efficient order.
+          drawCashFirst();
+          if (simRemaining > 0 && simCurrentTaxable > 0) {
+            const draw = Math.min(simCurrentTaxable, simRemaining);
+            simCurrentTaxable -= draw;
+            simTaxableDraw += draw;
+            simRemaining -= draw;
+          }
+          if (simRemaining > 0 && simCurrentPreTax > 0) {
+            const grossedDraw = simRemaining * FINANCIAL_CONSTANTS.PRE_TAX_WITHDRAWAL_GROSS_UP;
+            const draw = Math.min(simCurrentPreTax, grossedDraw);
+            simCurrentPreTax -= draw;
+            simPreTaxDraw += draw;
+            simRemaining -= draw / FINANCIAL_CONSTANTS.PRE_TAX_WITHDRAWAL_GROSS_UP;
+          }
+          if (simRemaining > 0 && simCurrentPostTax > 0) {
+            const draw = Math.min(simCurrentPostTax, simRemaining);
+            simCurrentPostTax -= draw;
+            simRemaining -= draw;
+          }
+        }
+        
+        // RMDs
+        if (age >= RMD_START_AGE && simCurrentPreTax > 0) {
+          const rmd = simCurrentPreTax / rmdDivisor(age);
+          if (simPreTaxDraw < rmd) {
+            const extra = Math.min(simCurrentPreTax, rmd - simPreTaxDraw);
+            simCurrentPreTax -= extra;
+            simPreTaxDraw += extra;
+            simCurrentTaxable += extra;
+            simRemaining = Math.max(0, simRemaining - extra);
+          }
+        }
+        
+        // Roth conversions in MC
+        if (rothOn && rothAnnual > 0 && age >= rothStart && age <= rothEnd && simCurrentPreTax > 0) {
+          simRothConverted = Math.min(simCurrentPreTax, rothAnnual);
+          simCurrentPreTax -= simRothConverted;
+          simCurrentPostTax += simRothConverted;
+          simConversionTaxBase = simRothConverted;
+        }
+
+        // Apply guardrails cut to needed amount
+        if (withdrawalStrategy === 'guardrails' && i > 1 && simPrevEnd < simPrevPrevEnd && guardrailCut > 0) {
+          trialOutflow *= 1 - guardrailCut;
+        }
+
+        const tax = estimateMcTax(simPreTaxDraw + simConversionTaxBase + simTaxableDraw, filing, stateTaxPct);
+        simPortfolio -= simRemaining + tax;
+        
+        // Track portfolio components for next iteration
+        simPortfolio = simCurrentLiquid + simCurrentTaxable + simCurrentPreTax + simCurrentPostTax;
       }
 
       simPortfolio *= 1 + trialPortfolioReturn;
@@ -808,7 +966,7 @@ export function runRetirementSimulation(
   const healthBase = state.healthcareMonthlyAt65 ?? 0;
   const healthAtRetirement =
     healthBase > 0 && targetRetirementAge >= (state.healthcareStartAge ?? 65)
-      ? healthBase * 12 * Math.pow(1 + (state.healthcareInflationPct ?? 5.5) / 100, targetRetirementAge - (state.healthcareStartAge ?? 65)) * healthColMultiplier
+      ? healthBase * 12 * Math.pow(1 + (state.healthcareInflationPct ?? 5.5) / 100, targetRetirementAge - (state.healthcareStartAge ?? 65))
       : 0;
   const estimatedRetirementAnnualExpense =
     baseMonthlyLifestyle * 12 * colMultiplier + rentAtRetirement + mortgageAtRetirement + healthAtRetirement;

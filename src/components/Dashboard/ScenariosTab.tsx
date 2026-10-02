@@ -16,24 +16,32 @@ interface Props {
 
 function kpiRows(a: SimulationResult, b: SimulationResult) {
   const fmt$ = (n: number) => `$${Math.round(n).toLocaleString()}`;
+  const fmtAge = (v: number | null) => (v != null ? `Age ${v}` : '—');
   return [
-    { label: 'Success rate', a: `${a.successRate}%`, b: `${b.successRate}%`, delta: b.successRate - a.successRate, suffix: 'pts' },
-    { label: 'Net worth at retirement', a: fmt$(a.targetRetirementNetWorth), b: fmt$(b.targetRetirementNetWorth), delta: b.targetRetirementNetWorth - a.targetRetirementNetWorth, suffix: '$' },
-    { label: 'Net worth at horizon', a: fmt$(a.finalNetWorth), b: fmt$(b.finalNetWorth), delta: b.finalNetWorth - a.finalNetWorth, suffix: '$' },
-    { label: 'FIRE age', a: a.fireAgeAchievable ? `Age ${a.fireAgeAchievable}` : '—', b: b.fireAgeAchievable ? `Age ${b.fireAgeAchievable}` : '—', delta: (a.fireAgeAchievable ?? 99) - (b.fireAgeAchievable ?? 99), suffix: 'yrs' },
-    { label: 'Lifetime taxes', a: fmt$(a.lifetimeTaxesPaid), b: fmt$(b.lifetimeTaxesPaid), delta: a.lifetimeTaxesPaid - b.lifetimeTaxesPaid, suffix: '$' },
+    { label: 'Success rate', a: `${a.successRate}%`, b: `${b.successRate}%`, delta: b.successRate - a.successRate, suffix: 'pts', higherIsBetter: true },
+    { label: 'Net worth at retirement', a: fmt$(a.targetRetirementNetWorth), b: fmt$(b.targetRetirementNetWorth), delta: b.targetRetirementNetWorth - a.targetRetirementNetWorth, suffix: '$', higherIsBetter: true },
+    { label: 'Net worth at horizon', a: fmt$(a.finalNetWorth), b: fmt$(b.finalNetWorth), delta: b.finalNetWorth - a.finalNetWorth, suffix: '$', higherIsBetter: true },
+    // FIRE age and taxes: lower is better, but delta stays B − A like every row.
+    { label: 'FIRE age', a: fmtAge(a.fireAgeAchievable), b: fmtAge(b.fireAgeAchievable), delta: (b.fireAgeAchievable ?? 99) - (a.fireAgeAchievable ?? 99), suffix: 'yrs', higherIsBetter: false },
+    { label: 'Lifetime taxes', a: fmt$(a.lifetimeTaxesPaid), b: fmt$(b.lifetimeTaxesPaid), delta: b.lifetimeTaxesPaid - a.lifetimeTaxesPaid, suffix: '$', higherIsBetter: false },
   ];
 }
 
 function formatDelta(delta: number, suffix: string): string {
-  const sign = delta > 0 ? '+' : '';
+  const rounded = suffix === '$' ? Math.round(delta) : Math.round(delta * 10) / 10;
+  if (rounded === 0) return '—';
+  const sign = rounded < 0 ? '−' : '+';
   if (suffix === '$') {
-    const abs = Math.abs(Math.round(delta));
+    const abs = Math.abs(rounded);
     const str = abs >= 1000000 ? `$${(abs / 1000000).toFixed(1)}M` : `$${abs.toLocaleString()}`;
-    return `${delta > 0 ? '+' : delta < 0 ? '−' : ''}${str}`;
+    return `${sign}${str}`;
   }
-  void sign;
-  return `${delta > 0 ? '+' : ''}${Math.round(delta * 10) / 10}${suffix === 'pts' ? ' pts' : suffix === 'yrs' ? ' yrs' : suffix}`;
+  return `${sign}${Math.abs(rounded)}${suffix === 'pts' ? ' pts' : ' yrs'}`;
+}
+
+function deltaIsGood(delta: number, higherIsBetter: boolean): boolean | null {
+  if (Math.abs(delta) < 0.005) return null;
+  return higherIsBetter ? delta > 0 : delta < 0;
 }
 
 export const ScenariosTab: React.FC<Props> = ({ state, currentResult, onLoadState, onTriggerToast }) => {
@@ -208,16 +216,19 @@ export const ScenariosTab: React.FC<Props> = ({ state, currentResult, onLoadStat
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60">
-                {kpiRows(currentResult, compareResult).map((r) => (
-                  <tr key={r.label} className="hover:bg-slate-800/40">
-                    <td className="px-4 py-2.5 text-slate-300 font-medium">{r.label}</td>
-                    <td className="px-4 py-2.5 text-right text-slate-200 font-mono">{r.a}</td>
-                    <td className="px-4 py-2.5 text-right text-purple-300 font-mono">{r.b}</td>
-                    <td className={`px-4 py-2.5 text-right font-mono font-bold ${r.delta > 0 ? 'text-emerald-400' : r.delta < 0 ? 'text-red-400' : 'text-slate-500'}`}>
-                      {formatDelta(r.delta, r.suffix)}
-                    </td>
-                  </tr>
-                ))}
+                {kpiRows(currentResult, compareResult).map((r) => {
+                  const good = deltaIsGood(r.delta, r.higherIsBetter);
+                  return (
+                    <tr key={r.label} className="hover:bg-slate-800/40">
+                      <td className="px-4 py-2.5 text-slate-300 font-medium">{r.label}</td>
+                      <td className="px-4 py-2.5 text-right text-slate-200 font-mono">{r.a}</td>
+                      <td className="px-4 py-2.5 text-right text-purple-300 font-mono">{r.b}</td>
+                      <td className={`px-4 py-2.5 text-right font-mono font-bold ${good == null ? 'text-slate-500' : good ? 'text-emerald-400' : 'text-red-400'}`}>
+                        {formatDelta(r.delta, r.suffix)}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

@@ -51,6 +51,18 @@ export const DemographicsSection: React.FC<Props> = ({
                 targetRetirementAge: Math.max(val + 1, state.targetRetirementAge),
               });
             }}
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                const val = Math.min(80, state.currentAge + 1);
+                onChange({ currentAge: val, targetRetirementAge: Math.max(val + 1, state.targetRetirementAge) });
+              } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+                e.preventDefault();
+                const val = Math.max(18, state.currentAge - 1);
+                onChange({ currentAge: val, targetRetirementAge: Math.max(val + 1, state.targetRetirementAge) });
+              }
+            }}
+            aria-valuetext={`Age ${state.currentAge}`}
             className="w-full cursor-pointer"
           />
           <div className="flex justify-between text-xs text-slate-500 font-medium pt-0.5">
@@ -80,6 +92,18 @@ export const DemographicsSection: React.FC<Props> = ({
                 lifeExpectancy: Math.max(val + 5, state.lifeExpectancy),
               });
             }}
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                const val = Math.min(85, state.targetRetirementAge + 1);
+                onChange({ targetRetirementAge: val, lifeExpectancy: Math.max(val + 5, state.lifeExpectancy) });
+              } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+                e.preventDefault();
+                const val = Math.max(Math.max(19, state.currentAge + 1), state.targetRetirementAge - 1);
+                onChange({ targetRetirementAge: val, lifeExpectancy: Math.max(val + 5, state.lifeExpectancy) });
+              }
+            }}
+            aria-valuetext={`Age ${state.targetRetirementAge}`}
             className="w-full cursor-pointer"
           />
           <div className="flex justify-between text-xs text-slate-500 font-medium pt-0.5">
@@ -103,6 +127,16 @@ export const DemographicsSection: React.FC<Props> = ({
             max={110}
             value={state.lifeExpectancy}
             onChange={(e) => onChange({ lifeExpectancy: parseInt(e.target.value) })}
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                onChange({ lifeExpectancy: Math.min(110, state.lifeExpectancy + 1) });
+              } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+                e.preventDefault();
+                onChange({ lifeExpectancy: Math.max(Math.max(60, state.targetRetirementAge + 1), state.lifeExpectancy - 1) });
+              }
+            }}
+            aria-valuetext={`Age ${state.lifeExpectancy}`}
             className="w-full cursor-pointer"
           />
           <div className="flex justify-between text-xs text-slate-500 font-medium pt-0.5">

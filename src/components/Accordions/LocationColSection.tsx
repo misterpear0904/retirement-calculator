@@ -122,6 +122,16 @@ export const LocationColSection: React.FC<Props> = ({
                 step={5}
                 value={state.colAdjustmentPct}
                 onChange={(e) => onChange({ colAdjustmentPct: parseInt(e.target.value) })}
+                onKeyDown={(e) => {
+                  if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    onChange({ colAdjustmentPct: Math.min(50, state.colAdjustmentPct + 5) });
+                  } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    onChange({ colAdjustmentPct: Math.max(-50, state.colAdjustmentPct - 5) });
+                  }
+                }}
+                aria-valuetext={`${state.colAdjustmentPct > 0 ? '+' : ''}${state.colAdjustmentPct}% adjustment`}
                 className="w-full cursor-pointer accent-cyan-500"
               />
               <div className="flex justify-between text-[10px] text-slate-500 font-medium">

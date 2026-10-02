@@ -1,12 +1,18 @@
 export type RealIncomeGrowthMode = 'standard_2' | 'aggressive_5' | 'custom';
 export type InflationMode = 'fixed_3' | 'custom' | 'historical_replay';
-export type ReturnMode = 'deterministic' | 'historical_real' | 'monte_carlo';
+export type ReturnMode = 'deterministic' | 'historical_real' | 'historical_replay' | 'monte_carlo';
 export type SchoolType = 'public' | 'private_k12';
 export type CollegeTier = 'in_state' | 'private' | 'none';
 export type HousingType = 'rent' | 'mortgage';
 export type LifestyleTier = 'minimalist' | 'moderate' | 'luxury' | 'custom';
 export type TaxFilingStatus = 'single' | 'joint';
 export type WithdrawalStrategy = 'fixed_order' | 'proportional' | 'guardrails';
+
+export interface SpendingSmile {
+  early: number;  // multiplier for ages < spendingSmileStartAge
+  mid: number;    // multiplier for spendingSmileStartAge <= age < spendingSmileMidAge
+  late: number;   // multiplier for age >= spendingSmileMidAge
+}
 
 export interface PartnerInfo {
   enabled: boolean;
@@ -116,6 +122,11 @@ export interface RetirementState {
   rothConversionAnnual: number;
   rothConversionStartAge: number;
   rothConversionEndAge: number;
+
+  // Section H2: Spending smile (early/mid/late retirement multipliers)
+  spendingSmile: SpendingSmile;
+  spendingSmileStartAge: number; // age when "early" ends
+  spendingSmileMidAge: number;   // age when "mid" ends
 
   // Section G: Retirement Location & COL
   targetLocationId: string;

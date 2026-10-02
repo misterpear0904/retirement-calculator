@@ -60,6 +60,16 @@ export const MarketInflationSection: React.FC<Props> = ({
                 step={5}
                 value={state.stockPct}
                 onChange={(e) => handleStockPctChange(parseInt(e.target.value))}
+                onKeyDown={(e) => {
+                  if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    handleStockPctChange(Math.min(100, state.stockPct + 5));
+                  } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    handleStockPctChange(Math.max(0, state.stockPct - 5));
+                  }
+                }}
+                aria-valuetext={`${state.stockPct}% stocks`}
                 className="w-full cursor-pointer"
               />
             </div>
@@ -79,6 +89,17 @@ export const MarketInflationSection: React.FC<Props> = ({
                   const b = parseInt(e.target.value);
                   onChange({ bondPct: b, cashPct: 100 - state.stockPct - b });
                 }}
+                onKeyDown={(e) => {
+                  if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    const maxBond = 100 - state.stockPct;
+                    handleStockPctChange(Math.min(maxBond, state.bondPct + 5));
+                  } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    handleStockPctChange(Math.max(0, state.bondPct - 5));
+                  }
+                }}
+                aria-valuetext={`${state.bondPct}% bonds`}
                 className="w-full cursor-pointer"
               />
             </div>
@@ -141,6 +162,16 @@ export const MarketInflationSection: React.FC<Props> = ({
                 step={0.25}
                 value={state.customInflationRate}
                 onChange={(e) => onChange({ customInflationRate: parseFloat(e.target.value) })}
+                onKeyDown={(e) => {
+                  if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    onChange({ customInflationRate: Math.min(10, state.customInflationRate + 0.25) });
+                  } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    onChange({ customInflationRate: Math.max(1, state.customInflationRate - 0.25) });
+                  }
+                }}
+                aria-valuetext={`${state.customInflationRate}% inflation`}
                 className="w-full cursor-pointer"
               />
             </div>
