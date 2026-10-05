@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Download, Share2, Sparkles, Check, RefreshCw, Sun, Moon, FileDown, FileUp, ShieldCheck } from 'lucide-react';
 import { RetirementState } from '../types/retirement';
-import { encodeStateToUrl } from '../utils/urlEncoder';
+import { encodeStateToUrl, SHARE_URL_WARN_LENGTH } from '../utils/urlEncoder';
 import { getRiskLabel, getRiskBadgeClasses } from '../utils/risk';
 import { PRESET_LABELS, PresetName } from '../data/presets';
 
@@ -34,7 +34,14 @@ export const Header: React.FC<Props> = ({
   const [presetValue, setPresetValue] = useState('');
 
   const handleShareUrl = async () => {
-    const url = encodeStateToUrl(state);
+    const url = await encodeStateToUrl(state);
+    // A compressed plan fits comfortably; warn rather than silently handing out a
+    // link that some browsers will refuse to load.
+    const tooLong = url.length > SHARE_URL_WARN_LENGTH;
+    if (tooLong) {
+      onTriggerToast('This plan is too large for a share link — use Export Inputs instead.');
+      return;
+    }
     try {
       await navigator.clipboard.writeText(url);
     } catch {

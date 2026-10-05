@@ -28,35 +28,48 @@ const JOINT_BRACKETS: Array<[number, number]> = [
   [Infinity, 0.37],
 ];
 
+/** TY2025 standard deduction as amended by the One Big Beautiful Bill Act (IRS IR-2025-103). */
 export const STANDARD_DEDUCTION: Record<TaxFilingStatus, number> = {
-  single: 15000,
-  joint: 30000,
+  single: 15750,
+  joint: 31500,
 };
 
-/** 0%/15%/20% capital-gains thresholds (taxable income, 2025). */
-const GAINS_15_THRESHOLD: Record<TaxFilingStatus, number> = { single: 48475, joint: 96950 };
+/**
+ * Top of the 0% long-term capital-gains band (TY2025, Rev. Proc. 2024-40).
+ * These are the *maximum zero-rate amounts*, which differ from the 12% ordinary
+ * bracket tops (48,475 / 96,950) because the two are indexed under separate sections.
+ */
+const GAINS_15_THRESHOLD: Record<TaxFilingStatus, number> = { single: 48350, joint: 96700 };
 const GAINS_20_THRESHOLD: Record<TaxFilingStatus, number> = { single: 533400, joint: 600050 };
 
 /** Share of each taxable-account withdrawal assumed to be gain (rest is basis). */
 export const TAXABLE_GAIN_RATIO = 0.3;
 
-/** RMDs begin at 75 (SECURE 2.0). Uses actual IRS Uniform Lifetime Table divisors. */
+/**
+ * RMDs begin at 75 (SECURE 2.0). Divisors are the IRS Uniform Lifetime Table
+ * (Publication 590-B, Table III) for ages 75+. Ages below 75 have no divisor
+ * here — `rmdDivisor` returns Infinity and callers guard on `age >= RMD_START_AGE`.
+ */
 export const RMD_START_AGE = 75;
 
+/** IRS Uniform Lifetime Table, Table III (account owner / spouse not >10 yrs younger). */
 const RMD_DIVISORS: Record<number, number> = {
-  75: 27.4, 76: 26.5, 77: 25.5, 78: 24.6, 79: 23.7, 80: 22.9,
-  81: 22.0, 82: 21.1, 83: 20.2, 84: 19.4, 85: 18.5, 86: 17.7,
-  87: 16.8, 88: 16.0, 89: 15.2, 90: 14.4, 91: 13.6, 92: 12.8,
-  93: 12.0, 94: 11.3, 95: 10.5, 96: 9.8, 97: 9.1, 98: 8.4,
-  99: 7.8, 100: 7.2, 101: 6.6, 102: 6.0, 103: 5.5, 104: 5.0,
-  105: 4.6, 106: 4.2, 107: 3.8, 108: 3.4, 109: 3.0, 110: 2.7,
-  111: 2.4, 112: 2.1, 113: 1.8, 114: 1.5, 115: 1.3, 116: 1.1,
-  117: 0.9, 118: 0.7, 119: 0.5, 120: 0.4,
+  75: 24.6, 76: 23.7, 77: 22.9, 78: 22.0, 79: 21.1, 80: 20.2,
+  81: 19.4, 82: 18.5, 83: 17.7, 84: 16.8, 85: 16.0, 86: 15.2,
+  87: 14.4, 88: 13.7, 89: 12.9, 90: 12.2, 91: 11.5, 92: 10.8,
+  93: 10.1, 94: 9.5, 95: 8.9, 96: 8.4, 97: 7.8, 98: 7.3,
+  99: 6.8, 100: 6.4, 101: 6.0, 102: 5.6, 103: 5.2, 104: 4.9,
+  105: 4.6, 106: 4.3, 107: 4.1, 108: 3.9, 109: 3.7, 110: 3.5,
+  111: 3.4, 112: 3.3, 113: 3.1, 114: 3.0, 115: 2.9, 116: 2.8,
+  117: 2.7, 118: 2.5, 119: 2.3, 120: 2.0,
 };
 
+/** Age 120 and over uses the table's terminal divisor of 2.0. */
+const RMD_DIVISOR_TERMINAL = 2.0;
+
 export function rmdDivisor(age: number): number {
-  if (age < RMD_START_AGE) return Infinity;
-  return RMD_DIVISORS[age] ?? 4.9; // Floor at 4.9 for ages > 120
+  if (!Number.isFinite(age) || age < RMD_START_AGE) return Infinity;
+  return RMD_DIVISORS[Math.floor(age)] ?? RMD_DIVISOR_TERMINAL;
 }
 
 /** Social Security benefit factor vs full retirement age 67 (moved from calculatorEngine). */
@@ -90,16 +103,16 @@ export const IRMAA_BRACKETS: Record<TaxFilingStatus, Array<[number, number]>> = 
     [106000, 0],      // Base premium
     [133000, 74.00],  // Part B increase
     [167000, 185.00],
-    [200000, 296.10],
-    [500000, 407.20],
+    [200000, 295.90],
+    [500000, 406.90],
     [Infinity, 443.90],
   ],
   joint: [
     [212000, 0],
     [266000, 74.00],
     [334000, 185.00],
-    [400000, 296.10],
-    [750000, 407.20],
+    [400000, 295.90],
+    [750000, 406.90],
     [Infinity, 443.90],
   ],
 };
@@ -146,10 +159,15 @@ export function taxableSocialSecurity(
   if (ssAnnual <= 0) return 0;
   const provisional = otherIncome + 0.5 * ssAnnual;
   const t1 = filing === 'joint' ? 32000 : 25000;
-  const t2 = filing === 'joint' ? 44000 : 34000;
+  // Second tier spans base + $12,000 (joint) / + $9,000 (single); the 50% add-on
+  // itself is capped at $6,000 (joint) / $4,500 (single). Form 1040 SS worksheet.
+  const tier2Span = filing === 'joint' ? 12000 : 9000;
+  const tier2AddOnCap = filing === 'joint' ? 6000 : 4500;
+  const t2 = t1 + tier2Span;
   if (provisional < t1) return 0;
   if (provisional < t2) return Math.min(0.5 * ssAnnual, 0.5 * (provisional - t1));
-  return Math.min(0.85 * ssAnnual, 0.85 * (provisional - t2) + Math.min(6000, 0.5 * ssAnnual));
+  const addOn = Math.min(tier2AddOnCap, 0.5 * ssAnnual);
+  return Math.min(0.85 * ssAnnual, 0.85 * (provisional - t2) + addOn);
 }
 
 /** Federal tax on long-term capital gains given total taxable income context. */

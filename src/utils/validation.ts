@@ -21,6 +21,11 @@ export function sanitizeRetirementState(state: RetirementState): RetirementState
   const money = (v: number | undefined, cap: number = MAX_BALANCE, fallback = 0) =>
     Math.min(cap, Math.max(0, Number.isFinite(v) ? (v as number) : fallback));
 
+  // Pin a union-typed field to a known member. Guards against share links and
+  // imported files carrying a value the engine's switch statements can't handle.
+  const oneOf = <T extends string>(v: unknown, allowed: readonly T[], fallback: T): T =>
+    typeof v === 'string' && (allowed as readonly string[]).includes(v) ? (v as T) : fallback;
+
   const currentAge = Math.round(clamp(state.currentAge, VALIDATION_LIMITS.MIN_AGE, VALIDATION_LIMITS.MAX_AGE, 32));  const lifeExpectancy = Math.round(
     clamp(state.lifeExpectancy, currentAge + 1, VALIDATION_LIMITS.MAX_AGE + 10, 90)
   );
@@ -49,7 +54,7 @@ export function sanitizeRetirementState(state: RetirementState): RetirementState
     cashPct: clamp(state.cashPct ?? 0, 0, 100, 5),
     socialSecurityStartAge: Math.round(clamp(state.socialSecurityStartAge ?? 67, 62, 70, 67)),
     pensionStartAge: Math.round(clamp(state.pensionStartAge ?? 65, 50, 75, 65)),
-    mortgageRemainingYears: Math.max(0, Math.round(state.mortgageRemainingYears ?? 0)),
+    mortgageRemainingYears: Math.round(clamp(state.mortgageRemainingYears ?? 0, 0, 60, 0)),
     mortgageBalance: money(state.mortgageBalance, MAX_BALANCE),
     mortgageMonthly: money(state.mortgageMonthly, MAX_MONTHLY),
     rentMonthly: money(state.rentMonthly, MAX_MONTHLY),
@@ -70,6 +75,24 @@ export function sanitizeRetirementState(state: RetirementState): RetirementState
       state.withdrawalStrategy === 'proportional' || state.withdrawalStrategy === 'guardrails'
         ? state.withdrawalStrategy
         : 'fixed_order',
+    // Remaining union-typed enums. An unknown `housingType` falls through to the
+    // rent branch in the engine and silently inflates lifetime housing costs, so
+    // every one of these is pinned to a known member of its union.
+    housingType: oneOf(state.housingType, ['rent', 'mortgage'], 'rent'),
+    lifestyleTier: oneOf(state.lifestyleTier, ['minimalist', 'moderate', 'luxury', 'custom'], 'moderate'),
+    returnMode: oneOf(
+      state.returnMode,
+      ['deterministic', 'historical_real', 'historical_replay', 'monte_carlo'],
+      'monte_carlo'
+    ),
+    realIncomeGrowthMode: oneOf(state.realIncomeGrowthMode, ['standard_2', 'aggressive_5', 'custom'], 'standard_2'),
+    inflationMode: oneOf(state.inflationMode, ['fixed_3', 'custom', 'historical_replay'], 'fixed_3'),
+    // Both are required strings in the type. Coerce non-strings to '' so an unknown
+    // key resolves to the engine's existing "not found" fallback rather than
+    // breaking the lookup, and a deliberately cleared value stays cleared.
+    historicalInflationPreset: typeof state.historicalInflationPreset === 'string' ? state.historicalInflationPreset : '',
+    targetLocationId: typeof state.targetLocationId === 'string' ? state.targetLocationId : '',
+    useFixedContribution: !!state.useFixedContribution,
     guardrailCutPct: clamp(state.guardrailCutPct ?? 15, 0, 50, 15),
     useRothConversions: !!state.useRothConversions,
     rothConversionAnnual: money(state.rothConversionAnnual, MAX_YEARLY, 25000),
@@ -103,21 +126,33 @@ export function sanitizeRetirementState(state: RetirementState): RetirementState
     customStockReturn: clamp(state.customStockReturn ?? 9.5, -50, 100, 9.5),
     customBondReturn: clamp(state.customBondReturn ?? 4.5, -50, 100, 4.5),
     mortgageInterestRate: clamp(state.mortgageInterestRate ?? 6, 0, 30, 6),
-    debts: (state.debts ?? []).map((d) => ({
+    // Arrays arrive from localStorage / share links / imported files, so the
+    // element type must be verified before mapping — `?? []` does not catch a
+    // string or number, and mapping one throws inside a React state updater.
+    debts: (Array.isArray(state.debts) ? state.debts : []).map((d) => ({
       ...d,
       balance: money(d.balance, MAX_BALANCE),
       monthlyPayment: money(d.monthlyPayment, MAX_MONTHLY),
       interestRate: clamp(d.interestRate ?? 0, 0, 100, 0),
     })),
-    children: (state.children ?? []).map((c) => ({
+    children: (Array.isArray(state.children) ? state.children : []).map((c) => ({
       ...c,
+      currentAge: Math.round(clamp(c.currentAge, 0, VALIDATION_LIMITS.MAX_AGE, 0)),
+      collegeYears: Math.round(clamp(c.collegeYears ?? 4, 0, 12, 4)),
       privateAnnualCost: money(c.privateAnnualCost, MAX_YEARLY),
       collegeAnnualCost: money(c.collegeAnnualCost, MAX_YEARLY),
     })),
-    customCategories: (state.customCategories ?? []).map((c) => ({
+    customCategories: (Array.isArray(state.customCategories) ? state.customCategories : []).map((c) => ({
       ...c,
       monthlyAmount: money(c.monthlyAmount, MAX_MONTHLY),
     })),
+    // The engine divides contributions by this split's total, so both the
+    // components and the total must be sane or every projection becomes NaN.
+    contributionSplit: {
+      preTaxPct: clamp(state.contributionSplit?.preTaxPct ?? 60, 0, 100, 60),
+      postTaxPct: clamp(state.contributionSplit?.postTaxPct ?? 10, 0, 100, 10),
+      taxablePct: clamp(state.contributionSplit?.taxablePct ?? 30, 0, 100, 30),
+    },
   };
 }
 

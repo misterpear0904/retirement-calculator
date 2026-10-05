@@ -79,18 +79,25 @@ export function App() {
   // Load URL state if present, else restore the autosaved session.
   // Priority: shared link > saved session > defaults.
   useEffect(() => {
-    const urlState = decodeStateFromUrl();
-    if (urlState) {
-      setState((prev) => sanitizeRetirementState({ ...prev, ...urlState }));
-      setToastMessage('Loaded shared scenario from URL hash!');
-      clearScenarioFromUrl();
-      return;
-    }
-    const saved = loadStateFromStorage();
-    if (saved) {
-      setState((prev) => sanitizeRetirementState({ ...prev, ...saved }));
-      setToastMessage('Restored your last session from this browser.');
-    }
+    let cancelled = false;
+    // Async: the share payload may be deflate-compressed.
+    decodeStateFromUrl().then((urlState) => {
+      if (cancelled) return;
+      if (urlState) {
+        setState((prev) => sanitizeRetirementState({ ...prev, ...urlState }));
+        setToastMessage('Loaded shared scenario from URL hash!');
+        clearScenarioFromUrl();
+        return;
+      }
+      const saved = loadStateFromStorage();
+      if (saved) {
+        setState((prev) => sanitizeRetirementState({ ...prev, ...saved }));
+        setToastMessage('Restored your last session from this browser.');
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Keep Tailwind `dark` class in sync (index.html starts with class="dark").

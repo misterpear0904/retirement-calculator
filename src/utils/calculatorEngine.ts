@@ -753,6 +753,7 @@ export function runRetirementSimulation(
     const simOtherMonthly = debts.reduce((acc, d) => acc + d.monthlyPayment, 0);
     let simCumInflation = 1;
     let simFailed = false;
+      let simShortfall = false;
     let simPrevEnd = simPortfolio;
     let simPrevPrevEnd = simPortfolio;
 
@@ -770,6 +771,14 @@ export function runRetirementSimulation(
       );
 
       const trialPortfolioReturn = stockW * sampledStock + bondW * sampledBond + cashW * 0.025;
+
+      // Split the portfolio across buckets by starting weights. Guard the divisor so a
+      // fully-depleted starting portfolio yields zero buckets instead of NaN.
+      const startBucketTotal = Math.max(1e-9, liquidCash + taxableInvestments + preTax401k + postTaxRothHsa);
+      let simCurrentLiquid = (simPortfolio * liquidCash) / startBucketTotal;
+      let simCurrentTaxable = (simPortfolio * taxableInvestments) / startBucketTotal;
+      let simCurrentPreTax = (simPortfolio * preTax401k) / startBucketTotal;
+      let simCurrentPostTax = (simPortfolio * postTaxRothHsa) / startBucketTotal;
 
       // Expenses (same structure as deterministic trajectory)
       let annualLiving = baseMonthlyLifestyle * 12 * simCumInflation;
@@ -843,10 +852,6 @@ export function runRetirementSimulation(
         let simRothConverted = 0;
         let simConversionTaxBase = 0;
         let simRemaining = needed;
-        let simCurrentLiquid = simPortfolio * (liquidCash / (liquidCash + taxableInvestments + preTax401k + postTaxRothHsa));
-        let simCurrentTaxable = simPortfolio * (taxableInvestments / (liquidCash + taxableInvestments + preTax401k + postTaxRothHsa));
-        let simCurrentPreTax = simPortfolio * (preTax401k / (liquidCash + taxableInvestments + preTax401k + postTaxRothHsa));
-        let simCurrentPostTax = simPortfolio * (postTaxRothHsa / (liquidCash + taxableInvestments + preTax401k + postTaxRothHsa));
         
         const drawCashFirst = () => {
           if (simRemaining > 0 && simCurrentLiquid > 0) {
@@ -925,11 +930,12 @@ export function runRetirementSimulation(
           trialOutflow *= 1 - guardrailCut;
         }
 
+        // Anything still unfunded after exhausting every bucket is a shortfall.
+        if (simRemaining > 0.5) simShortfall = true;
+
+        // Settle the year: taxes are paid from cash/taxable on top of the spend.
         const tax = estimateMcTax(simPreTaxDraw + simConversionTaxBase + simTaxableDraw, filing, stateTaxPct);
-        simPortfolio -= simRemaining + tax;
-        
-        // Track portfolio components for next iteration
-        simPortfolio = simCurrentLiquid + simCurrentTaxable + simCurrentPreTax + simCurrentPostTax;
+        simPortfolio = simCurrentLiquid + simCurrentTaxable + simCurrentPreTax + simCurrentPostTax - simRemaining - tax;
       }
 
       simPortfolio *= 1 + trialPortfolioReturn;
@@ -937,7 +943,9 @@ export function runRetirementSimulation(
       simPrevPrevEnd = simPrevEnd;
       simPrevEnd = simPortfolio;
 
-      if (simPortfolio < 0 && isRetired) {
+      // Failure = an unfunded year's spending, or net worth fully exhausted while retired.
+      const simNetWorth = simPortfolio - simMortgageBal - simOtherDebt;
+      if (simShortfall || (simNetWorth <= 0 && isRetired)) {
         simFailed = true;
         break;
       }
@@ -975,14 +983,18 @@ export function runRetirementSimulation(
   // Find early FIRE age if portfolio hits 25x annual retirement expenses
   let fireAgeAchievable: number | null = null;
 
-  const fireProj = mergedProjections.find(
-    (p) => p.totalPortfolio - p.totalDebtBalance >= targetFireNumber && p.age < targetRetirementAge
-  );
+  const fireProj =
+    targetFireNumber > 0
+      ? mergedProjections.find(
+          (p) => p.totalPortfolio - p.totalDebtBalance >= targetFireNumber && p.age < targetRetirementAge
+        )
+      : undefined;
   if (fireProj) {
     fireAgeAchievable = fireProj.age;
   }
 
-  // Safe Withdrawal Rate
+  // Safe Withdrawal Rate: retirement-year spend as a percent of retirement-year net worth.
+  // (25x coverage => 4.00%)
   const safeWithdrawalRatePct =
     targetRetirementNetWorth > 0
       ? Math.round((estimatedRetirementAnnualExpense / targetRetirementNetWorth) * 10000) / 100
