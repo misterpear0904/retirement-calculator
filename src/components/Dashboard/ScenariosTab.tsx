@@ -57,8 +57,8 @@ function computeStateDiff(saved: RetirementState, current: RetirementState): Dif
   const keys = Array.from(new Set([...Object.keys(saved), ...Object.keys(current)])).sort();
 
   for (const key of keys) {
-    const oldVal = (saved as unknown as Record<string, unknown>)[key];
-    const newVal = (current as unknown as Record<string, unknown>)[key];
+    const oldVal = saved[key as keyof RetirementState];
+    const newVal = current[key as keyof RetirementState];
     const label = humanizeKey(key);
 
     if (ARRAY_KEYS.has(key)) {

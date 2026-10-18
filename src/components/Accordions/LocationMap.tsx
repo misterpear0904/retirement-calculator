@@ -1,6 +1,8 @@
 import React, { useState, useMemo, useCallback, useRef } from 'react';
 import { Expand } from 'lucide-react';
 import { feature } from 'topojson-client';
+import type { Topology } from 'topojson-specification';
+import type { GeometryCollection } from 'geojson';
 import landTopology from '../../data/land110m.json';
 import { nearestLocation, resolveLocation } from '../../data/cityLocations';
 import { FullscreenModal } from '../FullscreenModal';
@@ -21,13 +23,14 @@ const clampLat = (lat: number) => Math.min(90, Math.max(-90, lat));
 
 function buildLandPaths(): string[] {
   try {
-    const geo: any = feature(
-      landTopology as any,
-      (landTopology as any).objects.land
-    );
+    const topo = landTopology as unknown as Topology;
+    const landObj = topo.objects.land as unknown as GeometryCollection;
+    const geo = feature(topo, landObj as unknown as Parameters<typeof feature>[1]) as unknown as
+      | GeoJSON.FeatureCollection<GeoJSON.Polygon | GeoJSON.MultiPolygon>
+      | GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>;
     const polys: number[][][][] =
       geo.type === 'FeatureCollection'
-        ? geo.features.flatMap((f: any) =>
+        ? geo.features.flatMap((f) =>
             f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates
           )
         : geo.geometry.type === 'Polygon'

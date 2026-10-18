@@ -25,8 +25,6 @@ export interface HouseholdOptimum {
  * early spouse claims, no delayed credits — per SSA rules).
  */
 export function primaryClaimRows(state: RetirementState): ClaimRow[] {
-  const horizon = Math.max(0, state.lifeExpectancy - 62);
-  void horizon;
   return range62to70().map((age) => {
     const monthly = state.socialSecurityMonthlyAt67 * ssClaimFactor(age);
     const years = Math.max(0, state.lifeExpectancy - age);

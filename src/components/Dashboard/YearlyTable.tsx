@@ -130,7 +130,7 @@ export const YearlyTable: React.FC<Props> = ({ yearlyProjections }) => {
               <th scope="col" className="px-4 py-3.5 text-right whitespace-nowrap">Contributions</th>
               <th scope="col" className="px-4 py-3.5 text-right whitespace-nowrap">Total Expenses</th>
               <th scope="col" className="px-4 py-3.5 text-right whitespace-nowrap">Net Withdrawal</th>
-              <th scope="col" className="px-4 py-3.5 text-right font-bold text-slate-100 whitespace-nowrap">Portfolio Net Worth</th>
+              <th scope="col" className="px-4 py-3.5 text-right font-bold text-slate-100 whitespace-nowrap">Total Portfolio</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800/60 font-mono">

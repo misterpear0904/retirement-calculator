@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { RetirementState, SimulationResult } from '../../types/retirement';
 import { solveRetirementAge, solveSavingsRate } from '../../utils/solver';
 import { InfoTip } from '../InfoTip';
@@ -21,11 +21,13 @@ export function SolverTab({ state, onTriggerToast, onSelectRetirementAge }: Solv
   const [busy, setBusy] = useState<'age' | 'savings' | null>(null);
   const [ageResult, setAgeResult] = useState<number | null | undefined>(undefined);
   const [savingsResult, setSavingsResult] = useState<number | null | undefined>(undefined);
+  const timerRef = useRef<number | null>(null);
+  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
 
   const runSolve = (kind: 'age' | 'savings') => {
     setBusy(kind);
     // Yield a frame so the busy state paints before the synchronous search.
-    window.setTimeout(() => {
+    timerRef.current = window.setTimeout(() => {
       try {
         const trials = 300;
         const result =
@@ -43,6 +45,7 @@ export function SolverTab({ state, onTriggerToast, onSelectRetirementAge }: Solv
         );
       } finally {
         setBusy(null);
+        timerRef.current = null;
       }
     }, 20);
   };

@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { RetirementState, SimulationResult } from './types/retirement';
 import { runRetirementSimulation } from './utils/calculatorEngine';
-import { FINANCIAL_CONSTANTS } from './utils/constants';
 import { decodeStateFromUrl, clearScenarioFromUrl } from './utils/urlEncoder';
 import { saveStateToStorage, loadStateFromStorage } from './utils/storage';
 import { exportStateToFile, importStateFromFile } from './utils/fileExportImport';
@@ -103,12 +102,14 @@ export function App() {
         setState((prev) => sanitizeRetirementState({ ...prev, ...urlState }));
         setToastMessage('Loaded shared scenario from URL hash!');
         clearScenarioFromUrl();
+        dirtyRef.current = true;
         return;
       }
       const saved = loadStateFromStorage();
       if (saved) {
         setState((prev) => sanitizeRetirementState({ ...prev, ...saved }));
         setToastMessage('Restored your last session from this browser.');
+        dirtyRef.current = true;
       }
     });
     return () => {
@@ -188,6 +189,8 @@ export function App() {
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return;
       if (e.key === '?' && !e.altKey && !e.ctrlKey && !e.metaKey) {
         setShowKeyboardHelp((prev) => !prev);
         return;
@@ -208,6 +211,7 @@ export function App() {
   // 500-trial MC runs on a worker with a version token so stale responses are
   // ignored. Falls back to inline computation when workers are unavailable.
   const [mcSuccessRate, setMcSuccessRate] = useState<number | null>(null);
+  const [workerAvailable, setWorkerAvailable] = useState(true);
   const workerRef = React.useRef<Worker | null>(null);
   const versionRef = React.useRef(0);
 
@@ -222,10 +226,13 @@ export function App() {
       };
       worker.onerror = () => {
         workerRef.current = null; // fall back to inline computation
+        setWorkerAvailable(false);
+        versionRef.current = 0;
       };
       workerRef.current = worker;
     } catch {
       workerRef.current = null;
+      setWorkerAvailable(false);
     }
     return () => {
       worker?.terminate();
@@ -246,11 +253,10 @@ export function App() {
     return runRetirementSimulation(debouncedState, { trials: 1 });
   }, [debouncedState]);
 
-  // Fallback path when workers are blocked: full MC inline.
   const simulationResultInline: SimulationResult | null = useMemo(() => {
-    if (workerRef.current) return null;
+    if (workerAvailable && workerRef.current) return null;
     return runRetirementSimulation(debouncedState);
-  }, [debouncedState]);
+  }, [debouncedState, workerAvailable]);
 
   const simulationResult: SimulationResult =
     simulationResultInline ?? {

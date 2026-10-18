@@ -15,27 +15,24 @@ export const FullscreenModal: React.FC<Props> = ({ title, onClose, children }) =
   const panelRef = useRef<HTMLDivElement>(null);
   const openerRef = useRef<HTMLElement | null>(null);
 
+  const onCloseRef = useRef(onClose);
+  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
   useEffect(() => {
-    // Restore focus to whichever element opened the modal.
     openerRef.current = document.activeElement as HTMLElement | null;
-
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') onCloseRef.current();
     };
     document.addEventListener('keydown', onKey);
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-
-    // Move focus into the dialog (close button is the first focusable control).
     const first = panelRef.current?.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
     first?.focus();
-
     return () => {
       document.removeEventListener('keydown', onKey);
       document.body.style.overflow = prev;
       openerRef.current?.focus?.();
     };
-  }, [onClose]);
+  }, []);
 
   const handleTabKey = (e: React.KeyboardEvent) => {
     // Trap Tab: cycle through focusables inside the panel only.

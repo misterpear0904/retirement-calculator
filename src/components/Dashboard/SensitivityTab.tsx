@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Activity, Play } from 'lucide-react';
 import { RetirementState } from '../../types/retirement';
 import { runRetirementSimulation } from '../../utils/calculatorEngine';
@@ -43,7 +43,11 @@ const FACTORS: FactorDef[] = [
     label: 'Stocks ±10 pts',
     apply: (s, dir) => {
       const stock = Math.min(100, Math.max(0, s.stockPct + dir * 10));
-      return { ...s, stockPct: stock, bondPct: Math.max(0, 95 - stock), cashPct: 5 };
+      const remaining = 100 - stock;
+      const bondShare = s.bondPct + s.cashPct > 0 ? s.bondPct / (s.bondPct + s.cashPct) : 0.75;
+      const bond = Math.round(remaining * bondShare);
+      const cash = remaining - bond;
+      return { ...s, stockPct: stock, bondPct: bond, cashPct: cash };
     },
   },
   {
@@ -85,10 +89,12 @@ export const SensitivityTab: React.FC<Props> = ({ state }) => {
   const [baseline, setBaseline] = useState<number | null>(null);
   const [rows, setRows] = useState<RowResult[] | null>(null);
 
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
   const run = () => {
     setRunning(true);
     // Let the loading state paint before the blocking sweep.
-    setTimeout(() => {
+    timerRef.current = setTimeout(() => {
       try {
         const base = runRetirementSimulation(state, { trials: 150 }).successRate;
         const out: RowResult[] = FACTORS.map((f) => {
@@ -101,6 +107,7 @@ export const SensitivityTab: React.FC<Props> = ({ state }) => {
         setRows(out);
       } finally {
         setRunning(false);
+        timerRef.current = null;
       }
     }, 30);
   };

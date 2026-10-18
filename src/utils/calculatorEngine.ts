@@ -463,8 +463,8 @@ export function runRetirementSimulation(
           if (currentMortgageBal <= 0) {
             currentMortgageBal = 0;
             milestones.push({
-              age: age + 1,
-              year: year + 1,
+              age,
+              year,
               title: '🏡 Mortgage Paid Off!',
               description: `Monthly housing payment drops to $0, freeing cash flow.`,
               icon: 'Home',
@@ -1145,6 +1145,11 @@ export function runRetirementSimulation(
         // Anything still unfunded after exhausting every bucket is a shortfall.
         if (simRemaining > 0.5) simShortfall = true;
 
+        // Withhold the pre-tax gross-up margin as cash (mirrors the
+        // deterministic path) so the tax bill can actually be paid.
+        const mcGrossUp = FINANCIAL_CONSTANTS.PRE_TAX_WITHDRAWAL_GROSS_UP;
+        simCurrentLiquid += Math.max(0, simPreTaxDraw - simPreTaxDraw / mcGrossUp);
+
         // Real tax bill (incl. taxable-SS rules and the senior deduction),
         // paid from the withheld gross-up margin (cash), then taxable, then a
         // final pre-tax top-up — mirroring the deterministic settlement.
@@ -1215,9 +1220,12 @@ export function runRetirementSimulation(
   let fireAgeAchievable: number | null = null;
 
   const fireProj =
-    targetFireNumber > 0
+    targetFireNumber > 0 && expectedPortfolioReturn > -1
       ? mergedProjections.find(
-          (p) => p.totalPortfolio - p.totalDebtBalance >= targetFireNumber && p.age < targetRetirementAge
+          (p) =>
+            p.age < targetRetirementAge &&
+            p.totalPortfolio - p.totalDebtBalance >=
+              targetFireNumber / Math.pow(1 + expectedPortfolioReturn, targetRetirementAge - p.age)
         )
       : undefined;
   if (fireProj) {

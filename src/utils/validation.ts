@@ -130,23 +130,34 @@ export function sanitizeRetirementState(state: RetirementState): RetirementState
     // Arrays arrive from localStorage / share links / imported files, so the
     // element type must be verified before mapping — `?? []` does not catch a
     // string or number, and mapping one throws inside a React state updater.
-    debts: (Array.isArray(state.debts) ? state.debts : []).map((d) => ({
-      ...d,
-      balance: money(d.balance, MAX_BALANCE),
-      monthlyPayment: money(d.monthlyPayment, MAX_MONTHLY),
-      interestRate: clamp(d.interestRate ?? 0, 0, 100, 0),
-    })),
-    children: (Array.isArray(state.children) ? state.children : []).map((c) => ({
-      ...c,
-      currentAge: Math.round(clamp(c.currentAge, 0, VALIDATION_LIMITS.MAX_AGE, 0)),
-      collegeYears: Math.round(clamp(c.collegeYears ?? 4, 0, 12, 4)),
-      privateAnnualCost: money(c.privateAnnualCost, MAX_YEARLY),
-      collegeAnnualCost: money(c.collegeAnnualCost, MAX_YEARLY),
-    })),
-    customCategories: (Array.isArray(state.customCategories) ? state.customCategories : []).map((c) => ({
-      ...c,
-      monthlyAmount: money(c.monthlyAmount, MAX_MONTHLY),
-    })),
+    debts: (Array.isArray(state.debts) ? state.debts : [])
+      .slice(0, 50)
+      .map((d) => ({
+        id: String(d?.id ?? ''),
+        name: String(d?.name ?? ''),
+        balance: money(d?.balance, MAX_BALANCE),
+        monthlyPayment: money(d?.monthlyPayment, MAX_MONTHLY),
+        interestRate: clamp(d?.interestRate ?? 0, 0, 100, 0),
+      })),
+    children: (Array.isArray(state.children) ? state.children : [])
+      .slice(0, 20)
+      .map((c) => ({
+        id: String(c?.id ?? ''),
+        name: String(c?.name ?? ''),
+        currentAge: Math.round(clamp(c?.currentAge, 0, VALIDATION_LIMITS.MAX_AGE, 0)),
+        schoolType: oneOf(c?.schoolType, ['public', 'private_k12'] as const, 'public'),
+        privateAnnualCost: money(c?.privateAnnualCost, MAX_YEARLY),
+        collegeTier: oneOf(c?.collegeTier, ['in_state', 'private', 'none'] as const, 'in_state'),
+        collegeYears: Math.round(clamp(c?.collegeYears ?? 4, 0, 12, 4)),
+        collegeAnnualCost: money(c?.collegeAnnualCost, MAX_YEARLY),
+      })),
+    customCategories: (Array.isArray(state.customCategories) ? state.customCategories : [])
+      .slice(0, 50)
+      .map((c) => ({
+        id: String(c?.id ?? ''),
+        name: String(c?.name ?? ''),
+        monthlyAmount: money(c?.monthlyAmount, MAX_MONTHLY),
+      })),
     // The engine divides contributions by this split's total, so both the
     // components and the total must be sane or every projection becomes NaN.
     contributionSplit: {

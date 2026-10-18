@@ -40,10 +40,30 @@ async function deflate(text: string): Promise<Uint8Array> {
 }
 
 async function inflate(bytes: Uint8Array): Promise<string> {
+  const MAX_OUTPUT = 256 * 1024; // guard against decompression bombs
   const stream = new Blob([bytes as BlobPart])
     .stream()
     .pipeThrough(new DecompressionStream('deflate-raw' as CompressionFormat));
-  return new Response(stream).text();
+  const reader = stream.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > MAX_OUTPUT) {
+      reader.cancel();
+      throw new Error('Decompressed payload exceeds the size limit.');
+    }
+    chunks.push(value);
+  }
+  const out = new Uint8Array(total);
+  let off = 0;
+  for (const c of chunks) {
+    out.set(c, off);
+    off += c.byteLength;
+  }
+  return new TextDecoder().decode(out);
 }
 
 /**
@@ -90,6 +110,7 @@ export async function decodeStateFromUrl(): Promise<Partial<RetirementState> | n
 
     const base64 = hash.split(`${SCENARIO_KEY}=`)[1]?.split('&')[0];
     if (!base64) return null;
+    if (base64.length > 200000) return null; // guard against oversized payloads
 
     const jsonStr = base64.startsWith(COMPRESSED_PREFIX)
       ? await inflate(base64UrlToBytes(base64.slice(COMPRESSED_PREFIX.length)))
