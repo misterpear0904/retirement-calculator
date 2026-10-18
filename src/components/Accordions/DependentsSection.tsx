@@ -109,7 +109,7 @@ export const DependentsSection: React.FC<Props> = ({
               >
                 <div className="flex items-center justify-between border-b border-slate-700/60 pb-3">
                   <div className="flex items-center gap-2">
-                    <Baby className="w-4.5 h-4.5 text-blue-400 shrink-0" />
+                    <Baby className="w-4 h-4 text-blue-400 shrink-0" />
                     <input
                       type="text"
                       value={child.name}
@@ -135,7 +135,11 @@ export const DependentsSection: React.FC<Props> = ({
                       min={0}
                       max={25}
                       value={child.currentAge}
-                      onChange={(e) => handleUpdateChild(child.id, 'currentAge', parseInt(e.target.value) || 0)}
+                      onChange={(e) => {
+                        const v = parseInt(e.target.value, 10);
+                        if (Number.isFinite(v)) handleUpdateChild(child.id, 'currentAge', v);
+                      }}
+                      aria-label={`Current age for ${child.name || 'child'}`}
                       className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 font-semibold focus:border-blue-500 focus:outline-none"
                     />
                   </div>
@@ -185,7 +189,11 @@ export const DependentsSection: React.FC<Props> = ({
                         type="number"
                         step={1000}
                         value={child.privateAnnualCost}
-                        onChange={(e) => handleUpdateChild(child.id, 'privateAnnualCost', parseFloat(e.target.value) || 0)}
+                        onChange={(e) => {
+                          const v = parseFloat(e.target.value);
+                          if (Number.isFinite(v)) handleUpdateChild(child.id, 'privateAnnualCost', Math.max(0, v));
+                        }}
+                        aria-label={`Private K-12 annual cost for ${child.name || 'child'}`}
                         className="w-28 bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-slate-100 font-bold"
                       />
                       <span className="text-slate-400">/yr</span>
@@ -204,7 +212,11 @@ export const DependentsSection: React.FC<Props> = ({
                         type="number"
                         step={2500}
                         value={child.collegeAnnualCost}
-                        onChange={(e) => handleUpdateChild(child.id, 'collegeAnnualCost', parseFloat(e.target.value) || 0)}
+                        onChange={(e) => {
+                          const v = parseFloat(e.target.value);
+                          if (Number.isFinite(v)) handleUpdateChild(child.id, 'collegeAnnualCost', Math.max(0, v));
+                        }}
+                        aria-label={`College annual cost for ${child.name || 'child'}`}
                         className="w-32 bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-slate-100 font-bold text-right"
                       />
                       <span className="text-slate-400">/yr</span>

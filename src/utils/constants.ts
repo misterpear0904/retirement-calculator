@@ -19,10 +19,6 @@ export const FINANCIAL_CONSTANTS = {
     minimalist: 0.8,
     luxury: 1.6,
   } as const,
-  /** Social Security adjustments vs full retirement age 67. */
-  SS_EARLY_REDUCTION_PER_YEAR: 0.0667,
-  SS_LATE_BONUS_PER_YEAR: 0.08,
-  SS_LATE_BONUS_MAX_YEARS: 3,
 } as const;
 
 export const VALIDATION_LIMITS = {

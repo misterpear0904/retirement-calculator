@@ -44,7 +44,11 @@ export const IncomeGrowthSection: React.FC<Props> = ({
               min={0}
               step={5000}
               value={state.currentAnnualIncome}
-              onChange={(e) => onChange({ currentAnnualIncome: Math.max(0, parseFloat(e.target.value) || 0) })}
+              onChange={(e) => {
+                const v = parseFloat(e.target.value);
+                if (Number.isFinite(v)) onChange({ currentAnnualIncome: Math.max(0, v) });
+              }}
+              aria-label="Current household gross annual income in dollars"
               className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-9 pr-3 py-2 text-sm font-bold text-slate-100 focus:border-blue-500 focus:outline-none transition-colors"
             />
           </div>
@@ -87,7 +91,13 @@ export const IncomeGrowthSection: React.FC<Props> = ({
                   max={12}
                   step={0.5}
                   value={state.customIncomeGrowthRate}
-                  onChange={(e) => onChange({ customIncomeGrowthRate: parseFloat(e.target.value) })}
+                  aria-label="Custom annual real income growth percentage"
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    if (raw === '') return;
+                    const v = parseFloat(raw);
+                    if (Number.isFinite(v)) onChange({ customIncomeGrowthRate: v });
+                  }}
                   className="w-full cursor-pointer"
                 />
               </div>
@@ -122,7 +132,13 @@ export const IncomeGrowthSection: React.FC<Props> = ({
                 min={0}
                 max={75}
                 value={state.savingsRatePct}
-                onChange={(e) => onChange({ savingsRatePct: parseInt(e.target.value) })}
+                aria-label="Savings rate percentage of income"
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  if (raw === '') return;
+                  const v = parseInt(raw);
+                  if (Number.isFinite(v)) onChange({ savingsRatePct: v });
+                }}
                 className="w-full cursor-pointer"
               />
               <p className="text-xs text-slate-400 leading-relaxed">
@@ -139,7 +155,11 @@ export const IncomeGrowthSection: React.FC<Props> = ({
                   min={0}
                   step={1000}
                   value={state.fixedAnnualContribution}
-                  onChange={(e) => onChange({ fixedAnnualContribution: Math.max(0, parseFloat(e.target.value) || 0) })}
+                  onChange={(e) => {
+                    const v = parseFloat(e.target.value);
+                    if (Number.isFinite(v)) onChange({ fixedAnnualContribution: Math.max(0, v) });
+                  }}
+                  aria-label="Fixed annual contribution in dollars"
                   className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-9 pr-3 py-2 text-sm font-bold text-slate-100 focus:border-blue-500 focus:outline-none transition-colors"
                 />
               </div>

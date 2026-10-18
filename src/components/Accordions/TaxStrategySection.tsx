@@ -113,7 +113,13 @@ export const TaxStrategySection: React.FC<Props> = ({ state, onChange, isOpen, o
                 max={50}
                 step={5}
                 value={state.guardrailCutPct}
-                onChange={(e) => onChange({ guardrailCutPct: parseInt(e.target.value) })}
+                aria-label="Spending cut after a down year"
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  if (raw === '') return;
+                  const v = parseInt(raw);
+                  if (Number.isFinite(v)) onChange({ guardrailCutPct: v });
+                }}
                 className="w-full cursor-pointer"
               />
             </div>
@@ -160,7 +166,11 @@ export const TaxStrategySection: React.FC<Props> = ({ state, onChange, isOpen, o
                   type="number"
                   step={1000}
                   value={state.rothConversionAnnual}
-                  onChange={(e) => onChange({ rothConversionAnnual: parseFloat(e.target.value) || 0 })}
+                  onChange={(e) => {
+                    const v = parseFloat(e.target.value);
+                    if (Number.isFinite(v)) onChange({ rothConversionAnnual: Math.max(0, v) });
+                  }}
+                  aria-label="Roth conversion amount per year in dollars"
                   className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 font-bold text-slate-100 focus:border-purple-500 focus:outline-none"
                 />
               </div>
@@ -175,12 +185,17 @@ export const TaxStrategySection: React.FC<Props> = ({ state, onChange, isOpen, o
                     min={50}
                     max={85}
                     value={state.rothConversionStartAge}
-                    onChange={(e) =>
+                    aria-label="Roth conversions from age"
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      if (raw === '') return;
+                      const v = parseInt(raw);
+                      if (!Number.isFinite(v)) return;
                       onChange({
-                        rothConversionStartAge: parseInt(e.target.value),
-                        rothConversionEndAge: Math.max(parseInt(e.target.value), state.rothConversionEndAge),
-                      })
-                    }
+                        rothConversionStartAge: v,
+                        rothConversionEndAge: Math.max(v, state.rothConversionEndAge),
+                      });
+                    }}
                     className="w-full cursor-pointer"
                   />
                 </div>
@@ -194,12 +209,17 @@ export const TaxStrategySection: React.FC<Props> = ({ state, onChange, isOpen, o
                     min={50}
                     max={85}
                     value={state.rothConversionEndAge}
-                    onChange={(e) =>
+                    aria-label="Roth conversions through age"
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      if (raw === '') return;
+                      const v = parseInt(raw);
+                      if (!Number.isFinite(v)) return;
                       onChange({
-                        rothConversionEndAge: parseInt(e.target.value),
-                        rothConversionStartAge: Math.min(parseInt(e.target.value), state.rothConversionStartAge),
-                      })
-                    }
+                        rothConversionEndAge: v,
+                        rothConversionStartAge: Math.min(v, state.rothConversionStartAge),
+                      });
+                    }}
                     className="w-full cursor-pointer"
                   />
                 </div>

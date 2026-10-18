@@ -65,7 +65,7 @@ export const MilestoneTimeline: React.FC<Props> = ({ yearlyProjections, onSelect
   return (
     <div className="glass-panel p-6 sm:p-7 rounded-2xl space-y-5">
       <h3 className="text-base sm:text-lg font-bold dark:text-slate-100 text-slate-900 flex items-center gap-2">
-        <Calendar className="w-4.5 h-4.5 text-blue-400 shrink-0" /> Dynamic Milestone Event Timeline
+        <Calendar className="w-4 h-4 text-blue-400 shrink-0" /> Dynamic Milestone Event Timeline
       </h3>
 
       <div className="relative border-l border-slate-800 ml-4 pl-6 space-y-5">

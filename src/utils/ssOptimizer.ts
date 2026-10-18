@@ -1,5 +1,5 @@
 import { RetirementState } from '../types/retirement';
-import { ssClaimFactor } from './taxEngine';
+import { ssClaimFactor, spousalClaimFactor } from './taxEngine';
 
 export interface ClaimRow {
   claimAge: number;
@@ -44,16 +44,15 @@ function range62to70(): number[] {
   return [62, 63, 64, 65, 66, 67, 68, 69, 70];
 }
 
-/** Spousal monthly benefit at a given spouse claim age (simplified SSA rules). */
+/** Spousal monthly benefit at a given spouse claim age (exact SSA formula). */
 export function spousalMonthly(
   primaryMonthlyAt67: number,
   spouseClaimAge: number
 ): number {
-  const base = 0.5 * primaryMonthlyAt67;
-  if (spouseClaimAge >= 67) return base; // no delayed credits on spousal
-  // Reduced ~25/36% per month early (simplified to ~6.5%/yr, floored at 65% at 62).
-  const factor = Math.max(0.65, 1 - 0.065 * (67 - spouseClaimAge));
-  return base * factor;
+  // 50% of the primary's PIA at FRA, reduced 25/36 of 1% per month for the
+  // first 36 months of early claiming and 5/12 of 1% beyond — no delayed
+  // credits on the spousal portion. Shares the engine's exact factor.
+  return 0.5 * primaryMonthlyAt67 * spousalClaimFactor(spouseClaimAge);
 }
 
 export function optimizeHousehold(state: RetirementState): {

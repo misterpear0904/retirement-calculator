@@ -113,6 +113,8 @@ export interface RetirementState {
   healthcareMonthlyAt65: number;
   healthcareInflationPct: number;
   healthcareStartAge: number;
+  /** Add Medicare Part B + IRMAA premiums (2026 schedule) from age 65. */
+  includeMedicarePremiums: boolean;
 
   // Section H: Tax strategy & decumulation
   taxFilingStatus: TaxFilingStatus;
@@ -152,6 +154,8 @@ export interface YearlyProjection {
   year: number;
   age: number;
   isRetired: boolean;
+  /** Cumulative inflation factor from today to this year (1.0 at start). */
+  inflationFactor: number;
   
   // Percentiles for Net Worth
   netWorth50: number; // Target case (50th percentile)
@@ -191,6 +195,14 @@ export interface SimulationResult {
   /** Net worth at the end of the plan horizon (lifeExpectancy). */
   finalNetWorth: number;
   fireAgeAchievable: number | null;
+  /**
+   * Earliest age where the portfolio could reach the FIRE number by the
+   * target retirement age even with no further contributions ("Coast FIRE").
+   * Null when never reached before retirement.
+   */
+  coastFireAge: number | null;
+  /** Annual retirement spending in the retirement year (inflated, nominal $). */
+  retirementAnnualExpense: number;
   safeWithdrawalRatePct: number;
   monthlyRetirementSpending: number;
   baselineLocationName: string;

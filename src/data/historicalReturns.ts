@@ -98,10 +98,13 @@ export const HISTORICAL_PRESETS: HistoricalSequencePreset[] = [
   }
 ];
 
-// Long-Term Historical Asset Class Parameters (1928 - 2024) for Stochastic Monte Carlo
+// Long-Term Historical Asset Class Parameters (1928 - 2024) for Stochastic Monte Carlo.
+// Standard deviations track long-run US history more closely than before:
+// large-cap stocks σ≈19.5% (was 16.5 — understated tail risk), 10-yr
+// Treasuries σ≈7.5%, CPI σ≈4.5% (was 2.2 — far too tame).
 export const MONTE_CARLO_STATS = {
-  stock: { mean: 0.098, stdev: 0.165 },
-  bond: { mean: 0.048, stdev: 0.065 },
+  stock: { mean: 0.098, stdev: 0.195 },
+  bond: { mean: 0.048, stdev: 0.075 },
   cash: { mean: 0.025, stdev: 0.018 },
-  inflation: { mean: 0.031, stdev: 0.022 },
+  inflation: { mean: 0.031, stdev: 0.045 },
 };

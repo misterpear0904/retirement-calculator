@@ -121,7 +121,13 @@ export const LocationColSection: React.FC<Props> = ({
                 max={50}
                 step={5}
                 value={state.colAdjustmentPct}
-                onChange={(e) => onChange({ colAdjustmentPct: parseInt(e.target.value) })}
+                aria-label="Local cost-of-living adjustment"
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  if (raw === '') return;
+                  const v = parseInt(raw);
+                  if (Number.isFinite(v)) onChange({ colAdjustmentPct: v });
+                }}
                 onKeyDown={(e) => {
                   if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
                     e.preventDefault();
@@ -163,7 +169,11 @@ export const LocationColSection: React.FC<Props> = ({
                   type="number"
                   step={100}
                   value={state.socialSecurityMonthlyAt67}
-                  onChange={(e) => onChange({ socialSecurityMonthlyAt67: parseFloat(e.target.value) || 0 })}
+                  onChange={(e) => {
+                    const v = parseFloat(e.target.value);
+                    if (Number.isFinite(v)) onChange({ socialSecurityMonthlyAt67: Math.max(0, v) });
+                  }}
+                  aria-label="Estimated monthly Social Security benefit at 67 in dollars"
                   className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 font-bold text-slate-100 focus:border-emerald-500 focus:outline-none"
                 />
               </div>
@@ -178,7 +188,13 @@ export const LocationColSection: React.FC<Props> = ({
                   min={62}
                   max={70}
                   value={state.socialSecurityStartAge}
-                  onChange={(e) => onChange({ socialSecurityStartAge: parseInt(e.target.value) })}
+                  aria-label="Social Security claiming start age"
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    if (raw === '') return;
+                    const v = parseInt(raw);
+                    if (Number.isFinite(v)) onChange({ socialSecurityStartAge: v });
+                  }}
                   className="w-full cursor-pointer"
                 />
                 <div className="flex justify-between text-[10px] text-slate-500 font-medium pt-0.5">
@@ -268,7 +284,11 @@ export const LocationColSection: React.FC<Props> = ({
                   type="number"
                   step={100}
                   value={state.pensionMonthly}
-                  onChange={(e) => onChange({ pensionMonthly: parseFloat(e.target.value) || 0 })}
+                  onChange={(e) => {
+                    const v = parseFloat(e.target.value);
+                    if (Number.isFinite(v)) onChange({ pensionMonthly: Math.max(0, v) });
+                  }}
+                  aria-label="Estimated monthly pension in dollars"
                   className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 font-bold text-slate-100 focus:border-purple-500 focus:outline-none"
                 />
               </div>
@@ -283,7 +303,13 @@ export const LocationColSection: React.FC<Props> = ({
                   min={50}
                   max={75}
                   value={state.pensionStartAge}
-                  onChange={(e) => onChange({ pensionStartAge: parseInt(e.target.value) })}
+                  aria-label="Pension start age"
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    if (raw === '') return;
+                    const v = parseInt(raw);
+                    if (Number.isFinite(v)) onChange({ pensionStartAge: v });
+                  }}
                   className="w-full cursor-pointer"
                 />
               </div>

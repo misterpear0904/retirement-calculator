@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Activity, Play } from 'lucide-react';
 import { RetirementState } from '../../types/retirement';
 import { runRetirementSimulation } from '../../utils/calculatorEngine';
+import { VALIDATION_LIMITS } from '../../utils/constants';
 import { InfoTip } from '../InfoTip';
 
 interface Props {
@@ -18,13 +19,22 @@ const FACTORS: FactorDef[] = [
   {
     id: 'savings',
     label: 'Savings rate ±5 pts',
-    apply: (s, dir) => ({ ...s, savingsRatePct: Math.min(75, Math.max(0, s.savingsRatePct + dir * 5)) }),
+    apply: (s, dir) => ({
+      ...s,
+      savingsRatePct: Math.min(
+        VALIDATION_LIMITS.MAX_SAVINGS_RATE_PCT,
+        Math.max(VALIDATION_LIMITS.MIN_SAVINGS_RATE_PCT, s.savingsRatePct + dir * 5)
+      ),
+    }),
   },
   {
     id: 'retireAge',
     label: 'Retire age ±2 yrs',
     apply: (s, dir) => {
-      const t = Math.min(85, Math.max(s.currentAge + 1, s.targetRetirementAge + dir * 2));
+      const t = Math.min(
+        VALIDATION_LIMITS.MAX_RETIREMENT_AGE,
+        Math.max(s.currentAge + VALIDATION_LIMITS.MIN_RETIREMENT_AGE_OFFSET, s.targetRetirementAge + dir * 2)
+      );
       return { ...s, targetRetirementAge: t, lifeExpectancy: Math.max(t + 1, s.lifeExpectancy) };
     },
   },
@@ -53,7 +63,13 @@ const FACTORS: FactorDef[] = [
   {
     id: 'col',
     label: 'COL adjustment ±10 pts',
-    apply: (s, dir) => ({ ...s, colAdjustmentPct: Math.min(50, Math.max(-50, s.colAdjustmentPct + dir * 10)) }),
+    apply: (s, dir) => ({
+      ...s,
+      colAdjustmentPct: Math.min(
+        VALIDATION_LIMITS.MAX_COL_ADJUSTMENT_PCT,
+        Math.max(VALIDATION_LIMITS.MIN_COL_ADJUSTMENT_PCT, s.colAdjustmentPct + dir * 10)
+      ),
+    }),
   },
 ];
 
@@ -96,7 +112,7 @@ export const SensitivityTab: React.FC<Props> = ({ state }) => {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h3 className="text-base sm:text-lg font-bold dark:text-slate-100 text-slate-900 flex items-center gap-2">
-            <Activity className="w-4.5 h-4.5 text-amber-400 shrink-0" /> Sensitivity Analysis
+            <Activity className="w-4 h-4 text-amber-400 shrink-0" /> Sensitivity Analysis
             <InfoTip term="sensitivity" />
           </h3>
           <p className="text-xs dark:text-slate-400 text-slate-500 mt-1 leading-relaxed">

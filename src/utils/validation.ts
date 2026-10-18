@@ -121,6 +121,7 @@ export function sanitizeRetirementState(state: RetirementState): RetirementState
     healthcareMonthlyAt65: money(state.healthcareMonthlyAt65 ?? 0, MAX_MONTHLY, 0),
     healthcareInflationPct: clamp(state.healthcareInflationPct ?? 5.5, 0, 50, 5.5),
     healthcareStartAge: Math.round(clamp(state.healthcareStartAge ?? 65, 40, 90, 65)),
+    includeMedicarePremiums: state.includeMedicarePremiums !== false,
     customInflationRate: clamp(state.customInflationRate ?? 3, -10, 50, 3),
     customIncomeGrowthRate: clamp(state.customIncomeGrowthRate ?? 2, -20, 50, 2),
     customStockReturn: clamp(state.customStockReturn ?? 9.5, -50, 100, 9.5),
@@ -186,6 +187,30 @@ export function validateRetirementState(state: RetirementState): ValidationIssue
     issues.push({
       field: 'lifeExpectancy',
       message: 'Life expectancy must be after target retirement age.',
+    });
+  }
+  // Spending beyond all means: monthly outflow (rent/mortgage included) with
+  // no income, no savings rate and zero assets is unsalvageable.
+  const monthlySpend =
+    (state.essentialExpensesMonthly ?? 0) +
+    (state.discretionaryExpensesMonthly ?? 0) +
+    (Array.isArray(state.customCategories)
+      ? state.customCategories.reduce((a, c) => a + (c.monthlyAmount ?? 0), 0)
+      : 0);
+  const totalAssets =
+    (state.liquidCash ?? 0) +
+    (state.taxableInvestments ?? 0) +
+    (state.preTax401k ?? 0) +
+    (state.postTaxRothHsa ?? 0);
+  if (
+    monthlySpend > 0 &&
+    (state.currentAnnualIncome ?? 0) < monthlySpend * 12 &&
+    (state.savingsRatePct ?? 0) <= 0 &&
+    totalAssets <= 0
+  ) {
+    issues.push({
+      field: 'expenses',
+      message: `Monthly spending (~$${Math.round(monthlySpend).toLocaleString()}) exceeds income and there are no assets or savings to fund it.`,
     });
   }
   return issues;

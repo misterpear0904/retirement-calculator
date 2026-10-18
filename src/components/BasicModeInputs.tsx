@@ -95,7 +95,10 @@ export const BasicModeInputs: React.FC<Props> = ({ state, onChange, onSwitchToAd
               max={80}
               value={state.currentAge}
               onChange={(e) => {
-                const val = parseInt(e.target.value);
+                const raw = e.target.value;
+                if (raw === '') return;
+                const val = parseInt(raw);
+                if (!Number.isFinite(val)) return;
                 onChange({
                   currentAge: val,
                   targetRetirementAge: Math.max(val + 1, state.targetRetirementAge),
@@ -121,7 +124,10 @@ export const BasicModeInputs: React.FC<Props> = ({ state, onChange, onSwitchToAd
               max={85}
               value={state.targetRetirementAge}
               onChange={(e) => {
-                const val = parseInt(e.target.value);
+                const raw = e.target.value;
+                if (raw === '') return;
+                const val = parseInt(raw);
+                if (!Number.isFinite(val)) return;
                 onChange({
                   targetRetirementAge: val,
                   lifeExpectancy: Math.max(val + 5, state.lifeExpectancy),
@@ -146,7 +152,12 @@ export const BasicModeInputs: React.FC<Props> = ({ state, onChange, onSwitchToAd
               min={Math.max(60, state.targetRetirementAge + 1)}
               max={110}
               value={state.lifeExpectancy}
-              onChange={(e) => onChange({ lifeExpectancy: parseInt(e.target.value) })}
+              onChange={(e) => {
+                const raw = e.target.value;
+                if (raw === '') return;
+                const val = parseInt(raw);
+                if (Number.isFinite(val)) onChange({ lifeExpectancy: val });
+              }}
               className="w-full cursor-pointer"
             />
           </div>
@@ -167,7 +178,11 @@ export const BasicModeInputs: React.FC<Props> = ({ state, onChange, onSwitchToAd
                 min={0}
                 step={1000}
                 value={state.currentAnnualIncome}
-                onChange={(e) => onChange({ currentAnnualIncome: Math.max(0, parseFloat(e.target.value) || 0) })}
+                onChange={(e) => {
+                  const v = parseFloat(e.target.value);
+                  // Ignore empty / mid-typing input; keep the previous value.
+                  if (Number.isFinite(v)) onChange({ currentAnnualIncome: Math.max(0, v) });
+                }}
                 className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-7 pr-3 py-2 text-sm font-bold text-slate-100 focus:border-blue-500 focus:outline-none"
               />
             </div>
@@ -188,7 +203,12 @@ export const BasicModeInputs: React.FC<Props> = ({ state, onChange, onSwitchToAd
               min={0}
               max={75}
               value={state.savingsRatePct}
-              onChange={(e) => onChange({ savingsRatePct: parseInt(e.target.value), useFixedContribution: false })}
+              onChange={(e) => {
+                const raw = e.target.value;
+                if (raw === '') return;
+                const val = parseInt(raw);
+                if (Number.isFinite(val)) onChange({ savingsRatePct: val, useFixedContribution: false });
+              }}
               className="w-full cursor-pointer"
             />
             <p className="text-[11px] text-slate-500">
@@ -212,9 +232,10 @@ export const BasicModeInputs: React.FC<Props> = ({ state, onChange, onSwitchToAd
                 min={0}
                 step={1000}
                 value={totalSavings}
-                onChange={(e) =>
-                  onChange(distributeTotalSavings(state, Math.max(0, parseFloat(e.target.value) || 0)))
-                }
+                onChange={(e) => {
+                  const v = parseFloat(e.target.value);
+                  if (Number.isFinite(v)) onChange(distributeTotalSavings(state, Math.max(0, v)));
+                }}
                 className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-7 pr-3 py-2 text-sm font-bold text-slate-100 focus:border-cyan-500 focus:outline-none"
               />
             </div>
@@ -238,13 +259,15 @@ export const BasicModeInputs: React.FC<Props> = ({ state, onChange, onSwitchToAd
                 step={100}
                 value={monthlySpending}
                 onChange={(e) => {
-                  const v = Math.max(0, parseFloat(e.target.value) || 0);
-                  onChange({
-                    essentialExpensesMonthly: v,
-                    discretionaryExpensesMonthly: 0,
-                    lifestyleTier: 'moderate',
-                    customCategories: [],
-                  });
+                  const v = parseFloat(e.target.value);
+                  if (Number.isFinite(v) && v !== monthlySpending) {
+                    onChange({
+                      essentialExpensesMonthly: Math.max(0, v),
+                      discretionaryExpensesMonthly: 0,
+                      lifestyleTier: 'moderate',
+                      customCategories: [],
+                    });
+                  }
                 }}
                 className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-7 pr-3 py-2 text-sm font-bold text-slate-100 focus:border-amber-500 focus:outline-none"
               />
@@ -269,7 +292,10 @@ export const BasicModeInputs: React.FC<Props> = ({ state, onChange, onSwitchToAd
               max={95}
               value={state.stockPct}
               onChange={(e) => {
-                const stock = parseInt(e.target.value);
+                const raw = e.target.value;
+                if (raw === '') return;
+                const stock = parseInt(raw);
+                if (!Number.isFinite(stock)) return;
                 onChange({ stockPct: stock, bondPct: Math.max(0, 95 - stock), cashPct: 5 });
               }}
               onKeyDown={(e) => {

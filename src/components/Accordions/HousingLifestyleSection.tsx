@@ -1,5 +1,5 @@
-import React from 'react';
-import { Home, ShoppingBag, Plus, Trash2, HeartPulse } from 'lucide-react';
+import React, { useState } from 'react';
+import { Home, ShoppingBag, Plus, Trash2, HeartPulse, Waves, ChevronDown } from 'lucide-react';
 import { RetirementState, HousingType, LifestyleTier, CustomExpenseCategory } from '../../types/retirement';
 import { AccordionWrapper } from './AccordionWrapper';
 import { InfoTip } from '../InfoTip';
@@ -11,12 +11,25 @@ interface Props {
   onToggle: () => void;
 }
 
+/** Guard for number inputs: empty / mid-typing strings must never reach state as NaN. */
+function parseNumberInput(raw: string, fallback: number): number {
+  if (raw === '') return fallback;
+  const v = parseFloat(raw);
+  return Number.isFinite(v) ? v : fallback;
+}
+
 export const HousingLifestyleSection: React.FC<Props> = ({
   state,
   onChange,
   isOpen,
   onToggle,
 }) => {
+  const [smileOpen, setSmileOpen] = useState(false);
+
+  const smile = state.spendingSmile;
+  // Engine treats undefined includeMedicarePremiums as ON (toggle renders on until explicitly disabled).
+  const medicareOn = state.includeMedicarePremiums !== false;
+
   const handleAddCustomCategory = () => {
     const newCat: CustomExpenseCategory = {
       id: `cat_${Date.now()}`,
@@ -86,7 +99,9 @@ export const HousingLifestyleSection: React.FC<Props> = ({
                   type="number"
                   step={10000}
                   value={state.mortgageBalance}
-                  onChange={(e) => onChange({ mortgageBalance: parseFloat(e.target.value) || 0 })}
+                  onChange={(e) =>
+                    onChange({ mortgageBalance: parseNumberInput(e.target.value, state.mortgageBalance) })}
+                  aria-label="Mortgage balance in dollars"
                   className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 font-bold text-slate-100 focus:border-blue-500 focus:outline-none"
                 />
               </div>
@@ -97,7 +112,9 @@ export const HousingLifestyleSection: React.FC<Props> = ({
                   type="number"
                   step={100}
                   value={state.mortgageMonthly}
-                  onChange={(e) => onChange({ mortgageMonthly: parseFloat(e.target.value) || 0 })}
+                  onChange={(e) =>
+                    onChange({ mortgageMonthly: parseNumberInput(e.target.value, state.mortgageMonthly) })}
+                  aria-label="Monthly mortgage payment"
                   className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 font-bold text-slate-100 focus:border-blue-500 focus:outline-none"
                 />
               </div>
@@ -109,7 +126,9 @@ export const HousingLifestyleSection: React.FC<Props> = ({
                   min={1}
                   max={30}
                   value={state.mortgageRemainingYears}
-                  onChange={(e) => onChange({ mortgageRemainingYears: parseInt(e.target.value) || 1 })}
+                  onChange={(e) =>
+                    onChange({ mortgageRemainingYears: Math.max(1, Math.round(parseNumberInput(e.target.value, state.mortgageRemainingYears))) })}
+                  aria-label="Mortgage remaining term in years"
                   className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 font-bold text-slate-100 focus:border-blue-500 focus:outline-none"
                 />
               </div>
@@ -122,7 +141,9 @@ export const HousingLifestyleSection: React.FC<Props> = ({
                   type="number"
                   step={100}
                   value={state.rentMonthly}
-                  onChange={(e) => onChange({ rentMonthly: parseFloat(e.target.value) || 0 })}
+                  onChange={(e) =>
+                    onChange({ rentMonthly: parseNumberInput(e.target.value, state.rentMonthly) })}
+                  aria-label="Monthly rent in dollars"
                   className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 font-bold text-slate-100 focus:border-blue-500 focus:outline-none"
                 />
               </div>
@@ -133,7 +154,9 @@ export const HousingLifestyleSection: React.FC<Props> = ({
                   type="number"
                   step={0.5}
                   value={state.rentInflationPct}
-                  onChange={(e) => onChange({ rentInflationPct: parseFloat(e.target.value) || 0 })}
+                  onChange={(e) =>
+                    onChange({ rentInflationPct: parseNumberInput(e.target.value, state.rentInflationPct) })}
+                  aria-label="Annual rent inflation percentage"
                   className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 font-bold text-slate-100 focus:border-blue-500 focus:outline-none"
                 />
               </div>
@@ -177,7 +200,9 @@ export const HousingLifestyleSection: React.FC<Props> = ({
                 type="number"
                 step={250}
                 value={state.essentialExpensesMonthly}
-                onChange={(e) => onChange({ essentialExpensesMonthly: parseFloat(e.target.value) || 0 })}
+                onChange={(e) =>
+                  onChange({ essentialExpensesMonthly: parseNumberInput(e.target.value, state.essentialExpensesMonthly) })}
+                aria-label="Essential living expenses per month"
                 className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 font-semibold text-slate-100 focus:border-blue-500 focus:outline-none"
               />
             </div>
@@ -188,7 +213,9 @@ export const HousingLifestyleSection: React.FC<Props> = ({
                 type="number"
                 step={250}
                 value={state.discretionaryExpensesMonthly}
-                onChange={(e) => onChange({ discretionaryExpensesMonthly: parseFloat(e.target.value) || 0 })}
+                onChange={(e) =>
+                  onChange({ discretionaryExpensesMonthly: parseNumberInput(e.target.value, state.discretionaryExpensesMonthly) })}
+                aria-label="Discretionary expenses per month"
                 className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 font-semibold text-slate-100 focus:border-blue-500 focus:outline-none"
               />
             </div>
@@ -222,7 +249,9 @@ export const HousingLifestyleSection: React.FC<Props> = ({
                       type="number"
                       step={50}
                       value={cat.monthlyAmount}
-                      onChange={(e) => handleUpdateCustomCategory(cat.id, 'monthlyAmount', parseFloat(e.target.value) || 0)}
+                      onChange={(e) =>
+                        handleUpdateCustomCategory(cat.id, 'monthlyAmount', parseNumberInput(e.target.value, cat.monthlyAmount))}
+                      aria-label={`Monthly amount for ${cat.name || 'custom category'}`}
                       className="w-24 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-slate-100 font-bold"
                     />
                     <span className="text-slate-400">/mo</span>
@@ -253,7 +282,9 @@ export const HousingLifestyleSection: React.FC<Props> = ({
                 type="number"
                 step={50}
                 value={state.healthcareMonthlyAt65}
-                onChange={(e) => onChange({ healthcareMonthlyAt65: parseFloat(e.target.value) || 0 })}
+                onChange={(e) =>
+                  onChange({ healthcareMonthlyAt65: parseNumberInput(e.target.value, state.healthcareMonthlyAt65) })}
+                aria-label="Healthcare monthly cost at 65"
                 className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 font-bold text-slate-100 focus:border-rose-500 focus:outline-none"
               />
             </div>
@@ -263,7 +294,9 @@ export const HousingLifestyleSection: React.FC<Props> = ({
                 type="number"
                 step={0.5}
                 value={state.healthcareInflationPct}
-                onChange={(e) => onChange({ healthcareInflationPct: parseFloat(e.target.value) || 0 })}
+                onChange={(e) =>
+                  onChange({ healthcareInflationPct: parseNumberInput(e.target.value, state.healthcareInflationPct) })}
+                aria-label="Medical inflation percentage per year"
                 className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 font-bold text-slate-100 focus:border-rose-500 focus:outline-none"
               />
             </div>
@@ -274,15 +307,169 @@ export const HousingLifestyleSection: React.FC<Props> = ({
                 min={40}
                 max={90}
                 value={state.healthcareStartAge}
-                onChange={(e) => onChange({ healthcareStartAge: parseInt(e.target.value) || 65 })}
+                onChange={(e) =>
+                  onChange({ healthcareStartAge: Math.round(parseNumberInput(e.target.value, state.healthcareStartAge)) })}
+                aria-label="Healthcare costs start age"
                 className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 font-bold text-slate-100 focus:border-rose-500 focus:outline-none"
               />
             </div>
+          </div>
+          {/* Medicare premiums toggle */}
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-900 p-3.5 rounded-xl border border-slate-800">
+            <div>
+              <span className="text-xs font-semibold text-slate-200 block">
+                Add Medicare premiums automatically
+              </span>
+              <span className="text-[11px] text-slate-500 block mt-0.5 leading-relaxed">
+                Part B + IRMAA (2026 schedule) are added to your healthcare costs from age 65.
+              </span>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={medicareOn}
+              aria-label="Add Medicare premiums automatically from age 65"
+              onClick={() => onChange({ includeMedicarePremiums: !medicareOn })}
+              className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${
+                medicareOn ? 'bg-rose-500' : 'bg-slate-700'
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all ${
+                  medicareOn ? 'left-[22px]' : 'left-0.5'
+                }`}
+              />
+            </button>
           </div>
           <p className="text-[11px] text-slate-500 leading-relaxed">
             Set to $0 to exclude. Costs grow at medical inflation from the start age and are weighted by
             your destination&apos;s healthcare index.
           </p>
+        </div>
+
+        {/* Spending smile (early / mid / late retirement multipliers) */}
+        <div className="bg-slate-800/40 p-5 rounded-xl border border-slate-700/50 space-y-4">
+          <button
+            type="button"
+            onClick={() => setSmileOpen((v) => !v)}
+            aria-expanded={smileOpen}
+            className="w-full flex items-center justify-between gap-3 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-lg"
+          >
+            <h4 className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+              <Waves className="w-4 h-4 text-sky-400 shrink-0" /> Spending Curve Over Retirement
+            </h4>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-500/15 text-sky-400 border border-sky-500/30">
+                {smile.early.toFixed(1)}× / {smile.mid.toFixed(1)}× / {smile.late.toFixed(1)}×
+              </span>
+              <ChevronDown
+                className={`w-4 h-4 text-slate-400 transition-transform duration-300 ${smileOpen ? 'rotate-180' : ''}`}
+              />
+            </div>
+          </button>
+
+          {!smileOpen && (
+            <p className="text-[11px] text-slate-500 leading-relaxed">
+              Front/late-load your retirement years — models the travel-then-care curve.
+            </p>
+          )}
+
+          {smileOpen && (
+            <div className="space-y-4 animate-fade-in">
+              <p className="text-[11px] text-slate-500 leading-relaxed">
+                Front/late-load your retirement years — models the travel-then-care curve. The base
+                monthly budget is unchanged; these multipliers shape when spend happens.
+              </p>
+
+              <div className="space-y-3">
+                {[
+                  { key: 'early' as const, label: 'Explore more early', color: 'text-sky-400' },
+                  { key: 'mid' as const, label: 'Even mid', color: 'text-emerald-400' },
+                  { key: 'late' as const, label: 'Care later', color: 'text-amber-400' },
+                ].map((row) => (
+                  <div key={row.key}>
+                    <div className="flex justify-between text-xs mb-1.5 font-medium">
+                      <span className={row.color}>{row.label}</span>
+                      <span className={`font-bold ${row.color}`}>
+                        {smile[row.key].toFixed(1)}×
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min={0.5}
+                      max={2.0}
+                      step={0.05}
+                      value={smile[row.key]}
+                      aria-label={row.label}
+                      onChange={(e) => {
+                        const raw = e.target.value;
+                        if (raw === '') return;
+                        const v = parseFloat(raw);
+                        if (!Number.isFinite(v)) return;
+                        onChange({ spendingSmile: { ...smile, [row.key]: v } });
+                      }}
+                      className="w-full cursor-pointer accent-sky-500"
+                    />
+                  </div>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <div className="flex justify-between text-[11px] text-slate-400 mb-1">
+                    <span>&ldquo;Early&rdquo; ends at age</span>
+                    <span className="font-bold text-sky-400">{state.spendingSmileStartAge}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={60}
+                    max={80}
+                    step={1}
+                    value={state.spendingSmileStartAge}
+                    aria-label="Age when the early spending phase ends"
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      if (raw === '') return;
+                      const v = parseInt(raw);
+                      if (!Number.isFinite(v)) return;
+                      onChange({
+                        spendingSmileStartAge: v,
+                        // Mid must end after early: keep the engine's clamp in sync.
+                        spendingSmileMidAge: Math.max(v + 1, state.spendingSmileMidAge),
+                      });
+                    }}
+                    className="w-full cursor-pointer accent-sky-500"
+                  />
+                </div>
+                <div>
+                  <div className="flex justify-between text-[11px] text-slate-400 mb-1">
+                    <span>&ldquo;Mid&rdquo; ends at age</span>
+                    <span className="font-bold text-emerald-400">{state.spendingSmileMidAge}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={70}
+                    max={90}
+                    step={1}
+                    value={state.spendingSmileMidAge}
+                    aria-label="Age when the mid spending phase ends"
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      if (raw === '') return;
+                      const v = parseInt(raw);
+                      if (!Number.isFinite(v)) return;
+                      onChange({
+                        spendingSmileMidAge: v,
+                        // Early must end before mid: keep the two phases ordered.
+                        spendingSmileStartAge: Math.min(v - 1, state.spendingSmileStartAge),
+                      });
+                    }}
+                    className="w-full cursor-pointer accent-emerald-500"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </AccordionWrapper>

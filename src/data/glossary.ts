@@ -6,7 +6,13 @@ export const GLOSSARY: Record<string, string> = {
     'Share of 500 simulated market futures where your money lasts to the end of the plan. 80%+ is generally considered safe.',
   monteCarlo:
     "A simulation that replays your plan 500 times with randomly sampled market returns and inflation, so a single lucky average can't hide risk.",
-  swr: 'Safe Withdrawal Rate: the share of your retirement wealth your yearly spending represents. Near or below 4% is the classic comfort zone.',
+  swr: 'Spend Rate: your retirement-year spending as a share of your retirement-year wealth — 4% means exactly 25x coverage. Near or below 4% is the classic comfort zone (updated annually for inflation).',
+  coastFire:
+    'Coast FIRE: the age when your portfolio could grow to the FIRE number by your retirement age with zero further contributions — saving could stop while compounding does the rest.',
+  smile:
+    'Spending smile: front-load or back-load retirement spending (travel early, more care late). The engine scales your lifestyle budget by the phase you are in each year.',
+  historyReplay:
+    'Replays a real decade of returns and inflation year by year (e.g. the 1970s or the 2000s crashes) instead of smooth averages — a stress test on the actual sequence. After the preset ends, its last year holds.',
   fireAge:
     'The age your invested assets first cover 25x your yearly retirement spending — the classic Financial Independence threshold.',
   col: 'Cost-of-Living multiplier. 1.00 = US average; 0.62 (Lisbon) means retirement spending stretches ~38% further.',
@@ -14,9 +20,9 @@ export const GLOSSARY: Record<string, string> = {
     'Three deterministic paths: expected returns (Target), +2% returns (Conservative), and -2.5% returns with higher inflation (Stress Test). Not statistical percentiles.',
   rothConversion:
     'Moving money from pre-tax (401k/IRA) to Roth in low-income years. You pay income tax now so withdrawals later — including growth — are tax-free.',
-  rmd: 'Required Minimum Distribution: from age 75 the IRS forces yearly pre-tax withdrawals (balance ÷ life-expectancy factor), taxed as income.',
+  rmd: 'Required Minimum Distribution: the IRS forces yearly pre-tax withdrawals from your start age (balance ÷ life-expectancy factor), taxed as income. Start age is 73 if born 1951-1959, 75 if born 1960+.',
   brackets:
-    'The US taxes ordinary income in slices (10%-37% for 2025) after a standard deduction ($15k single / $30k joint). Only income inside each slice pays that slice\u2019s rate.',
+    'The US taxes ordinary income in slices (10%-37% for 2026) after a standard deduction ($16.1k single / $32.2k joint). Only income inside each slice pays that slice\u2019s rate.',
   guardrails:
     'A dynamic-spending rule: after a year your portfolio falls, trim spending by a set % instead of withdrawing the full amount. Small cuts early prevent big shortfalls late.',
   sequenceRisk:

@@ -25,6 +25,15 @@ export const MarketInflationSection: React.FC<Props> = ({
     onChange({ stockPct: newStock, bondPct: newBond, cashPct: newCash });
   };
 
+  // Bonds are the driven input here: stocks stay fixed, cash absorbs the change.
+  // (Mirrors handleStockPctChange but with bond as the slider — the previous
+  // bug routed arrow keys through handleStockPctChange and destroyed the mix.)
+  const handleBondPctChange = (newBond: number) => {
+    const bounded = Math.max(0, Math.min(100 - state.stockPct, newBond));
+    const newCash = 100 - state.stockPct - bounded;
+    onChange({ bondPct: bounded, cashPct: newCash });
+  };
+
   return (
     <AccordionWrapper
       id="market"
@@ -59,7 +68,13 @@ export const MarketInflationSection: React.FC<Props> = ({
                 max={100}
                 step={5}
                 value={state.stockPct}
-                onChange={(e) => handleStockPctChange(parseInt(e.target.value))}
+                aria-label="Stocks allocation percentage"
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  if (raw === '') return;
+                  const v = parseInt(raw);
+                  if (Number.isFinite(v)) handleStockPctChange(v);
+                }}
                 onKeyDown={(e) => {
                   if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
                     e.preventDefault();
@@ -85,18 +100,20 @@ export const MarketInflationSection: React.FC<Props> = ({
                 max={100 - state.stockPct}
                 step={5}
                 value={state.bondPct}
+                aria-label="Bonds allocation percentage"
                 onChange={(e) => {
-                  const b = parseInt(e.target.value);
-                  onChange({ bondPct: b, cashPct: 100 - state.stockPct - b });
+                  const raw = e.target.value;
+                  if (raw === '') return;
+                  const b = parseInt(raw);
+                  if (Number.isFinite(b)) handleBondPctChange(b);
                 }}
                 onKeyDown={(e) => {
                   if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
                     e.preventDefault();
-                    const maxBond = 100 - state.stockPct;
-                    handleStockPctChange(Math.min(maxBond, state.bondPct + 5));
+                    handleBondPctChange(state.bondPct + 5);
                   } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
                     e.preventDefault();
-                    handleStockPctChange(Math.max(0, state.bondPct - 5));
+                    handleBondPctChange(state.bondPct - 5);
                   }
                 }}
                 aria-valuetext={`${state.bondPct}% bonds`}
@@ -161,7 +178,13 @@ export const MarketInflationSection: React.FC<Props> = ({
                 max={10}
                 step={0.25}
                 value={state.customInflationRate}
-                onChange={(e) => onChange({ customInflationRate: parseFloat(e.target.value) })}
+                aria-label="Custom annual inflation percentage"
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  if (raw === '') return;
+                  const v = parseFloat(raw);
+                  if (Number.isFinite(v)) onChange({ customInflationRate: v });
+                }}
                 onKeyDown={(e) => {
                   if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
                     e.preventDefault();
@@ -223,6 +246,14 @@ export const MarketInflationSection: React.FC<Props> = ({
               ))}
             </div>
           </div>
+          {state.returnMode === 'historical_real' && (
+            <p className="text-[11px] text-slate-500 leading-relaxed animate-fade-in">
+              Hist. Real replays both the returns <em>and</em> the inflation of the selected
+              &ldquo;Hist. Replay&rdquo; preset above — real returns follow the same historical
+              year-by-year sequence.
+              <InfoTip term="sequenceRisk" />
+            </p>
+          )}
         </div>
       </div>
     </AccordionWrapper>

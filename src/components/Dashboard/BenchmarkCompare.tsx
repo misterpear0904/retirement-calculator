@@ -62,7 +62,7 @@ export const BenchmarkCompare: React.FC<Props> = ({ state }) => {
     <div className="glass-panel p-6 sm:p-7 rounded-2xl space-y-5">
       <div>
         <h3 className="text-base sm:text-lg font-bold dark:text-slate-100 text-slate-900 flex items-center gap-2">
-          <Globe2 className="w-4.5 h-4.5 text-blue-400 shrink-0" /> How You Compare Globally
+          <Globe2 className="w-4 h-4 text-blue-400 shrink-0" /> How You Compare Globally
         </h3>
         <p className="text-xs dark:text-slate-400 text-slate-500 mt-1 leading-relaxed">
           You (age {state.currentAge}, wealth band “{band.label}”) vs typical households in 4 regions.

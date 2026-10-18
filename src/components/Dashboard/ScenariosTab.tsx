@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Save, Trash2, FolderOpen, GitCompareArrows, Plus } from 'lucide-react';
+import { Save, Trash2, FolderOpen, GitCompareArrows, Plus, ListChecks } from 'lucide-react';
 import { ResponsiveContainer, ComposedChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { RetirementState, SimulationResult } from '../../types/retirement';
 import { runRetirementSimulation } from '../../utils/calculatorEngine';
@@ -12,6 +12,85 @@ interface Props {
   currentResult: SimulationResult;
   onLoadState: (state: RetirementState) => void;
   onTriggerToast: (msg: string) => void;
+}
+
+/** Matches the hard cap inside utils/scenarios.ts (slice(-20)). */
+const SCENARIO_LIMIT = 20;
+const STORAGE_ERROR_MSG =
+  'Save failed (localStorage full or blocked) — try deleting old scenarios or use Export';
+
+/** RetiredState keys that are arrays — shown as "count X vs Y" rows instead of per-item diffs. */
+const ARRAY_KEYS = new Set(['debts', 'children', 'customCategories']);
+
+/** Simple objects in RetirementState whose fields get per-field diff rows. */
+function isPlainObjectKey(key: string): boolean {
+  return ['partner', 'contributionSplit', 'spendingSmile'].includes(key);
+}
+
+function humanizeKey(key: string): string {
+  return key
+    .replace(/([A-Z])/g, ' $1')
+    .replace(/^./, (c) => c.toUpperCase())
+    .trim();
+}
+
+function formatDiffValue(v: unknown): string {
+  if (v == null) return '—';
+  if (typeof v === 'boolean') return v ? 'Yes' : 'No';
+  if (typeof v === 'number') return Number.isInteger(v) ? v.toLocaleString() : String(v);
+  return String(v);
+}
+
+function valuesDiffer(a: unknown, b: unknown): boolean {
+  return String(a) !== String(b);
+}
+
+interface DiffRow {
+  label: string;
+  old: string;
+  new: string;
+}
+
+/** Top-level state diff: scalars directly, objects per-field, arrays as counts. */
+function computeStateDiff(saved: RetirementState, current: RetirementState): DiffRow[] {
+  const rows: DiffRow[] = [];
+  const keys = Array.from(new Set([...Object.keys(saved), ...Object.keys(current)])).sort();
+
+  for (const key of keys) {
+    const oldVal = (saved as unknown as Record<string, unknown>)[key];
+    const newVal = (current as unknown as Record<string, unknown>)[key];
+    const label = humanizeKey(key);
+
+    if (ARRAY_KEYS.has(key)) {
+      const oldLen = Array.isArray(oldVal) ? oldVal.length : 0;
+      const newLen = Array.isArray(newVal) ? newVal.length : 0;
+      if (oldLen !== newLen) {
+        rows.push({ label, old: `${oldLen} item${oldLen === 1 ? '' : 's'}`, new: `${newLen} item${newLen === 1 ? '' : 's'}` });
+      }
+      continue;
+    }
+
+    if (isPlainObjectKey(key)) {
+      const oldObj = (oldVal ?? {}) as Record<string, unknown>;
+      const newObj = (newVal ?? {}) as Record<string, unknown>;
+      const subKeys = Array.from(new Set([...Object.keys(oldObj), ...Object.keys(newObj)])).sort();
+      for (const sub of subKeys) {
+        if (valuesDiffer(oldObj[sub], newObj[sub])) {
+          rows.push({
+            label: `${label} · ${humanizeKey(sub)}`,
+            old: formatDiffValue(oldObj[sub]),
+            new: formatDiffValue(newObj[sub]),
+          });
+        }
+      }
+      continue;
+    }
+
+    if (valuesDiffer(oldVal, newVal)) {
+      rows.push({ label, old: formatDiffValue(oldVal), new: formatDiffValue(newVal) });
+    }
+  }
+  return rows;
 }
 
 function kpiRows(a: SimulationResult, b: SimulationResult) {
@@ -48,6 +127,7 @@ export const ScenariosTab: React.FC<Props> = ({ state, currentResult, onLoadStat
   const [saved, setSaved] = useState<SavedScenario[]>(() => listScenarios());
   const [name, setName] = useState('');
   const [compareId, setCompareId] = useState<string | null>(null);
+  const [diffOpen, setDiffOpen] = useState(false);
 
   const compareState = useMemo(() => {
     const found = saved.find((s) => s.id === compareId);
@@ -69,12 +149,54 @@ export const ScenariosTab: React.FC<Props> = ({ state, currentResult, onLoadStat
     }));
   }, [currentResult, compareResult]);
 
+  // Saved-vs-current input diff ("What changed?"). Both sides pass through the
+  // same sanitizer so defaults don't show up as phantom changes.
+  const stateDiff = useMemo(
+    () =>
+      compareState ? computeStateDiff(compareState, sanitizeRetirementState({ ...state })) : [],
+    [compareState, state]
+  );
+
   const handleSave = () => {
-    const entry = saveScenario(name || `Scenario ${saved.length + 1}`, state);
-    setSaved(listScenarios());
-    setName('');
-    setCompareId(entry.id);
-    onTriggerToast(`Saved scenario "${entry.name}"`);
+    try {
+      const wasAtLimit = saved.length >= SCENARIO_LIMIT;
+      const entry = saveScenario(name || `Scenario ${saved.length + 1}`, state);
+      // Scenario writes are swallowed silently in utils/scenarios.ts, so verify
+      // the entry actually landed to detect quota / private-mode failures.
+      const after = listScenarios();
+      setSaved(after);
+      if (!after.some((s) => s.id === entry.id)) {
+        onTriggerToast(STORAGE_ERROR_MSG);
+        return;
+      }
+      setName('');
+      setCompareId(entry.id);
+      onTriggerToast(
+        wasAtLimit
+          ? `Scenario limit reached — replaced oldest save (${saved.length} kept)`
+          : `Saved scenario "${entry.name}"`
+      );
+    } catch {
+      onTriggerToast(STORAGE_ERROR_MSG);
+    }
+  };
+
+  const handleLoad = (s: SavedScenario) => {
+    try {
+      onLoadState(sanitizeRetirementState({ ...s.state }));
+      onTriggerToast(`Loaded scenario "${s.name}"`);
+    } catch {
+      onTriggerToast('Load failed — the scenario may be corrupted. Try re-saving it.');
+    }
+  };
+
+  const handleDelete = (id: string) => {
+    try {
+      setSaved(deleteScenario(id));
+      if (compareId === id) setCompareId(null);
+    } catch {
+      onTriggerToast('Delete failed (localStorage blocked) — the scenario is still saved.');
+    }
   };
 
   const compareName = saved.find((s) => s.id === compareId)?.name ?? '';
@@ -83,7 +205,7 @@ export const ScenariosTab: React.FC<Props> = ({ state, currentResult, onLoadStat
     <div className="glass-panel p-6 sm:p-7 rounded-2xl space-y-5">
       <div>
         <h3 className="text-base sm:text-lg font-bold dark:text-slate-100 text-slate-900 flex items-center gap-2">
-          <GitCompareArrows className="w-4.5 h-4.5 text-blue-400 shrink-0" /> Scenario Compare
+          <GitCompareArrows className="w-4 h-4 text-blue-400 shrink-0" /> Scenario Compare
           <InfoTip term="scenarios" />
         </h3>
         <p className="text-xs dark:text-slate-400 text-slate-500 mt-1 leading-relaxed">
@@ -145,10 +267,7 @@ export const ScenariosTab: React.FC<Props> = ({ state, currentResult, onLoadStat
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  onLoadState(sanitizeRetirementState({ ...s.state }));
-                  onTriggerToast(`Loaded scenario "${s.name}"`);
-                }}
+                onClick={() => handleLoad(s)}
                 className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 border border-slate-700 hover:text-white transition-colors"
               >
                 <FolderOpen className="w-3.5 h-3.5" /> Load
@@ -156,10 +275,7 @@ export const ScenariosTab: React.FC<Props> = ({ state, currentResult, onLoadStat
               <button
                 type="button"
                 aria-label={`Delete scenario ${s.name}`}
-                onClick={() => {
-                  setSaved(deleteScenario(s.id));
-                  if (compareId === s.id) setCompareId(null);
-                }}
+                onClick={() => handleDelete(s.id)}
                 className="p-1.5 text-slate-500 hover:text-red-400 rounded-lg hover:bg-red-500/10 transition-colors"
               >
                 <Trash2 className="w-4 h-4" />
@@ -172,9 +288,52 @@ export const ScenariosTab: React.FC<Props> = ({ state, currentResult, onLoadStat
       {/* Comparison */}
       {compareResult && compareState && (
         <div className="space-y-4 pt-2 border-t dark:border-slate-800 border-slate-200 animate-fade-in">
-          <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-400">
-            Current plan vs <span className="text-purple-400">{compareName}</span> <span className="font-medium normal-case">(B − A)</span>
+          <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-400 flex items-center justify-between gap-3 flex-wrap">
+            <span>
+              Current plan vs <span className="text-purple-400">{compareName}</span> <span className="font-medium normal-case">(B − A)</span>
+            </span>
+            <button
+              type="button"
+              onClick={() => setDiffOpen((v) => !v)}
+              aria-expanded={diffOpen}
+              className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 border border-slate-700 hover:text-white normal-case tracking-normal transition-colors"
+            >
+              <ListChecks className="w-3.5 h-3.5" />
+              What changed? {diffOpen ? '(hide)' : `(${stateDiff.length})`}
+            </button>
           </h4>
+
+          {/* Saved-input diff drill-down: old (saved) → new (current) for every differing field */}
+          {diffOpen && (
+            <div className="rounded-xl border border-slate-800 bg-slate-900/60 overflow-hidden animate-fade-in">
+              {stateDiff.length === 0 ? (
+                <p className="px-4 py-3 text-xs text-slate-500">
+                  All inputs match the current plan — the difference is pure market math.
+                </p>
+              ) : (
+                <div className="max-h-[300px] overflow-y-auto">
+                  <table className="w-full text-xs">
+                    <thead className="bg-slate-900 text-slate-400 text-left sticky top-0">
+                      <tr>
+                        <th scope="col" className="px-4 py-2 font-semibold">Input</th>
+                        <th scope="col" className="px-4 py-2 font-semibold text-right">{compareName} (saved)</th>
+                        <th scope="col" className="px-4 py-2 font-semibold text-right">Current</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/60">
+                      {stateDiff.map((row) => (
+                        <tr key={row.label} className="hover:bg-slate-800/40">
+                          <td className="px-4 py-2 text-slate-300 font-medium">{row.label}</td>
+                          <td className="px-4 py-2 text-right font-mono text-purple-300">{row.old}</td>
+                          <td className="px-4 py-2 text-right font-mono text-amber-300">{row.new}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="h-[260px] w-full">
             <ResponsiveContainer width="100%" height="100%">

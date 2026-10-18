@@ -45,7 +45,10 @@ export const DemographicsSection: React.FC<Props> = ({
             max={80}
             value={state.currentAge}
             onChange={(e) => {
-              const val = parseInt(e.target.value);
+              const raw = e.target.value;
+              if (raw === '') return;
+              const val = parseInt(raw);
+              if (!Number.isFinite(val)) return;
               onChange({
                 currentAge: val,
                 targetRetirementAge: Math.max(val + 1, state.targetRetirementAge),
@@ -62,6 +65,7 @@ export const DemographicsSection: React.FC<Props> = ({
                 onChange({ currentAge: val, targetRetirementAge: Math.max(val + 1, state.targetRetirementAge) });
               }
             }}
+            aria-label="Current age"
             aria-valuetext={`Age ${state.currentAge}`}
             className="w-full cursor-pointer"
           />
@@ -86,7 +90,10 @@ export const DemographicsSection: React.FC<Props> = ({
             max={85}
             value={state.targetRetirementAge}
             onChange={(e) => {
-              const val = parseInt(e.target.value);
+              const raw = e.target.value;
+              if (raw === '') return;
+              const val = parseInt(raw);
+              if (!Number.isFinite(val)) return;
               onChange({
                 targetRetirementAge: val,
                 lifeExpectancy: Math.max(val + 5, state.lifeExpectancy),
@@ -103,6 +110,7 @@ export const DemographicsSection: React.FC<Props> = ({
                 onChange({ targetRetirementAge: val, lifeExpectancy: Math.max(val + 5, state.lifeExpectancy) });
               }
             }}
+            aria-label="Target retirement age"
             aria-valuetext={`Age ${state.targetRetirementAge}`}
             className="w-full cursor-pointer"
           />
@@ -126,7 +134,12 @@ export const DemographicsSection: React.FC<Props> = ({
             min={Math.max(60, state.targetRetirementAge + 1)}
             max={110}
             value={state.lifeExpectancy}
-            onChange={(e) => onChange({ lifeExpectancy: parseInt(e.target.value) })}
+            onChange={(e) => {
+              const raw = e.target.value;
+              if (raw === '') return;
+              const val = parseInt(raw);
+              if (Number.isFinite(val)) onChange({ lifeExpectancy: val });
+            }}
             onKeyDown={(e) => {
               if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
                 e.preventDefault();
@@ -136,6 +149,7 @@ export const DemographicsSection: React.FC<Props> = ({
                 onChange({ lifeExpectancy: Math.max(Math.max(60, state.targetRetirementAge + 1), state.lifeExpectancy - 1) });
               }
             }}
+            aria-label="Life expectancy"
             aria-valuetext={`Age ${state.lifeExpectancy}`}
             className="w-full cursor-pointer"
           />
@@ -196,9 +210,11 @@ export const DemographicsSection: React.FC<Props> = ({
                 min={18}
                 max={100}
                 value={state.partner.currentAge}
-                onChange={(e) =>
-                  onChange({ partner: { ...state.partner, currentAge: parseInt(e.target.value) || 32 } })
-                }
+                onChange={(e) => {
+                  const v = parseInt(e.target.value);
+                  if (Number.isFinite(v)) onChange({ partner: { ...state.partner, currentAge: v } });
+                }}
+                aria-label="Partner's current age"
                 className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 font-bold text-slate-100 focus:border-pink-500 focus:outline-none"
               />
             </div>
@@ -208,9 +224,11 @@ export const DemographicsSection: React.FC<Props> = ({
                 type="number"
                 step={1000}
                 value={state.partner.annualIncome}
-                onChange={(e) =>
-                  onChange({ partner: { ...state.partner, annualIncome: parseFloat(e.target.value) || 0 } })
-                }
+                onChange={(e) => {
+                  const v = parseFloat(e.target.value);
+                  if (Number.isFinite(v)) onChange({ partner: { ...state.partner, annualIncome: Math.max(0, v) } });
+                }}
+                aria-label="Partner's annual income in dollars"
                 className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 font-bold text-slate-100 focus:border-pink-500 focus:outline-none"
               />
             </div>
@@ -221,9 +239,11 @@ export const DemographicsSection: React.FC<Props> = ({
                 min={30}
                 max={110}
                 value={state.partner.lifeExpectancy}
-                onChange={(e) =>
-                  onChange({ partner: { ...state.partner, lifeExpectancy: parseInt(e.target.value) || 90 } })
-                }
+                onChange={(e) => {
+                  const v = parseInt(e.target.value);
+                  if (Number.isFinite(v)) onChange({ partner: { ...state.partner, lifeExpectancy: v } });
+                }}
+                aria-label="Partner's life expectancy"
                 className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 font-bold text-slate-100 focus:border-pink-500 focus:outline-none"
               />
             </div>
@@ -233,9 +253,11 @@ export const DemographicsSection: React.FC<Props> = ({
                 type="number"
                 step={100}
                 value={state.partner.ssMonthlyAt67}
-                onChange={(e) =>
-                  onChange({ partner: { ...state.partner, ssMonthlyAt67: parseFloat(e.target.value) || 0 } })
-                }
+                onChange={(e) => {
+                  const v = parseFloat(e.target.value);
+                  if (Number.isFinite(v)) onChange({ partner: { ...state.partner, ssMonthlyAt67: Math.max(0, v) } });
+                }}
+                aria-label="Partner's monthly Social Security benefit at 67"
                 className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 font-bold text-slate-100 focus:border-pink-500 focus:outline-none"
               />
             </div>
@@ -249,9 +271,13 @@ export const DemographicsSection: React.FC<Props> = ({
                 min={62}
                 max={70}
                 value={state.partner.ssStartAge}
-                onChange={(e) =>
-                  onChange({ partner: { ...state.partner, ssStartAge: parseInt(e.target.value) } })
-                }
+                aria-label="Partner's Social Security claiming age"
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  if (raw === '') return;
+                  const v = parseInt(raw);
+                  if (Number.isFinite(v)) onChange({ partner: { ...state.partner, ssStartAge: v } });
+                }}
                 className="w-full cursor-pointer"
               />
             </div>

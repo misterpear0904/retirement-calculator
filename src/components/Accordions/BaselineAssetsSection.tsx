@@ -75,7 +75,11 @@ export const BaselineAssetsSection: React.FC<Props> = ({
                 min={0}
                 step={1000}
                 value={state.liquidCash}
-                onChange={(e) => onChange({ liquidCash: Math.max(0, parseFloat(e.target.value) || 0) })}
+                onChange={(e) => {
+                  const v = parseFloat(e.target.value);
+                  if (Number.isFinite(v)) onChange({ liquidCash: Math.max(0, v) });
+                }}
+                aria-label="Liquid cash and emergency fund in dollars"
                 className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-7 pr-2 py-2 text-sm font-bold text-slate-100 focus:border-blue-500 focus:outline-none transition-colors"
               />
             </div>
@@ -93,7 +97,11 @@ export const BaselineAssetsSection: React.FC<Props> = ({
                 min={0}
                 step={5000}
                 value={state.taxableInvestments}
-                onChange={(e) => onChange({ taxableInvestments: Math.max(0, parseFloat(e.target.value) || 0) })}
+                onChange={(e) => {
+                  const v = parseFloat(e.target.value);
+                  if (Number.isFinite(v)) onChange({ taxableInvestments: Math.max(0, v) });
+                }}
+                aria-label="Taxable brokerage investments in dollars"
                 className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-7 pr-2 py-2 text-sm font-bold text-slate-100 focus:border-blue-500 focus:outline-none transition-colors"
               />
             </div>
@@ -111,7 +119,11 @@ export const BaselineAssetsSection: React.FC<Props> = ({
                 min={0}
                 step={5000}
                 value={state.preTax401k}
-                onChange={(e) => onChange({ preTax401k: Math.max(0, parseFloat(e.target.value) || 0) })}
+                onChange={(e) => {
+                  const v = parseFloat(e.target.value);
+                  if (Number.isFinite(v)) onChange({ preTax401k: Math.max(0, v) });
+                }}
+                aria-label="Pre-tax 401k and traditional IRA balance in dollars"
                 className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-7 pr-2 py-2 text-sm font-bold text-slate-100 focus:border-blue-500 focus:outline-none transition-colors"
               />
             </div>
@@ -129,7 +141,11 @@ export const BaselineAssetsSection: React.FC<Props> = ({
                 min={0}
                 step={5000}
                 value={state.postTaxRothHsa}
-                onChange={(e) => onChange({ postTaxRothHsa: Math.max(0, parseFloat(e.target.value) || 0) })}
+                onChange={(e) => {
+                  const v = parseFloat(e.target.value);
+                  if (Number.isFinite(v)) onChange({ postTaxRothHsa: Math.max(0, v) });
+                }}
+                aria-label="Post-tax Roth and HSA balance in dollars"
                 className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-7 pr-2 py-2 text-sm font-bold text-slate-100 focus:border-blue-500 focus:outline-none transition-colors"
               />
             </div>
@@ -178,7 +194,11 @@ export const BaselineAssetsSection: React.FC<Props> = ({
                     type="number"
                     min={0}
                     value={debt.balance}
-                    onChange={(e) => handleDebtChange(debt.id, 'balance', parseFloat(e.target.value) || 0)}
+                    onChange={(e) => {
+                      const v = parseFloat(e.target.value);
+                      if (Number.isFinite(v)) handleDebtChange(debt.id, 'balance', Math.max(0, v));
+                    }}
+                    aria-label={`Balance for ${debt.name || 'liability'}`}
                     className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-100 font-medium"
                   />
                 </div>
@@ -189,7 +209,11 @@ export const BaselineAssetsSection: React.FC<Props> = ({
                     min={0}
                     step={0.1}
                     value={debt.interestRate}
-                    onChange={(e) => handleDebtChange(debt.id, 'interestRate', parseFloat(e.target.value) || 0)}
+                    onChange={(e) => {
+                      const v = parseFloat(e.target.value);
+                      if (Number.isFinite(v)) handleDebtChange(debt.id, 'interestRate', v);
+                    }}
+                    aria-label={`Interest rate percentage for ${debt.name || 'liability'}`}
                     className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-100 font-medium"
                   />
                 </div>
@@ -200,7 +224,11 @@ export const BaselineAssetsSection: React.FC<Props> = ({
                       type="number"
                       min={0}
                       value={debt.monthlyPayment}
-                      onChange={(e) => handleDebtChange(debt.id, 'monthlyPayment', parseFloat(e.target.value) || 0)}
+                      onChange={(e) => {
+                        const v = parseFloat(e.target.value);
+                        if (Number.isFinite(v)) handleDebtChange(debt.id, 'monthlyPayment', Math.max(0, v));
+                      }}
+                      aria-label={`Monthly payment for ${debt.name || 'liability'}`}
                       className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-100 font-medium"
                     />
                   </div>

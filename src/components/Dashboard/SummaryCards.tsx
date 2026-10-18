@@ -16,7 +16,9 @@ export const SummaryCards: React.FC<Props> = ({ result, state, onChange }) => {
     successRate,
     targetRetirementNetWorth,
     fireAgeAchievable,
+    coastFireAge,
     safeWithdrawalRatePct,
+    retirementAnnualExpense,
     monthlyRetirementSpending,
     targetLocationName,
     colMultiplier,
@@ -36,7 +38,7 @@ export const SummaryCards: React.FC<Props> = ({ result, state, onChange }) => {
         <div>
           <div className="flex justify-between items-start mb-3 gap-2">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-              <ShieldCheck className="w-4.5 h-4.5 text-blue-400 shrink-0" /> Success Confidence Score
+              <ShieldCheck className="w-4 h-4 text-blue-400 shrink-0" /> Success Confidence Score
               <InfoTip term="successRate" />
             </span>
             <span className={`text-xs font-extrabold px-3 py-1 rounded-full border shrink-0 ${statusClasses}`}>
@@ -69,8 +71,8 @@ export const SummaryCards: React.FC<Props> = ({ result, state, onChange }) => {
         </p>
       </div>
 
-      {/* 4 Supporting Metric Bento Tiles */}
-      <div className="xl:col-span-8 2xl:col-span-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+      {/* Supporting Metric Bento Tiles (now 5 incl. Coast FIRE) */}
+      <div className="xl:col-span-8 2xl:col-span-8 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
         {/* Tile 2A: Estimated Retirement Age */}
         <div className="glass-panel p-5 sm:p-6 rounded-2xl flex flex-col justify-between group hover:border-emerald-500/40 transition-colors">
           <div>
@@ -151,11 +153,11 @@ export const SummaryCards: React.FC<Props> = ({ result, state, onChange }) => {
           </p>
         </div>
 
-        {/* Tile 2C: Monthly Retirement Budget */}
+        {/* Tile 2C: Monthly Retirement Budget (today's dollars) */}
         <div className="glass-panel p-5 sm:p-6 rounded-2xl flex flex-col justify-between group">
           <div>
             <span className="text-xs font-semibold dark:text-slate-300 text-slate-600 flex items-center gap-2">
-              <DollarSign className="w-4 h-4 text-cyan-400 shrink-0" /> Monthly Spending Budget
+              <DollarSign className="w-4 h-4 text-cyan-400 shrink-0" /> Monthly Retirement Spending
             </span>
 
             <div className="my-3">
@@ -163,6 +165,9 @@ export const SummaryCards: React.FC<Props> = ({ result, state, onChange }) => {
                 ${Math.round(monthlyRetirementSpending).toLocaleString()}
               </span>
               <span className="text-xs text-slate-400 font-medium"> /mo</span>
+              <span className="block text-[11px] font-bold text-cyan-300/80 mt-1 uppercase tracking-wide">
+                Today&apos;s $
+              </span>
             </div>
           </div>
 
@@ -172,16 +177,15 @@ export const SummaryCards: React.FC<Props> = ({ result, state, onChange }) => {
           </p>
         </div>
 
-        {/* Tile 2D: Savings Rate & SWR with Inline Quick Toggles */}
+        {/* Tile 2D: Savings Rate & Spend Rate with Inline Quick Toggles */}
         <div className="glass-panel p-5 sm:p-6 rounded-2xl flex flex-col justify-between group">
           <div>
             <div className="flex justify-between items-start gap-2">
               <span className="text-xs font-semibold dark:text-slate-300 text-slate-600 flex items-center gap-2">
-                <Flame className="w-4 h-4 text-amber-400 shrink-0" /> Savings Rate & SWR
-                <InfoTip term="swr" />
+                <Flame className="w-4 h-4 text-amber-400 shrink-0" /> Savings Rate &amp; Spend Rate
               </span>
               <span className="text-[11px] font-bold text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded border border-amber-500/20 shrink-0">
-                SWR: {safeWithdrawalRatePct}%
+                Spend Rate: {safeWithdrawalRatePct}%
               </span>
             </div>
 
@@ -189,6 +193,10 @@ export const SummaryCards: React.FC<Props> = ({ result, state, onChange }) => {
               <span className="text-3xl font-extrabold text-emerald-400">{state.savingsRatePct}%</span>
               <span className="text-xs text-slate-400 font-medium">of salary saved</span>
             </div>
+            <p className="text-[11px] text-slate-500 leading-relaxed mt-1">
+              Spend Rate = retirement-year expense ÷ retirement-year net worth (4% = 25× coverage).
+              Retirement spend: ${Math.round(retirementAnnualExpense).toLocaleString()}/yr (in retirement-year dollars).
+            </p>
           </div>
 
           {/* Inline Quick Savings Rate Adjuster */}
@@ -213,6 +221,44 @@ export const SummaryCards: React.FC<Props> = ({ result, state, onChange }) => {
               </button>
             </div>
           </div>
+        </div>
+
+        {/* Tile 2E: Coast FIRE */}
+        <div className="glass-panel p-5 sm:p-6 rounded-2xl flex flex-col justify-between group hover:border-sky-500/40 transition-colors">
+          <div>
+            <div className="flex justify-between items-start gap-2">
+              <span className="text-xs font-semibold dark:text-slate-300 text-slate-600 flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-sky-400 shrink-0" /> Coast FIRE
+              </span>
+            </div>
+
+            <div className="my-3">
+              {coastFireAge != null ? (
+                <>
+                  <span className="text-3xl font-extrabold text-sky-400 tracking-tight">
+                    Age {coastFireAge}
+                  </span>
+                  <span className="block text-[11px] dark:text-slate-400 text-slate-500 mt-1 leading-relaxed">
+                    Coast FIRE age — the earliest you could stop contributing and still hit FIRE by
+                    your retirement age
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span className="text-3xl font-extrabold text-slate-400 tracking-tight">
+                    Not yet
+                  </span>
+                  <span className="block text-[11px] dark:text-slate-400 text-slate-500 mt-1 leading-relaxed">
+                    The earliest you could stop contributing and still hit FIRE by your retirement age
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
+
+          <p className="text-xs dark:text-slate-400 text-slate-500 border-t dark:border-slate-800/80 border-slate-200 pt-3 mt-3 leading-relaxed">
+            Stop saving, stay invested — the portfolio reaches your FIRE number on its own.
+          </p>
         </div>
       </div>
     </div>

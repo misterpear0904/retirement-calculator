@@ -150,7 +150,7 @@ function kpiCards(ctx: Ctx, result: SimulationResult, state: RetirementState) {
     { label: 'Net worth at retirement', value: fmtMoney(result.targetRetirementNetWorth), sub: `Age ${state.targetRetirementAge}`, accent: BLUE },
     { label: 'Net worth at horizon', value: fmtMoney(result.finalNetWorth), sub: `Age ${state.lifeExpectancy}`, accent: CYAN },
     { label: 'Monthly spending', value: fmtMoney(result.monthlyRetirementSpending), sub: 'In retirement', accent: EMERALD },
-    { label: 'Safe withdrawal rate', value: `${result.safeWithdrawalRatePct}%`, sub: 'Of retirement wealth', accent: AMBER },
+    { label: 'Spend rate of retirement wealth', value: `${result.safeWithdrawalRatePct}%`, sub: '4% = 25× coverage', accent: AMBER },
     { label: 'FIRE age', value: result.fireAgeAchievable ? `Age ${result.fireAgeAchievable}` : 'At target age', sub: '25× spending rule', accent: SLATE_900 },
   ];
   const gap = 4;

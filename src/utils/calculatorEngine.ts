@@ -10,10 +10,11 @@ import { HISTORICAL_PRESETS, MONTE_CARLO_STATS } from '../data/historicalReturns
 import { FINANCIAL_CONSTANTS } from './constants';
 import {
   ssClaimFactor,
+  spousalClaimFactor,
   calcWithdrawalTaxes,
-  estimateMcTax,
+  medicarePremiums,
   rmdDivisor,
-  RMD_START_AGE,
+  rmdStartAgeForBirthYear,
 } from './taxEngine';
 
 // Simple Mulberry32 seeded Pseudo-Random Number Generator for deterministic simulations
@@ -102,6 +103,72 @@ function calcHealthcareForYear(
   return base * 12 * Math.pow(1 + medInfl, primaryAge - startAge);
 }
 
+/**
+ * Household Social Security for one simulation year, implementing the real
+ * SSA rules:
+ *  - Each spouse receives their own earned benefit (reduced/boosted by their
+ *    own claiming age), and while the primary is alive and drawing they can
+ *    also get a spousal top-up of up to 50% of the primary's benefit at full
+ *    retirement age, reduced for the spouse's early claim via
+ *    `spousalClaimFactor`.
+ *  - After a death the survivor keeps the LARGER of the two checks (the
+ *    deceased check valued as it was being paid, i.e. with its own
+ *    claim-age factor).
+ */
+export function householdSsForYear(p: {
+  primaryAge: number;
+  partnerAge: number;
+  partnerOn: boolean;
+  primaryPIAMonthly: number;
+  partnerPIAMonthly: number;
+  primaryClaimAge: number;
+  partnerClaimAge: number;
+  inflationFactor: number;
+  primaryLifeExpectancy: number;
+  partnerLifeExpectancy: number;
+}): number {
+  const {
+    primaryAge,
+    partnerAge,
+    partnerOn,
+    primaryPIAMonthly,
+    partnerPIAMonthly,
+    primaryClaimAge,
+    partnerClaimAge,
+    inflationFactor,
+    primaryLifeExpectancy,
+    partnerLifeExpectancy,
+  } = p;
+  const primaryAlive = primaryAge <= primaryLifeExpectancy;
+  const partnerAlive = partnerOn && partnerAge <= partnerLifeExpectancy;
+
+  // Check values, computed from claiming rules independent of mortality so a
+  // deceased spouse's check still produces a survivor step-up.
+  const primaryCheck =
+    primaryAge >= primaryClaimAge && primaryPIAMonthly > 0
+      ? primaryPIAMonthly * 12 * ssClaimFactor(primaryClaimAge) * inflationFactor
+      : 0;
+  const partnerCheck =
+    partnerAge >= partnerClaimAge && partnerPIAMonthly > 0
+      ? partnerPIAMonthly * 12 * ssClaimFactor(partnerClaimAge) * inflationFactor
+      : 0;
+
+  if (primaryAlive && partnerAlive) {
+    // Spousal top-up: the spouse collects at least 50% of the primary's
+    // PIA (only once the primary has claimed), reduced for early claiming.
+    let spouseBenefit = partnerCheck;
+    if (primaryAge >= primaryClaimAge && primaryPIAMonthly > 0) {
+      const maxSpousal =
+        0.5 * primaryPIAMonthly * 12 * spousalClaimFactor(partnerClaimAge) * inflationFactor;
+      spouseBenefit = Math.max(partnerCheck, maxSpousal);
+    }
+    return primaryCheck + spouseBenefit;
+  }
+  if (primaryAlive) return Math.max(primaryCheck, partnerOn ? partnerCheck : 0); // partner passed away
+  if (partnerAlive) return Math.max(partnerCheck, primaryCheck); // primary passed away
+  return 0; // both deceased — household SS ends
+}
+
 /** Amortized mortgage payment split using the user-provided interest rate. */
 function applyMortgageYear(
   balance: number,
@@ -170,7 +237,6 @@ export function runRetirementSimulation(
     mortgageBalance,
     mortgageMonthly,
     mortgageInterestRate,
-    mortgageRemainingYears,
     socialSecurityMonthlyAt67,
     socialSecurityStartAge,
     pensionMonthly,
@@ -191,7 +257,6 @@ export function runRetirementSimulation(
   const location = resolveLocation(state.targetLocationId);
   const baseColMultiplier = location.colIndex / 100.0;
   const colMultiplier = baseColMultiplier * (1 + (state.colAdjustmentPct || 0) / 100);
-  const healthColMultiplier = (location.healthcareIndex ?? 100) / 100.0;
   const stateTaxPct = location.stateTaxPct ?? 0;
 
   // Resolve Real Income Growth Rate
@@ -218,8 +283,6 @@ export function runRetirementSimulation(
     stockW * stockReturnNominal + bondW * bondReturnNominal + cashW * cashReturnNominal;
 
   const baseMonthlyLifestyle = getBaseMonthlyLifestyle(state);
-  const ssFactor = ssClaimFactor(socialSecurityStartAge);
-  const partnerSsFactor = partnerOn ? ssClaimFactor(partner.ssStartAge) : 1;
 
   const withdrawalStrategy = state.withdrawalStrategy ?? 'fixed_order';
   const guardrailCut = (state.guardrailCutPct ?? 15) / 100;
@@ -230,30 +293,28 @@ export function runRetirementSimulation(
 
   const numYears = Math.max(1, horizonEndAge - currentAge + 1);
 
-  /** Household Social Security for the year, with survivor benefit (max of the two). */
+  // SECURE 2.0 RMD start age by cohort (born 1951-1959 → 73, 1960+ → 75).
+  const birthYear = new Date().getFullYear() - currentAge;
+  const rmdStartAge = rmdStartAgeForBirthYear(birthYear);
+
+  /** Household Social Security for the year (shared helper; real SSA rules). */
   const householdSsAnnual = (
     primaryAge: number,
     partnerAge: number,
     cumInflation: number
-  ): number => {
-    const primaryAlive = primaryAge <= lifeExpectancy;
-    const partnerAlive = !partnerOn || partnerAge <= partner.lifeExpectancy;
-    let primarySs = 0;
-    if (primaryAlive && primaryAge >= socialSecurityStartAge && socialSecurityMonthlyAt67 > 0) {
-      primarySs = socialSecurityMonthlyAt67 * 12 * ssFactor * cumInflation;
-    }
-    let partnerSs = 0;
-    if (partnerOn && partnerAlive && partnerAge >= partner.ssStartAge && partner.ssMonthlyAt67 > 0) {
-      partnerSs = partner.ssMonthlyAt67 * 12 * partnerSsFactor * cumInflation;
-    }
-    if (primaryAlive && partnerAlive) return primarySs + partnerSs;
-    // Survivor keeps the larger check.
-    return Math.max(primarySs, partnerSs);
-  };
-
-  // Trackers for lifetime reporting.
-  let lifetimeTaxesPaid = 0;
-  let lifetimeRothConverted = 0;
+  ): number =>
+    householdSsForYear({
+      primaryAge,
+      partnerAge,
+      partnerOn,
+      primaryPIAMonthly: socialSecurityMonthlyAt67,
+      partnerPIAMonthly: partner.ssMonthlyAt67,
+      primaryClaimAge: socialSecurityStartAge,
+      partnerClaimAge: partner.ssStartAge,
+      inflationFactor: cumInflation,
+      primaryLifeExpectancy: lifeExpectancy,
+      partnerLifeExpectancy: partner.lifeExpectancy,
+    });
 
   // Peak portfolio value since retirement for guardrails
   let peakPortfolioSinceRetirement = 0;
@@ -279,8 +340,8 @@ export function runRetirementSimulation(
     let currentIncome = currentAnnualIncome;
     let currentPartnerIncome = partnerOn ? partner.annualIncome : 0;
     let currentMortgageBal = housingType === 'mortgage' ? mortgageBalance : 0;
-    let remainingMortgageYrs = housingType === 'mortgage' ? mortgageRemainingYears : 0;
-
+    // mortgageRemainingYears is user-facing only; the engine amortizes until
+    // the balance actually clears, even past the stated term.
     let otherDebtBal = debts.reduce((acc, d) => acc + d.balance, 0);
     const otherDebtMonthly = debts.reduce((acc, d) => acc + d.monthlyPayment, 0);
 
@@ -288,11 +349,13 @@ export function runRetirementSimulation(
       ? HISTORICAL_PRESETS.find((p) => p.id === sequencePresetKey)?.data
       : undefined;
 
+    // MAGI history (per year, nominal $) + cumulative inflation factors, for
+    // the SSA-style 2-year Medicare IRMAA lookback.
+    const magiByYear: number[] = [];
+    const inflFactors: number[] = [];
+
     // Cumulative inflation factor for correct compounding under variable inflation.
     let cumulativeInflation = 1;
-    // Year-end portfolio history for guardrails (decline detection).
-    let prevYearEnd = liquidCash + taxableInvestments + preTax401k + postTaxRothHsa;
-    let prevPrevYearEnd = prevYearEnd;
 
     for (let i = 0; i < numYears; i++) {
       const age = currentAge + i;
@@ -307,29 +370,38 @@ export function runRetirementSimulation(
       let yearInflation = baseInflation + inflationModifier;
       let yearPortfolioReturn = expectedPortfolioReturn + returnModifier;
 
-      if (returnMode === 'deterministic') {
+      if (returnMode === 'deterministic' && inflationMode !== 'historical_replay') {
         // Deterministic mode uses expected returns exactly (modifiers still apply for bands).
-      } else if (returnMode === 'historical_replay' && sequencePresetKey) {
-        // Historical replay: stop at preset end, don't cycle
+      } else if (sequencePresetKey) {
+        // Historical replay, chosen either via "Seq. Replay" inflation mode or
+        // the "Hist. Real" return mode: inflation always follows the preset
+        // sequence (holding the last year once the preset ends). Returns
+        // follow the preset only when the RETURNS mode itself is a replay —
+        // a "Seq. Replay" inflation user on a deterministic return curve gets
+        // deterministic returns with historical inflation.
         if (presetData && i >= presetData.length) {
-          // Continue with last year's returns and inflation
           const lastYear = presetData[presetData.length - 1];
           yearInflation = lastYear.inflation / 100.0;
-          const sRet = lastYear.stock / 100.0;
-          const bRet = lastYear.bond / 100.0;
-          yearPortfolioReturn = stockW * sRet + bondW * bRet + cashW * 0.02;
+          if (returnMode === 'historical_real') {
+            const sRet = lastYear.stock / 100.0;
+            const bRet = lastYear.bond / 100.0;
+            yearPortfolioReturn = stockW * sRet + bondW * bRet + cashW * 0.02;
+          }
         } else if (presetData && presetData.length > 0) {
           const pYear = presetData[i];
           yearInflation = pYear.inflation / 100.0;
-          const sRet = pYear.stock / 100.0;
-          const bRet = pYear.bond / 100.0;
-          yearPortfolioReturn = stockW * sRet + bondW * bRet + cashW * 0.02;
+          if (returnMode === 'historical_real') {
+            const sRet = pYear.stock / 100.0;
+            const bRet = pYear.bond / 100.0;
+            yearPortfolioReturn = stockW * sRet + bondW * bRet + cashW * 0.02;
+          }
         }
       }
 
       // Milestones for this year
       const milestones: TimelineMilestone[] = [];
 
+      inflFactors.push(cumulativeInflation);
       if (age === targetRetirementAge) {
         milestones.push({
           age,
@@ -363,7 +435,7 @@ export function runRetirementSimulation(
         });
       }
 
-      if (age === RMD_START_AGE && currentPreTax > 0) {
+      if (age === rmdStartAge && currentPreTax > 0) {
         milestones.push({
           age,
           year,
@@ -377,7 +449,10 @@ export function runRetirementSimulation(
       // Housing cost with amortized mortgage math.
       let annualHousingExpense = 0;
       if (housingType === 'mortgage') {
-        if (remainingMortgageYrs > 0 && currentMortgageBal > 0) {
+        // Keep amortizing until the balance is actually cleared, even past the
+        // stated term (a payment that can't amortize in the entered years just
+        // runs longer — never silently forgiving the residual balance).
+        if (currentMortgageBal > 0) {
           const { payment, newBalance } = applyMortgageYear(
             currentMortgageBal,
             mortgageMonthly,
@@ -385,8 +460,7 @@ export function runRetirementSimulation(
           );
           annualHousingExpense = payment;
           currentMortgageBal = newBalance;
-          remainingMortgageYrs -= 1;
-          if (remainingMortgageYrs === 0 || currentMortgageBal <= 0) {
+          if (currentMortgageBal <= 0) {
             currentMortgageBal = 0;
             milestones.push({
               age: age + 1,
@@ -429,22 +503,31 @@ export function runRetirementSimulation(
       }
 
       // Healthcare (age-graded, medical inflation). Location COL already applied to living expenses.
-      const healthExpenses = calcHealthcareForYear(state, age);
+      // Plus Medicare premiums from the eligibility age (Part B + IRMAA incl.
+      // Part D), using the SSA 2-year MAGI lookback in today's dollars.
+      let magiReal = 0;
+      if (magiByYear.length > 0) {
+        const lookbackIdx = magiByYear.length >= 2 ? magiByYear.length - 2 : magiByYear.length - 1;
+        magiReal = magiByYear[lookbackIdx] / (inflFactors[lookbackIdx] || 1);
+      }
+      let healthExpenses = calcHealthcareForYear(state, age);
+      if ((state.includeMedicarePremiums ?? true) && age >= 65) {
+        const prem = medicarePremiums(magiReal, filing);
+        healthExpenses += (prem.partB + prem.partDSurcharge) * 12 * cumulativeInflation;
+      }
 
       // Living expenses, with guardrails cut when active.
       let spendingCutApplied = false;
       let annualLivingExpenses = baseMonthlyLifestyle * 12 * cumulativeInflation;
 
       // Apply spending smile multiplier based on age
-      let spendingSmileMultiplier = 1.0;
       if (isRetired) {
-        if (age < spendingSmileStartAge) {
-          spendingSmileMultiplier = spendingSmile.early;
-        } else if (age < spendingSmileMidAge) {
-          spendingSmileMultiplier = spendingSmile.mid;
-        } else {
-          spendingSmileMultiplier = spendingSmile.late;
-        }
+        const spendingSmileMultiplier =
+          age < spendingSmileStartAge
+            ? spendingSmile.early
+            : age < spendingSmileMidAge
+              ? spendingSmile.mid
+              : spendingSmile.late;
         annualLivingExpenses *= spendingSmileMultiplier;
       }
 
@@ -485,6 +568,8 @@ export function runRetirementSimulation(
 
       let totalContrib = 0;
       let netWithdrawal = 0;
+      let preTaxDraw = 0;
+      let taxableDraw = 0;
       let yearTaxPaid = 0;
       let yearRothConverted = 0;
 
@@ -537,8 +622,6 @@ export function runRetirementSimulation(
         // Decumulation phase
         netWithdrawal = Math.max(0, totalAnnualOutflow - annualGuaranteedIncome);
         let remainingToWithdraw = netWithdrawal;
-        let preTaxDraw = 0;
-        let taxableDraw = 0;
 
         const drawCashFirst = () => {
           if (remainingToWithdraw > 0 && currentLiquid > 0) {
@@ -567,6 +650,9 @@ export function runRetirementSimulation(
             const pDraw = Math.min(balPreTax, grossed);
             currentPreTax -= pDraw;
             preTaxDraw += pDraw;
+            // Withhold the gross-up margin as cash so the upcoming tax bill
+            // can actually be paid (it ends up in drawTaxCash's source below).
+            currentLiquid += pDraw - pDraw / FINANCIAL_CONSTANTS.PRE_TAX_WITHDRAWAL_GROSS_UP;
             remainingToWithdraw -= pDraw / FINANCIAL_CONSTANTS.PRE_TAX_WITHDRAWAL_GROSS_UP;
           }
         } else if (withdrawalStrategy === 'guardrails') {
@@ -585,6 +671,8 @@ export function runRetirementSimulation(
             const draw = Math.min(currentPreTax, grossedDraw);
             currentPreTax -= draw;
             preTaxDraw += draw;
+            // Withhold the gross-up margin as cash for the upcoming tax bill.
+            currentLiquid += draw - draw / FINANCIAL_CONSTANTS.PRE_TAX_WITHDRAWAL_GROSS_UP;
             remainingToWithdraw -= draw / FINANCIAL_CONSTANTS.PRE_TAX_WITHDRAWAL_GROSS_UP;
           }
           // 4. Draw from Post-Tax (Roth/HSA - tax-free)
@@ -609,6 +697,8 @@ export function runRetirementSimulation(
             const draw = Math.min(currentPreTax, grossedDraw);
             currentPreTax -= draw;
             preTaxDraw += draw;
+            // Withhold the gross-up margin as cash for the upcoming tax bill.
+            currentLiquid += draw - draw / FINANCIAL_CONSTANTS.PRE_TAX_WITHDRAWAL_GROSS_UP;
             remainingToWithdraw -= draw / FINANCIAL_CONSTANTS.PRE_TAX_WITHDRAWAL_GROSS_UP;
           }
           // 4. Draw from Post-Tax (Roth/HSA - tax-free)
@@ -619,8 +709,9 @@ export function runRetirementSimulation(
           }
         }
 
-        // RMDs: force pre-tax withdrawals from 75 (excess over need lands in taxable).
-        if (age >= RMD_START_AGE && currentPreTax > 0) {
+        // RMDs: force pre-tax withdrawals from the SECURE 2.0 cohort age
+        // (73 for born 1951-1959, 75 for 1960+; excess lands in taxable).
+        if (age >= rmdStartAge && currentPreTax > 0) {
           const rmd = currentPreTax / rmdDivisor(age);
           if (preTaxDraw < rmd) {
             const extra = Math.min(currentPreTax, rmd - preTaxDraw);
@@ -631,7 +722,9 @@ export function runRetirementSimulation(
           }
         }
 
-        // Real tax bill on this year's draws + conversions, settled from cash/taxable.
+        // Real tax bill on this year's draws + conversions, settled from the
+        // withheld gross-up margin (cash) then taxable, with a final pre-tax
+        // top-up if the buckets still can't cover it.
         if (preTaxDraw > 0 || taxableDraw > 0 || conversionTaxBase > 0) {
           const bill = calcWithdrawalTaxes({
             preTaxDraw: preTaxDraw + conversionTaxBase,
@@ -640,8 +733,20 @@ export function runRetirementSimulation(
             ssAnnual,
             filing,
             stateTaxPct,
+            primaryAge: age,
+            partnerAge,
+            planYear: year,
           });
           yearTaxPaid = drawTaxCash(bill.total);
+          const unpaidTax = bill.total - yearTaxPaid;
+          if (unpaidTax > 0.5 && currentPreTax > 0) {
+            // Fund the remaining tax by an additional pre-tax draw; its own
+            // tax is approximated as covered by the withheld gross-up margin.
+            const topUp = Math.min(currentPreTax, unpaidTax);
+            currentPreTax -= topUp;
+            preTaxDraw += topUp;
+            yearTaxPaid += topUp;
+          }
         }
       } else if (conversionTaxBase > 0) {
         // Conversions during working years: tax the conversion alone.
@@ -652,9 +757,27 @@ export function runRetirementSimulation(
           ssAnnual: 0,
           filing,
           stateTaxPct,
+          primaryAge: age,
+          partnerAge,
+          planYear: year,
         });
         yearTaxPaid = drawTaxCash(bill.total);
+        const unpaidTax = bill.total - yearTaxPaid;
+        if (unpaidTax > 0.5 && currentPreTax > 0) {
+          const topUp = Math.min(currentPreTax, unpaidTax);
+          currentPreTax -= topUp;
+          yearTaxPaid += topUp;
+        }
       }
+
+      // MAGI history for the Medicare IRMAA 2-year lookback: working years
+      // use household wages; retirement years use guaranteed income plus the
+      // year's gross withdrawals/conversions.
+      magiByYear.push(
+        isRetired
+          ? annualGuaranteedIncome + preTaxDraw + taxableDraw + conversionTaxBase
+          : currentIncome + currentPartnerIncome
+      );
 
       // Apply portfolio growth for the year
       currentLiquid *= 1 + cashReturnNominal;
@@ -663,13 +786,12 @@ export function runRetirementSimulation(
       currentPostTax = Math.max(0, currentPostTax * (1 + yearPortfolioReturn));
 
       const netWorth = totalPortfolioAfterGrowth - currentMortgageBal - otherDebtBal;
-      prevPrevYearEnd = prevYearEnd;
-      prevYearEnd = totalPortfolioAfterGrowth;
 
       projections.push({
         year,
         age,
         isRetired,
+        inflationFactor: cumulativeInflation,
         netWorth50: Math.round(netWorth),
         netWorth95: Math.round(netWorth),
         netWorth10: Math.round(netWorth),
@@ -706,15 +828,15 @@ export function runRetirementSimulation(
   const targetProjections = runSingleTrajectory(
     0,
     0,
-    inflationMode === 'historical_replay' ? historicalInflationPreset : undefined
+    inflationMode === 'historical_replay' || returnMode === 'historical_real'
+      ? historicalInflationPreset || HISTORICAL_PRESETS[0].id
+      : undefined
   );
 
   // Lifetime totals come from the target run only (band runs share the
   // same accumulators, so recompute here instead of summing all three).
   const targetTaxes = targetProjections.reduce((a, p) => a + p.taxPaid, 0);
   const targetRoth = targetProjections.reduce((a, p) => a + p.rothConverted, 0);
-  lifetimeTaxesPaid = targetTaxes;
-  lifetimeRothConverted = targetRoth;
 
   // Scenario bands (labeled Conservative / Stress — deterministic offsets, not statistical percentiles).
   const conservativeProjections = runSingleTrajectory(0.02, -0.005);
@@ -738,29 +860,103 @@ export function runRetirementSimulation(
     };
   });
 
+  // Coast FIRE: the earliest age where the portfolio could reach the FIRE
+  // number by the target retirement age even with zero further contributions.
+  // (Nominal-to-nominal: the FIRE target is inflated to the retirement year.)
+  const yearsToRetirement = Math.max(0, targetRetirementAge - currentAge);
+  const retirementYearProjEarly = mergedProjections.find((p) => p.age === targetRetirementAge);
+  const inflationAtRetirement = retirementYearProjEarly
+    ? retirementYearProjEarly.inflationFactor
+    : Math.pow(1 + baseInflation, yearsToRetirement);
+  const rentAtRetirement =
+    housingType === 'rent' ? rentMonthly * 12 * Math.pow(1 + rentInflationPct / 100, yearsToRetirement) : 0;
+  // Amortize the mortgage forward to the retirement year: if a balance (and
+  // so a payment) remains then, it continues as a retirement housing cost.
+  let mortgageBalAtRetirement = housingType === 'mortgage' ? mortgageBalance : 0;
+  for (
+    let y = 0;
+    housingType === 'mortgage' && y < yearsToRetirement && mortgageBalAtRetirement > 0;
+    y++
+  ) {
+    mortgageBalAtRetirement = applyMortgageYear(
+      mortgageBalAtRetirement,
+      mortgageMonthly,
+      mortgageInterestRate
+    ).newBalance;
+  }
+  const mortgageAtRetirement = mortgageBalAtRetirement > 0 ? mortgageMonthly * 12 : 0;
+  const healthBase = state.healthcareMonthlyAt65 ?? 0;
+  const healthAtRetirement =
+    healthBase > 0 && targetRetirementAge >= (state.healthcareStartAge ?? 65)
+      ? healthBase * 12 * Math.pow(1 + (state.healthcareInflationPct ?? 5.5) / 100, targetRetirementAge - (state.healthcareStartAge ?? 65))
+      : 0;
+  const estimatedRetirementAnnualExpense =
+    baseMonthlyLifestyle * 12 * colMultiplier * inflationAtRetirement +
+    rentAtRetirement +
+    mortgageAtRetirement +
+    healthAtRetirement;
+  const targetFireNumber = estimatedRetirementAnnualExpense * FINANCIAL_CONSTANTS.FIRE_MULTIPLE;
+
+
+  let coastFireAge: number | null = null;
+  if (targetFireNumber > 0 && expectedPortfolioReturn > -1) {
+    for (const p of mergedProjections) {
+      if (p.age >= targetRetirementAge) break;
+      const needed = targetFireNumber / Math.pow(1 + expectedPortfolioReturn, targetRetirementAge - p.age);
+      if (p.totalPortfolio - p.totalDebtBalance >= needed) {
+        coastFireAge = p.age;
+        break;
+      }
+    }
+  }
+
+  // Coast FIRE milestone on the year it is reached.
+  if (coastFireAge != null) {
+    const coastProj = mergedProjections.find((p) => p.age === coastFireAge);
+    if (coastProj) {
+      coastProj.milestones.push({
+        age: coastFireAge,
+        year: coastProj.year,
+        title: '🛩️ Coast FIRE Reached',
+        description:
+          'The portfolio could now reach the FIRE number by your retirement age with no further contributions.',
+        icon: 'Landmark',
+        category: 'retirement',
+      });
+    }
+  }
+
   // Calculate Success Rate via Monte Carlo Simulation (shares outflow logic with main trajectory).
   let successfulTrials = 0;
   const totalTrials = opts?.trials ?? FINANCIAL_CONSTANTS.MONTE_CARLO_TRIALS;
   const prng = createPRNG(hashStateSeed(state));
 
   for (let trial = 0; trial < totalTrials; trial++) {
-    let simPortfolio = liquidCash + taxableInvestments + preTax401k + postTaxRothHsa;
+    // Persistent buckets per trial — same as the deterministic run — so
+    // draws, RMD depletion and returns carry across years instead of being
+    // re-split from static starting weights every year.
+    let simCurrentLiquid = liquidCash;
+    let simCurrentTaxable = taxableInvestments;
+    let simCurrentPreTax = preTax401k;
+    let simCurrentPostTax = postTaxRothHsa;
     let simIncome = currentAnnualIncome;
     let simPartnerIncome = partnerOn ? partner.annualIncome : 0;
     let simMortgageBal = housingType === 'mortgage' ? mortgageBalance : 0;
-    let simMortgageYrs = housingType === 'mortgage' ? mortgageRemainingYears : 0;
     let simOtherDebt = debts.reduce((acc, d) => acc + d.balance, 0);
     const simOtherMonthly = debts.reduce((acc, d) => acc + d.monthlyPayment, 0);
+    const simMagiByYear: number[] = [];
+    const simInflFactors: number[] = [];
     let simCumInflation = 1;
     let simFailed = false;
-      let simShortfall = false;
-    let simPrevEnd = simPortfolio;
-    let simPrevPrevEnd = simPortfolio;
+    let simShortfall = false;
+    let simPeak = 0;
+    let simPeakSet = false;
 
     for (let i = 0; i < numYears; i++) {
       const age = currentAge + i;
       const partnerAge = (partner.currentAge || currentAge) + i;
       const isRetired = age >= targetRetirementAge;
+      const year = new Date().getFullYear() + i;
 
       // Sample random market return and inflation for trial year using seeded PRNG
       const sampledStock = randomNormal(MONTE_CARLO_STATS.stock.mean, MONTE_CARLO_STATS.stock.stdev, prng);
@@ -770,37 +966,42 @@ export function runRetirementSimulation(
         randomNormal(MONTE_CARLO_STATS.inflation.mean, MONTE_CARLO_STATS.inflation.stdev, prng)
       );
 
-      const trialPortfolioReturn = stockW * sampledStock + bondW * sampledBond + cashW * 0.025;
+      const trialPortfolioReturn =
+        stockW * sampledStock + bondW * sampledBond + cashW * FINANCIAL_CONSTANTS.DEFAULT_CASH_RETURN_NOMINAL;
 
-      // Split the portfolio across buckets by starting weights. Guard the divisor so a
-      // fully-depleted starting portfolio yields zero buckets instead of NaN.
-      const startBucketTotal = Math.max(1e-9, liquidCash + taxableInvestments + preTax401k + postTaxRothHsa);
-      let simCurrentLiquid = (simPortfolio * liquidCash) / startBucketTotal;
-      let simCurrentTaxable = (simPortfolio * taxableInvestments) / startBucketTotal;
-      let simCurrentPreTax = (simPortfolio * preTax401k) / startBucketTotal;
-      let simCurrentPostTax = (simPortfolio * postTaxRothHsa) / startBucketTotal;
+      simInflFactors.push(simCumInflation);
 
-      // Expenses (same structure as deterministic trajectory)
+
+      // Expenses (same structure as deterministic trajectory).
       let annualLiving = baseMonthlyLifestyle * 12 * simCumInflation;
-      if (
-        withdrawalStrategy === 'guardrails' &&
-        isRetired &&
-        i > 1 &&
-        simPrevEnd < simPrevPrevEnd &&
-        guardrailCut > 0
-      ) {
-        annualLiving *= 1 - guardrailCut;
+      if (isRetired) {
+        // Spending smile (parity with the deterministic trajectory).
+        if (age < spendingSmileStartAge) annualLiving *= spendingSmile.early;
+        else if (age < spendingSmileMidAge) annualLiving *= spendingSmile.mid;
+        else annualLiving *= spendingSmile.late;
+        // Guardrails: cut spending when the portfolio falls below its
+        // post-retirement peak (same peak-based rule as deterministic).
+        if (withdrawalStrategy === 'guardrails' && i > 1 && guardrailCut > 0) {
+          const startPortfolio = simCurrentLiquid + simCurrentTaxable + simCurrentPreTax + simCurrentPostTax;
+          if (!simPeakSet || startPortfolio > simPeak) {
+            simPeak = startPortfolio;
+            simPeakSet = true;
+          }
+          if (simPeak > 0 && startPortfolio < simPeak * (1 - guardrailCut)) {
+            annualLiving *= 1 - guardrailCut;
+          }
+        }
+        annualLiving *= colMultiplier;
       }
-      if (isRetired) annualLiving *= colMultiplier;
 
       let annualHousing = 0;
       if (housingType === 'rent') {
         annualHousing = rentMonthly * 12 * Math.pow(1 + rentInflationPct / 100, i);
-      } else if (simMortgageYrs > 0 && simMortgageBal > 0) {
+      } else if (simMortgageBal > 0) {
+        // Keep amortizing until the balance clears (parity with deterministic).
         const { payment, newBalance } = applyMortgageYear(simMortgageBal, mortgageMonthly, mortgageInterestRate);
         annualHousing = payment;
         simMortgageBal = newBalance;
-        simMortgageYrs -= 1;
       }
 
       let annualDebt = 0;
@@ -810,13 +1011,18 @@ export function runRetirementSimulation(
       }
 
       const childEdu = calcChildEducationForYear(state, i, simCumInflation);
-      const healthTrial =
-        (state.healthcareMonthlyAt65 ?? 0) > 0 && age >= (state.healthcareStartAge ?? 65)
-          ? (state.healthcareMonthlyAt65 ?? 0) *
-            12 *
-            Math.pow(1 + (state.healthcareInflationPct ?? 5.5) / 100, age - (state.healthcareStartAge ?? 65))
-          : 0;
-      let trialOutflow = annualLiving + annualHousing + childEdu + annualDebt + healthTrial;
+      const healthTrial = calcHealthcareForYear(state, age);
+
+      // Medicare premiums from the eligibility age (Part B + IRMAA incl.
+      // Part D), using the SSA 2-year MAGI lookback in today's dollars.
+      let medicareTrial = 0;
+      if ((state.includeMedicarePremiums ?? true) && age >= 65) {
+        const lookbackIdx = simMagiByYear.length >= 2 ? simMagiByYear.length - 2 : simMagiByYear.length - 1;
+        const magiReal = lookbackIdx >= 0 ? simMagiByYear[lookbackIdx] / (simInflFactors[lookbackIdx] || 1) : 0;
+        const prem = medicarePremiums(magiReal, filing);
+        medicareTrial = (prem.partB + prem.partDSurcharge) * 12 * simCumInflation;
+      }
+      const trialOutflow = annualLiving + annualHousing + childEdu + annualDebt + healthTrial + medicareTrial;
 
       if (!isRetired) {
         if (i > 0) {
@@ -827,29 +1033,37 @@ export function runRetirementSimulation(
         const contrib = useFixedContribution
           ? fixedAnnualContribution
           : householdSimIncome * (savingsRatePct / 100.0);
-        simPortfolio += contrib;
+        const splitSum = Math.max(
+          1e-9,
+          contributionSplit.preTaxPct + contributionSplit.postTaxPct + contributionSplit.taxablePct
+        );
+        simCurrentPreTax += contrib * (contributionSplit.preTaxPct / splitSum);
+        simCurrentPostTax += contrib * (contributionSplit.postTaxPct / splitSum);
+        simCurrentTaxable += contrib * (contributionSplit.taxablePct / splitSum);
+        simMagiByYear.push(householdSimIncome);
       } else {
-        // Household SS with survivor benefit (same helper as deterministic).
-        const primaryAlive = age <= lifeExpectancy;
-        const partnerAlive = !partnerOn || partnerAge <= partner.lifeExpectancy;
-        let trialSs = 0;
-        if (primaryAlive && age >= socialSecurityStartAge && socialSecurityMonthlyAt67 > 0) {
-          trialSs = socialSecurityMonthlyAt67 * 12 * ssFactor * simCumInflation;
-        }
-        if (partnerOn && partnerAlive && partnerAge >= partner.ssStartAge && partner.ssMonthlyAt67 > 0) {
-          const pSs = partner.ssMonthlyAt67 * 12 * partnerSsFactor * simCumInflation;
-          trialSs = primaryAlive && partnerAlive ? trialSs + pSs : Math.max(trialSs, pSs);
-        }
-        let trialGuaranteed = trialSs;
-        if (age >= pensionStartAge) trialGuaranteed += pensionMonthly * 12 * simCumInflation;
+        // Household SS with spousal/survivor rules (same helper as deterministic).
+        const trialSs = householdSsForYear({
+          primaryAge: age,
+          partnerAge,
+          partnerOn,
+          primaryPIAMonthly: socialSecurityMonthlyAt67,
+          partnerPIAMonthly: partner.ssMonthlyAt67,
+          primaryClaimAge: socialSecurityStartAge,
+          partnerClaimAge: partner.ssStartAge,
+          inflationFactor: simCumInflation,
+          primaryLifeExpectancy: lifeExpectancy,
+          partnerLifeExpectancy: partner.lifeExpectancy,
+        });
+        const simPensionAnnual =
+          age >= pensionStartAge && pensionMonthly > 0 ? pensionMonthly * 12 * simCumInflation : 0;
+        const trialGuaranteed = trialSs + simPensionAnnual;
 
         const needed = Math.max(0, trialOutflow - trialGuaranteed);
         
         // Apply withdrawal strategy in MC
         let simPreTaxDraw = 0;
         let simTaxableDraw = 0;
-        let simPostTaxDraw = 0;
-        let simRothConverted = 0;
         let simConversionTaxBase = 0;
         let simRemaining = needed;
         
@@ -880,6 +1094,8 @@ export function runRetirementSimulation(
             const pDraw = Math.min(simCurrentPreTax, grossed);
             simCurrentPreTax -= pDraw;
             simPreTaxDraw += pDraw;
+            // Withhold the gross-up margin as cash for the upcoming tax bill.
+            simCurrentLiquid += pDraw - pDraw / FINANCIAL_CONSTANTS.PRE_TAX_WITHDRAWAL_GROSS_UP;
             simRemaining -= pDraw / FINANCIAL_CONSTANTS.PRE_TAX_WITHDRAWAL_GROSS_UP;
           }
         } else {
@@ -896,6 +1112,8 @@ export function runRetirementSimulation(
             const draw = Math.min(simCurrentPreTax, grossedDraw);
             simCurrentPreTax -= draw;
             simPreTaxDraw += draw;
+            // Withhold the gross-up margin as cash for the upcoming tax bill.
+            simCurrentLiquid += draw - draw / FINANCIAL_CONSTANTS.PRE_TAX_WITHDRAWAL_GROSS_UP;
             simRemaining -= draw / FINANCIAL_CONSTANTS.PRE_TAX_WITHDRAWAL_GROSS_UP;
           }
           if (simRemaining > 0 && simCurrentPostTax > 0) {
@@ -905,8 +1123,8 @@ export function runRetirementSimulation(
           }
         }
         
-        // RMDs
-        if (age >= RMD_START_AGE && simCurrentPreTax > 0) {
+        // RMDs (SECURE 2.0 cohort start age; excess lands in taxable).
+        if (age >= rmdStartAge && simCurrentPreTax > 0) {
           const rmd = simCurrentPreTax / rmdDivisor(age);
           if (simPreTaxDraw < rmd) {
             const extra = Math.min(simCurrentPreTax, rmd - simPreTaxDraw);
@@ -919,32 +1137,57 @@ export function runRetirementSimulation(
         
         // Roth conversions in MC
         if (rothOn && rothAnnual > 0 && age >= rothStart && age <= rothEnd && simCurrentPreTax > 0) {
-          simRothConverted = Math.min(simCurrentPreTax, rothAnnual);
-          simCurrentPreTax -= simRothConverted;
-          simCurrentPostTax += simRothConverted;
-          simConversionTaxBase = simRothConverted;
-        }
-
-        // Apply guardrails cut to needed amount
-        if (withdrawalStrategy === 'guardrails' && i > 1 && simPrevEnd < simPrevPrevEnd && guardrailCut > 0) {
-          trialOutflow *= 1 - guardrailCut;
+          simConversionTaxBase = Math.min(simCurrentPreTax, rothAnnual);
+          simCurrentPreTax -= simConversionTaxBase;
+          simCurrentPostTax += simConversionTaxBase;
         }
 
         // Anything still unfunded after exhausting every bucket is a shortfall.
         if (simRemaining > 0.5) simShortfall = true;
 
-        // Settle the year: taxes are paid from cash/taxable on top of the spend.
-        const tax = estimateMcTax(simPreTaxDraw + simConversionTaxBase + simTaxableDraw, filing, stateTaxPct);
-        simPortfolio = simCurrentLiquid + simCurrentTaxable + simCurrentPreTax + simCurrentPostTax - simRemaining - tax;
+        // Real tax bill (incl. taxable-SS rules and the senior deduction),
+        // paid from the withheld gross-up margin (cash), then taxable, then a
+        // final pre-tax top-up — mirroring the deterministic settlement.
+        const bill = calcWithdrawalTaxes({
+          preTaxDraw: simPreTaxDraw + simConversionTaxBase,
+          taxableDraw: simTaxableDraw,
+          pensionAnnual: simPensionAnnual,
+          ssAnnual: trialSs,
+          filing,
+          stateTaxPct,
+          primaryAge: age,
+          partnerAge,
+          planYear: year,
+        });
+        let taxUnpaid = Math.max(0, bill.total);
+        const paidFromLiquid = Math.min(simCurrentLiquid, taxUnpaid);
+        simCurrentLiquid -= paidFromLiquid;
+        taxUnpaid -= paidFromLiquid;
+        if (taxUnpaid > 0 && simCurrentTaxable > 0) {
+          const d = Math.min(simCurrentTaxable, taxUnpaid);
+          simCurrentTaxable -= d;
+          taxUnpaid -= d;
+        }
+        if (taxUnpaid > 0 && simCurrentPreTax > 0) {
+          const d = Math.min(simCurrentPreTax, taxUnpaid);
+          simCurrentPreTax -= d;
+        }
+
+        simMagiByYear.push(trialGuaranteed + simPreTaxDraw + simTaxableDraw + simConversionTaxBase);
       }
 
-      simPortfolio *= 1 + trialPortfolioReturn;
+      // Apply portfolio growth per bucket (cash earns its own rate, parity
+      // with the deterministic run).
+      simCurrentLiquid *= 1 + FINANCIAL_CONSTANTS.DEFAULT_CASH_RETURN_NOMINAL;
+      simCurrentTaxable *= 1 + trialPortfolioReturn;
+      simCurrentPreTax *= 1 + trialPortfolioReturn;
+      simCurrentPostTax *= 1 + trialPortfolioReturn;
       simCumInflation *= 1 + sampledInflation;
-      simPrevPrevEnd = simPrevEnd;
-      simPrevEnd = simPortfolio;
 
       // Failure = an unfunded year's spending, or net worth fully exhausted while retired.
-      const simNetWorth = simPortfolio - simMortgageBal - simOtherDebt;
+      const simNetWorth =
+        simCurrentLiquid + simCurrentTaxable + simCurrentPreTax + simCurrentPostTax -
+        simMortgageBal - simOtherDebt;
       if (simShortfall || (simNetWorth <= 0 && isRetired)) {
         simFailed = true;
         break;
@@ -965,20 +1208,8 @@ export function runRetirementSimulation(
     : 0;
   const finalNetWorth = finalYearProj ? finalYearProj.netWorth50 : 0;
 
-  // Estimate retirement-year spend including housing + healthcare so FIRE/SWR aren't understated.
-  const yearsToRetirement = Math.max(0, targetRetirementAge - currentAge);
-  const rentAtRetirement =
-    housingType === 'rent' ? rentMonthly * 12 * Math.pow(1 + rentInflationPct / 100, yearsToRetirement) : 0;
-  const mortgageAtRetirement =
-    housingType === 'mortgage' && yearsToRetirement < mortgageRemainingYears ? mortgageMonthly * 12 : 0;
-  const healthBase = state.healthcareMonthlyAt65 ?? 0;
-  const healthAtRetirement =
-    healthBase > 0 && targetRetirementAge >= (state.healthcareStartAge ?? 65)
-      ? healthBase * 12 * Math.pow(1 + (state.healthcareInflationPct ?? 5.5) / 100, targetRetirementAge - (state.healthcareStartAge ?? 65))
-      : 0;
-  const estimatedRetirementAnnualExpense =
-    baseMonthlyLifestyle * 12 * colMultiplier + rentAtRetirement + mortgageAtRetirement + healthAtRetirement;
-  const targetFireNumber = estimatedRetirementAnnualExpense * FINANCIAL_CONSTANTS.FIRE_MULTIPLE;
+  // Retirement-year spend (nominal), FIRE number and Coast FIRE were computed
+  // alongside mergedProjections above; only this SWR summary remains here.
 
   // Find early FIRE age if portfolio hits 25x annual retirement expenses
   let fireAgeAchievable: number | null = null;
@@ -1006,12 +1237,14 @@ export function runRetirementSimulation(
     targetRetirementNetWorth: Math.round(targetRetirementNetWorth),
     finalNetWorth: Math.round(finalNetWorth),
     fireAgeAchievable,
+    coastFireAge,
+    retirementAnnualExpense: Math.round(estimatedRetirementAnnualExpense),
     safeWithdrawalRatePct,
     monthlyRetirementSpending: Math.round(baseMonthlyLifestyle * colMultiplier),
     baselineLocationName: 'US National Average',
     targetLocationName: location.name,
     colMultiplier,
-    lifetimeTaxesPaid: Math.round(lifetimeTaxesPaid),
-    lifetimeRothConverted: Math.round(lifetimeRothConverted),
+    lifetimeTaxesPaid: Math.round(targetTaxes),
+    lifetimeRothConverted: Math.round(targetRoth),
   };
 }

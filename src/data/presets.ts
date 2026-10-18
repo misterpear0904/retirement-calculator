@@ -75,6 +75,7 @@ export const DEFAULT_STATE: RetirementState = {
   healthcareMonthlyAt65: 650,
   healthcareInflationPct: 5.5,
   healthcareStartAge: 65,
+  includeMedicarePremiums: true,
 
   taxFilingStatus: 'single',
   withdrawalStrategy: 'fixed_order',

@@ -1,9 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { RetirementState, SimulationResult } from './types/retirement';
 import { runRetirementSimulation } from './utils/calculatorEngine';
+import { FINANCIAL_CONSTANTS } from './utils/constants';
 import { decodeStateFromUrl, clearScenarioFromUrl } from './utils/urlEncoder';
 import { saveStateToStorage, loadStateFromStorage } from './utils/storage';
-import { exportToPdf } from './utils/pdfExport';
 import { exportStateToFile, importStateFromFile } from './utils/fileExportImport';
 import { sanitizeRetirementState, validateRetirementState } from './utils/validation';
 import { DEFAULT_STATE, applyPreset } from './data/presets';
@@ -26,9 +26,25 @@ import { YearlyTable } from './components/Dashboard/YearlyTable';
 import { BenchmarkCompare } from './components/Dashboard/BenchmarkCompare';
 import { ScenariosTab } from './components/Dashboard/ScenariosTab';
 import { SensitivityTab } from './components/Dashboard/SensitivityTab';
+import { SolverTab } from './components/Dashboard/SolverTab';
 import { BasicModeInputs } from './components/BasicModeInputs';
 
 import { Layers, ChevronUp, ChevronDown, AlertTriangle } from 'lucide-react';
+
+/**
+ * Dashboard tabs in display order — drives the Alt+1..N keyboard shortcuts.
+ */
+const DASHBOARD_TABS = [
+  { id: 'chart', label: 'Multi-Scenario Chart' },
+  { id: 'timeline', label: 'Milestone Timeline' },
+  { id: 'table', label: 'Yearly Schedule' },
+  { id: 'compare', label: 'Global Compare' },
+  { id: 'scenarios', label: 'Scenarios' },
+  { id: 'sensitivity', label: 'What-If' },
+  { id: 'solve', label: 'Solve' },
+] as const;
+
+type DashboardTabId = (typeof DASHBOARD_TABS)[number]['id'];
 
 function useDebouncedValue<T>(value: T, delayMs: number): T {
   const [debounced, setDebounced] = useState(value);
@@ -56,7 +72,7 @@ export function App() {
     tax: false,
   });
 
-  const [activeTab, setActiveTab] = useState<'chart' | 'timeline' | 'table' | 'compare' | 'scenarios' | 'sensitivity'>('chart');
+  const [activeTab, setActiveTab] = useState<DashboardTabId>('chart');
 
   // Basic vs Advanced input mode. Basic is the default: 7 essentials only.
   const [mode, setMode] = useState<'basic' | 'advanced'>(() => {
@@ -153,20 +169,101 @@ export function App() {
   const debouncedState = useDebouncedValue(state, 150);
 
   // Autosave inputs locally so returning visits restore without import/export.
+  // Quota/availability failures surface once instead of being silently lost.
+  const quotaWarnedRef = React.useRef(false);
   useEffect(() => {
     if (!dirtyRef.current) return;
-    saveStateToStorage(debouncedState);
+    try {
+      saveStateToStorage(debouncedState);
+      quotaWarnedRef.current = false;
+    } catch {
+      if (!quotaWarnedRef.current) {
+        quotaWarnedRef.current = true;
+        setToastMessage("Couldn't autosave (browser storage full or blocked). Use Export Inputs as a backup.");
+      }
+    }
   }, [debouncedState]);
 
-  // High performance real-time simulation
-  const simulationResult: SimulationResult = useMemo(() => {
+  // Keyboard shortcuts: Alt+1..7 switch dashboard tabs, "?" toggles this help.
+  const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === '?' && !e.altKey && !e.ctrlKey && !e.metaKey) {
+        setShowKeyboardHelp((prev) => !prev);
+        return;
+      }
+      if (!e.altKey || e.ctrlKey || e.metaKey) return;
+      const n = parseInt(e.key, 10);
+      if (n >= 1 && n <= DASHBOARD_TABS.length) {
+        e.preventDefault();
+        setActiveTab(DASHBOARD_TABS[n - 1].id);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  // --- Monte Carlo on a Web Worker -------------------------------------------
+  // The deterministic projections are cheap and computed synchronously; the
+  // 500-trial MC runs on a worker with a version token so stale responses are
+  // ignored. Falls back to inline computation when workers are unavailable.
+  const [mcSuccessRate, setMcSuccessRate] = useState<number | null>(null);
+  const workerRef = React.useRef<Worker | null>(null);
+  const versionRef = React.useRef(0);
+
+  useEffect(() => {
+    let worker: Worker | null = null;
+    try {
+      worker = new Worker(new URL('./utils/mcWorker.ts', import.meta.url), { type: 'module' });
+      worker.onmessage = (e: MessageEvent<{ type: string; version: number; successRate: number }>) => {
+        if (e.data?.type === 'result' && e.data.version === versionRef.current) {
+          setMcSuccessRate(e.data.successRate);
+        }
+      };
+      worker.onerror = () => {
+        workerRef.current = null; // fall back to inline computation
+      };
+      workerRef.current = worker;
+    } catch {
+      workerRef.current = null;
+    }
+    return () => {
+      worker?.terminate();
+      workerRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (workerRef.current) {
+      const version = ++versionRef.current;
+      workerRef.current.postMessage({ type: 'simulate', version, state: debouncedState });
+    }
+  }, [debouncedState]);
+
+  // The synchronous result deliberately runs with a single MC trial (the
+  // worker supplies the statistically meaningful success rate).
+  const simulationResultSync: SimulationResult = useMemo(() => {
+    return runRetirementSimulation(debouncedState, { trials: 1 });
+  }, [debouncedState]);
+
+  // Fallback path when workers are blocked: full MC inline.
+  const simulationResultInline: SimulationResult | null = useMemo(() => {
+    if (workerRef.current) return null;
     return runRetirementSimulation(debouncedState);
   }, [debouncedState]);
+
+  const simulationResult: SimulationResult =
+    simulationResultInline ?? {
+      ...simulationResultSync,
+      successRate: mcSuccessRate ?? simulationResultSync.successRate,
+    };
 
   const validationIssues = useMemo(() => validateRetirementState(state), [state]);
 
   const handleExportPdf = async () => {
     try {
+      // pdfExport pulls in jsPDF (~350 kB) — load it only when the user asks.
+      const { exportToPdf } = await import('./utils/pdfExport');
       await exportToPdf('dashboard-export-container', state, simulationResult);
     } catch {
       setToastMessage('Failed to generate PDF. Please try again.');
@@ -369,20 +466,14 @@ export function App() {
             {/* Dashboard Tab Controls */}
             <div className="flex items-center justify-between dark:bg-slate-900/80 bg-white p-1.5 rounded-xl border dark:border-slate-800 border-slate-200 backdrop-blur-md">
               <div className="flex gap-1 text-xs" role="tablist" aria-label="Dashboard views">
-                {[
-                  { id: 'chart', label: 'Multi-Scenario Chart' },
-                  { id: 'timeline', label: 'Milestone Timeline' },
-                  { id: 'table', label: 'Yearly Schedule' },
-                  { id: 'compare', label: 'Global Compare' },
-                  { id: 'scenarios', label: 'Scenarios' },
-                  { id: 'sensitivity', label: 'What-If' },
-                ].map((tab) => (
+                {DASHBOARD_TABS.map((tab, index) => (
                   <button
                     key={tab.id}
                     type="button"
                     role="tab"
+                    title={`Alt+${index + 1}`}
                     aria-selected={activeTab === tab.id}
-                    onClick={() => setActiveTab(tab.id as typeof activeTab)}
+                    onClick={() => setActiveTab(tab.id)}
                     className={`px-3.5 py-1.5 rounded-lg font-bold transition-all ${activeTab === tab.id
                         ? 'bg-blue-600 text-white shadow-glow'
                         : 'dark:text-slate-400 text-slate-500 hover:text-slate-200 dark:hover:bg-slate-800/60 hover:bg-slate-100'
@@ -430,11 +521,56 @@ export function App() {
             )}
 
             {activeTab === 'sensitivity' && <SensitivityTab state={debouncedState} />}
+
+            {activeTab === 'solve' && (
+              <SolverTab
+                state={state}
+                baselineResult={simulationResult}
+                onTriggerToast={(msg) => setToastMessage(msg)}
+                onSelectRetirementAge={(age) => {
+                  dirtyRef.current = true;
+                  handleChange({ targetRetirementAge: age });
+                  setToastMessage(`Retirement age set to ${age}`);
+                }}
+              />
+            )}
           </div>
         </div>
       </main>
 
       <Toast message={toastMessage} onClose={() => setToastMessage(null)} />
+
+      {showKeyboardHelp && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Keyboard shortcuts"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          onClick={() => setShowKeyboardHelp(false)}
+        >
+          <div
+            className="dark:bg-slate-900 bg-white rounded-2xl border dark:border-slate-700 border-slate-200 p-6 max-w-md w-full space-y-3"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-sm font-bold uppercase tracking-wider dark:text-slate-300 text-slate-600">
+              Keyboard shortcuts
+            </h3>
+            <ul className="text-xs space-y-1.5 dark:text-slate-400 text-slate-600">
+              <li><kbd className="px-1.5 py-0.5 dark:bg-slate-800 bg-slate-100 rounded">Alt</kbd> + <kbd className="px-1.5 py-0.5 dark:bg-slate-800 bg-slate-100 rounded">1–7</kbd> — switch dashboard view</li>
+              <li><kbd className="px-1.5 py-0.5 dark:bg-slate-800 bg-slate-100 rounded">?</kbd> — toggle this help</li>
+              <li><kbd className="px-1.5 py-0.5 dark:bg-slate-800 bg-slate-100 rounded">Esc</kbd> — close dialogs</li>
+              <li>Arrow keys on sliders adjust their values</li>
+            </ul>
+            <button
+              type="button"
+              onClick={() => setShowKeyboardHelp(false)}
+              className="text-blue-400 hover:underline text-xs font-medium"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
 
       <footer className="border-t dark:border-slate-900 border-slate-200 dark:bg-slate-950 bg-white py-6 mt-12 text-center text-xs dark:text-slate-500 text-slate-500">
         ApexRetire Pro — Modern Financial Modeling Engine. Estimates only, not financial advice.

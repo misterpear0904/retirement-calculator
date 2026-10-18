@@ -1,59 +1,72 @@
 import { TaxFilingStatus } from '../types/retirement';
-import { FINANCIAL_CONSTANTS } from './constants';
 
-// Simplified-but-real US federal tax model (2025 figures).
+// Simplified-but-real US federal tax model, pinned to tax year 2026
+// (Rev. Proc. 2025-32 and IR-2025-148 figures).
 // Documented approximations: standard deduction only (no itemizing),
 // SS taxation via the IRS provisional-income formula, capital gains on
-// taxable-account withdrawals via an assumed cost-basis ratio.
+// taxable-account withdrawals via an assumed cost-basis ratio, MAGI
+// approximated as ordinary + capital-gain income, and the legacy age-65
+// additional standard deduction ($2,100 TY2026) is folded into the senior
+// figures below rather than modeled separately.
 
-export const TAX_YEAR = 2025;
+export const TAX_YEAR = 2026;
 
 const SINGLE_BRACKETS: Array<[number, number]> = [
-  [11925, 0.1],
-  [48475, 0.12],
-  [103350, 0.22],
-  [197300, 0.24],
-  [250525, 0.32],
-  [626350, 0.35],
+  [12400, 0.1],
+  [50400, 0.12],
+  [105700, 0.22],
+  [201775, 0.24],
+  [256225, 0.32],
+  [640600, 0.35],
   [Infinity, 0.37],
 ];
 
 const JOINT_BRACKETS: Array<[number, number]> = [
-  [23850, 0.1],
-  [96950, 0.12],
-  [206700, 0.22],
-  [394600, 0.24],
-  [501050, 0.32],
-  [751600, 0.35],
+  [24800, 0.1],
+  [100800, 0.12],
+  [211400, 0.22],
+  [403550, 0.24],
+  [512450, 0.32],
+  [768700, 0.35],
   [Infinity, 0.37],
 ];
 
-/** TY2025 standard deduction as amended by the One Big Beautiful Bill Act (IRS IR-2025-103). */
+/** TY2026 standard deduction (Rev. Proc. 2025-32). */
 export const STANDARD_DEDUCTION: Record<TaxFilingStatus, number> = {
-  single: 15750,
-  joint: 31500,
+  single: 16100,
+  joint: 32200,
 };
 
 /**
- * Top of the 0% long-term capital-gains band (TY2025, Rev. Proc. 2024-40).
- * These are the *maximum zero-rate amounts*, which differ from the 12% ordinary
- * bracket tops (48,475 / 96,950) because the two are indexed under separate sections.
+ * Long-term capital-gains band breakpoints (TY2026, Rev. Proc. 2025-32).
+ * These are the *maximum zero-rate / 15%-rate amounts*, which differ from the
+ * ordinary bracket tops (50,400 / 100,800) because the two are indexed under
+ * separate sections.
  */
-const GAINS_15_THRESHOLD: Record<TaxFilingStatus, number> = { single: 48350, joint: 96700 };
-const GAINS_20_THRESHOLD: Record<TaxFilingStatus, number> = { single: 533400, joint: 600050 };
+const GAINS_15_THRESHOLD: Record<TaxFilingStatus, number> = { single: 49450, joint: 98900 };
+const GAINS_20_THRESHOLD: Record<TaxFilingStatus, number> = { single: 545500, joint: 613700 };
 
 /** Share of each taxable-account withdrawal assumed to be gain (rest is basis). */
 export const TAXABLE_GAIN_RATIO = 0.3;
 
 /**
- * RMDs begin at 75 (SECURE 2.0). Divisors are the IRS Uniform Lifetime Table
- * (Publication 590-B, Table III) for ages 75+. Ages below 75 have no divisor
- * here — `rmdDivisor` returns Infinity and callers guard on `age >= RMD_START_AGE`.
+ * SECURE 2.0 RMD starting ages: born 1951-1959 → 73, born 1960+ → 75.
+ * (Born ≤1950 → 72, already past RMD age; treated as 73+ here.)
  */
-export const RMD_START_AGE = 75;
+export function rmdStartAgeForBirthYear(birthYear: number): 73 | 75 {
+  return birthYear <= 1959 ? 73 : 75;
+}
 
-/** IRS Uniform Lifetime Table, Table III (account owner / spouse not >10 yrs younger). */
+/** Earliest age the Uniform Lifetime Table below covers (age 72). */
+export const RMD_TABLE_MIN_AGE = 72;
+
+/**
+ * IRS Uniform Lifetime Table, Publication 590-B Table III (owner / spouse not
+ * >10 yrs younger). Ages 72-74 apply to the earlier SECURE 2.0 cohort
+ * (`rmdStartAgeForBirthYear`); ages 75+ apply to everyone else.
+ */
 const RMD_DIVISORS: Record<number, number> = {
+  72: 27.4, 73: 26.5, 74: 25.5,
   75: 24.6, 76: 23.7, 77: 22.9, 78: 22.0, 79: 21.1, 80: 20.2,
   81: 19.4, 82: 18.5, 83: 17.7, 84: 16.8, 85: 16.0, 86: 15.2,
   87: 14.4, 88: 13.7, 89: 12.9, 90: 12.2, 91: 11.5, 92: 10.8,
@@ -67,66 +80,100 @@ const RMD_DIVISORS: Record<number, number> = {
 /** Age 120 and over uses the table's terminal divisor of 2.0. */
 const RMD_DIVISOR_TERMINAL = 2.0;
 
+/**
+ * RMD divisor for a given age. Returns Infinity below the table's minimum
+ * age (72) — callers decide the actual start age via
+ * `rmdStartAgeForBirthYear` and guard on it.
+ */
 export function rmdDivisor(age: number): number {
-  if (!Number.isFinite(age) || age < RMD_START_AGE) return Infinity;
+  if (!Number.isFinite(age) || age < RMD_TABLE_MIN_AGE) return Infinity;
   return RMD_DIVISORS[Math.floor(age)] ?? RMD_DIVISOR_TERMINAL;
 }
 
-/** Social Security benefit factor vs full retirement age 67 (moved from calculatorEngine). */
+/**
+ * Social Security benefit factor vs full retirement age 67, using the real
+ * SSA two-tier early-reduction formula: 5/9 of 1% per month for the first 36
+ * months of early claiming, 5/12 of 1% per month beyond that (62 → 0.70,
+ * 63 → 0.75, 64 → 0.80, 65 → 0.8667, 66 → 0.9333), and an 8%/yr delayed
+ * retirement credit up to age 70 (70 → 1.24).
+ */
 export function ssClaimFactor(startAge: number): number {
-  if (startAge < 67)
-    return Math.max(0.7, 1.0 - (67 - startAge) * FINANCIAL_CONSTANTS.SS_EARLY_REDUCTION_PER_YEAR);
-  if (startAge > 67)
-    return (
-      1.0 +
-      Math.min(FINANCIAL_CONSTANTS.SS_LATE_BONUS_MAX_YEARS, startAge - 67) *
-        FINANCIAL_CONSTANTS.SS_LATE_BONUS_PER_YEAR
-    );
+  if (startAge < 67) {
+    const monthsEarly = (67 - startAge) * 12;
+    const early = Math.min(monthsEarly, 36) * (5 / 9 / 100);
+    const late = Math.max(0, monthsEarly - 36) * (5 / 12 / 100);
+    return 1.0 - early - late;
+  }
+  if (startAge > 67) {
+    return 1.0 + Math.min(3, startAge - 67) * 0.08;
+  }
   return 1.0;
 }
 
-/** Spousal benefit factor (proper SSA formula: 25/36% per month early for 36 months, then 5/12% per month) */
+/**
+ * Spousal benefit factor: fraction of the 50% maximum spousal benefit that a
+ * spouse receives when claiming before their own FRA of 67 (real SSA formula:
+ * 25/36 of 1% per month for the first 36 months, then 5/12 of 1% — no delayed
+ * credits on the spousal portion). E.g. claiming at 62 → 0.65 of the share.
+ */
 export function spousalClaimFactor(startAge: number): number {
   if (startAge >= 67) return 1.0; // No delayed credits on spousal
   const monthsEarly = (67 - startAge) * 12;
   if (monthsEarly <= 36) {
     return 1.0 - monthsEarly * (25 / 36 / 100);
-  } else {
-    // 25/36% for first 36 months, then 5/12% for additional months
-    return 0.75 - (monthsEarly - 36) * (5 / 12 / 100);
   }
+  // 25/36% for first 36 months, then 5/12% for additional months
+  return 0.75 - (monthsEarly - 36) * (5 / 12 / 100);
 }
 
-/** Medicare IRMAA brackets (2025, modified adjusted gross income) */
-export const IRMAA_BRACKETS: Record<TaxFilingStatus, Array<[number, number]>> = {
-  single: [
-    [106000, 0],      // Base premium
-    [133000, 74.00],  // Part B increase
-    [167000, 185.00],
-    [200000, 295.90],
-    [500000, 406.90],
-    [Infinity, 443.90],
-  ],
-  joint: [
-    [212000, 0],
-    [266000, 74.00],
-    [334000, 185.00],
-    [400000, 295.90],
-    [750000, 406.90],
-    [Infinity, 443.90],
-  ],
+// ---------------------------------------------------------------------------
+// Medicare (2026 figures: CMS fact sheet "2026 Medicare Parts A & B Premiums
+// and Deductibles", released 2025-11-14).
+// ---------------------------------------------------------------------------
+
+/** 2026 Medicare figures. IRMAA tiers: [single MAGI cap, joint MAGI cap, Part B surcharge, Part D surcharge]. */
+export const MEDICARE_2026 = {
+  partBStandardMonthly: 202.9,
+  partDBaseMonthly: 38.99,
+  // [single MAGI cap, joint MAGI cap, Part B surcharge, Part D surcharge],
+  // ordered smallest → largest; `medicareTierIndex` scans top-down.
+  tiers: [
+    [109000, 218000, 0, 0],
+    [137000, 274000, 81.2, 14.5],
+    [171000, 342000, 202.9, 37.5],
+    [205000, 410000, 324.6, 60.4],
+    [500000, 750000, 446.3, 83.3],
+    [Infinity, Infinity, 487.0, 91.0],
+  ] as Array<[number, number, number, number]>,
 };
 
-/** Base Medicare Part B premium (2025) */
-export const MEDICARE_BASE_PREMIUM = 185.00;
-
-/** Calculate Medicare Part B premium based on MAGI */
-export function medicarePartBPremium(magi: number, filing: TaxFilingStatus): number {
-  const brackets = IRMAA_BRACKETS[filing];
-  for (const [threshold, premium] of brackets) {
-    if (magi <= threshold) return premium;
+/** IRMAA tier index for a MAGI and filing status (0 = no surcharge). */
+export function medicareTierIndex(magi: number, filing: TaxFilingStatus): number {
+  for (let i = 0; i < MEDICARE_2026.tiers.length; i++) {
+    const cap = MEDICARE_2026.tiers[i][filing === 'joint' ? 1 : 0];
+    if (magi <= cap) return i;
   }
-  return IRMAA_BRACKETS[filing][IRMAA_BRACKETS[filing].length - 1][1];
+  return MEDICARE_2026.tiers.length - 1;
+}
+
+/**
+ * Monthly Medicare premiums for a MAGI: total Part B premium (standard +
+ * surcharge) and the Part D surcharge added on top of any plan premium.
+ * `planYear` scales the base premiums by cumulative inflation so a plan
+ * projecting 2055 doesn't bill 2026 dollars.
+ */
+export function medicarePremiums(
+  magi: number,
+  filing: TaxFilingStatus,
+  inflationAdjustmentFactor = 1
+): { partB: number; partDSurcharge: number } {
+  const tier = medicareTierIndex(magi, filing);
+  const partBSurcharge = MEDICARE_2026.tiers[tier][2];
+  const partDSurcharge = MEDICARE_2026.tiers[tier][3];
+  return {
+    partB: (MEDICARE_2026.partBStandardMonthly + partBSurcharge) * inflationAdjustmentFactor,
+    partDSurcharge: partDSurcharge * inflationAdjustmentFactor,
+  };
 }
 
 function bracketTax(taxableIncome: number, brackets: Array<[number, number]>): number {
@@ -187,6 +234,24 @@ export function federalGainsTax(
   return at15 * 0.15 + at20 * 0.2;
 }
 
+/**
+ * OBBB senior deduction: an extra $6,000 per taxpayer aged 65+, available for
+ * tax years 2025-2028, phasing out at 6% of MAGI above $75,000 (single) /
+ * $150,000 (joint). Outside the 2025-2028 window the deduction is zero.
+ */
+export function seniorDeduction(
+  eligibleCount: number,
+  magi: number,
+  filing: TaxFilingStatus,
+  planYear: number
+): number {
+  if (planYear < 2025 || planYear > 2028 || eligibleCount <= 0) return 0;
+  const base = Math.min(eligibleCount, 2) * 6000;
+  const phaseOutStart = filing === 'joint' ? 150000 : 75000;
+  const reduction = 0.06 * Math.max(0, magi - phaseOutStart);
+  return Math.max(0, base - reduction);
+}
+
 export interface WithdrawalTaxInputs {
   preTaxDraw: number; // gross 401k/IRA withdrawals (incl. RMDs + Roth conversions)
   taxableDraw: number; // taxable-account withdrawals
@@ -194,6 +259,12 @@ export interface WithdrawalTaxInputs {
   ssAnnual: number;
   filing: TaxFilingStatus;
   stateTaxPct: number; // applied to ordinary income
+  /** Primary's age this year, for the senior deduction (optional). */
+  primaryAge?: number;
+  /** Partner's age this year (optional). */
+  partnerAge?: number;
+  /** Calendar year of the projection (optional; gates the senior deduction). */
+  planYear?: number;
 }
 
 /** Total tax bill for a year of retirement draws. */
@@ -201,6 +272,7 @@ export function calcWithdrawalTaxes(t: WithdrawalTaxInputs): {
   federal: number;
   state: number;
   gains: number;
+  seniorDeduction: number;
   total: number;
   taxableSs: number;
 } {
@@ -208,30 +280,19 @@ export function calcWithdrawalTaxes(t: WithdrawalTaxInputs): {
   const ordinaryPreSs = Math.max(0, t.preTaxDraw) + Math.max(0, t.pensionAnnual);
   const taxableSs = taxableSocialSecurity(t.ssAnnual, ordinaryPreSs, t.filing);
   const ordinary = ordinaryPreSs + taxableSs;
-  const federal = federalOrdinaryTax(ordinary, t.filing);
-  const ordinaryTaxable = Math.max(0, ordinary - STANDARD_DEDUCTION[t.filing]);
-  const gainsTax = federalGainsTax(gains, ordinaryTaxable, t.filing);
+  const senior =
+    t.primaryAge != null
+      ? seniorDeduction(
+          (t.primaryAge >= 65 ? 1 : 0) + (t.partnerAge != null && t.partnerAge >= 65 ? 1 : 0),
+          ordinary + gains,
+          t.filing,
+          t.planYear ?? new Date().getFullYear()
+        )
+      : 0;
+  const deductions = STANDARD_DEDUCTION[t.filing] + senior;
+  const taxableOrdinary = Math.max(0, ordinary - deductions);
+  const federal = bracketTax(taxableOrdinary, t.filing === 'joint' ? JOINT_BRACKETS : SINGLE_BRACKETS);
+  const gainsTax = federalGainsTax(gains, taxableOrdinary, t.filing);
   const state = ordinary * Math.max(0, t.stateTaxPct / 100);
-  return { federal, state, gains: gainsTax, total: federal + gainsTax + state, taxableSs };
-}
-
-/**
- * Lightweight tax estimate for Monte Carlo trials (single-pot portfolio, no
- * account buckets): assumes ~65% of each net withdrawal is ordinary income
- * and ~10% is taxable gain.
- */
-export function estimateMcTax(
-  netWithdrawal: number,
-  filing: TaxFilingStatus,
-  stateTaxPct: number
-): number {
-  if (netWithdrawal <= 0) return 0;
-  const ordinary = netWithdrawal * 0.65;
-  const gains = netWithdrawal * 0.35 * TAXABLE_GAIN_RATIO;
-  const ordinaryTaxable = Math.max(0, ordinary - STANDARD_DEDUCTION[filing]);
-  return (
-    federalOrdinaryTax(ordinary, filing) +
-    federalGainsTax(gains, ordinaryTaxable, filing) +
-    ordinary * Math.max(0, stateTaxPct / 100)
-  );
+  return { federal, state, gains: gainsTax, seniorDeduction: senior, total: federal + gainsTax + state, taxableSs };
 }

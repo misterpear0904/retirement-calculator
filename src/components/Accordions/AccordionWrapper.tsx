@@ -40,7 +40,7 @@ export const AccordionWrapper: React.FC<AccordionWrapperProps> = ({
             onToggle();
           }
         }}
-        className="w-full px-6 py-4.5 flex items-center justify-between text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 select-none group"
+        className="w-full px-6 py-4 flex items-center justify-between text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 select-none group"
         aria-expanded={isOpen}
       >
         <div className="flex items-center gap-3.5">
