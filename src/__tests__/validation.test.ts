@@ -93,11 +93,20 @@ describe('sanitizeRetirementState — hostile payloads', () => {
     s.children = 'nope' as unknown as RetirementState['children'];
     s.debts = 42 as unknown as RetirementState['debts'];
     s.customCategories = { a: 1 } as unknown as RetirementState['customCategories'];
-    s.children = [{ currentAge: NaN, schoolType: 'martian', collegeTier: 'gold' } as unknown as RetirementState['children'][number]];
-    const out = sanitizeRetirementState(s);
+    const dropped = sanitizeRetirementState(s);
+    // Non-array values are repaired to empty arrays.
+    expect(dropped.children).toEqual([]);
+    expect(dropped.debts).toEqual([]);
+    expect(dropped.customCategories).toEqual([]);
+
+    // Bad enum members inside an array fall back to valid defaults.
+    const s2 = asState(clone(DEFAULT_STATE));
+    s2.children = [
+      { currentAge: NaN, schoolType: 'martian', collegeTier: 'gold' } as unknown as RetirementState['children'][number],
+    ];
+    const out = sanitizeRetirementState(s2);
     expect(Array.isArray(out.children)).toBe(true);
-    expect(Array.isArray(out.debts)).toBe(true);
-    expect(Array.isArray(out.customCategories)).toBe(true);
+    expect(Number.isFinite(out.children[0].currentAge)).toBe(true);
     expect(out.children[0].schoolType).toBe('public');
     expect(out.children[0].collegeTier).toBe('in_state');
   });
@@ -108,6 +117,7 @@ describe('sanitizeRetirementState — hostile payloads', () => {
     const out = sanitizeRetirementState(s);
     expect(out.debts.length).toBe(50);
   });
+
   it('produces JSON-safe output (no NaN leaking into storage)', () => {
     const s = asState(clone(DEFAULT_STATE));
     s.preTax401k = NaN;

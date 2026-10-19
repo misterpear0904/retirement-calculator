@@ -371,7 +371,6 @@ describe('Monte Carlo', () => {
   });
 });
 
-
 describe('Monte Carlo determinism', () => {
   it('same state produces the identical success rate on repeat', () => {
     const s = mkState({ returnMode: 'monte_carlo' });

@@ -51,11 +51,12 @@ describe('Coast FIRE null path', () => {
 });
 
 describe('FIRE age (discounted target)', () => {
-  it('is null or below retirement age when found', () => {
+  it('finds the coast age for the default plan (regression: inflated-target bug made this null)', () => {
     const result = runRetirementSimulation(mkState(), { trials: 1 });
-    if (result.fireAgeAchievable != null) {
-      expect(result.fireAgeAchievable).toBeLessThan(60);
-    }
+    // The target FIRE number is in retirement-year dollars and must be
+    // discounted back before comparing to each year's portfolio.
+    expect(result.fireAgeAchievable).not.toBeNull();
+    expect(result.fireAgeAchievable!).toBeLessThan(mkState().targetRetirementAge);
   });
 });
 

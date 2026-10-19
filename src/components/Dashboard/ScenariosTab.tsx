@@ -173,7 +173,7 @@ export const ScenariosTab: React.FC<Props> = ({ state, currentResult, onLoadStat
       setCompareId(entry.id);
       onTriggerToast(
         wasAtLimit
-          ? `Scenario limit reached — replaced oldest save (${Math.min(saved.length, 20)} kept)`
+          ? `Scenario limit reached — replaced oldest save (${after.length} kept)`
           : `Saved scenario "${entry.name}"`
       );
     } catch {

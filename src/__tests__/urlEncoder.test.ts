@@ -37,7 +37,7 @@ describe('share-link round trip', () => {
     shimWindow(url);
     const decoded = await decodeStateFromUrl();
     expect(decoded).not.toBeNull();
-    expect(JSON.stringify(decoded)).toBe(JSON.stringify(DEFAULT_STATE));
+    expect(decoded).toEqual(DEFAULT_STATE);
   });
 
   it('shortens the payload vs raw percent-encoded JSON', async () => {
