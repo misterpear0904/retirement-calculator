@@ -1,4 +1,4 @@
-import jsPDF from 'jspdf';
+import { jsPDF } from 'jspdf';
 import { SimulationResult, RetirementState } from '../types/retirement';
 import { getRiskLabel } from './risk';
 

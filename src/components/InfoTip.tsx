@@ -56,7 +56,7 @@ export const InfoTip: React.FC<Props> = ({ term, label }) => {
     const onScroll = () => hide();
     const onResize = () => hide();
     document.addEventListener('keydown', onKey);
-    window.addEventListener('scroll', onScroll, true);
+    window.addEventListener('scroll', onScroll);
     window.addEventListener('resize', onResize);
     return () => {
       document.removeEventListener('keydown', onKey);

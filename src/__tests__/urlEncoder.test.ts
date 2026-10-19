@@ -10,7 +10,7 @@ type WinShim = { location: { href: string; hash: string }; history: { replaceSta
 const originalWindow = globalThis.window;
 
 function shimWindow(href: string) {
-  (globalThis as unknown as { window: WinShim }).window = {
+  (globalThis as unknown as { window: unknown }).window = {
     location: {
       href,
       get hash() {
@@ -34,10 +34,10 @@ describe('share-link round trip', () => {
   it('round-trips a full state losslessly (JSON equality)', async () => {
     const url = await encodeStateToUrl(DEFAULT_STATE);
     expect(url.startsWith('https://example.com/retirement-calculator/#scenario=')).toBe(true);
-    shimWindow(url); // the encoder builds a URL object — feed it back as "the location"
+    shimWindow(url);
     const decoded = await decodeStateFromUrl();
     expect(decoded).not.toBeNull();
-    expect(JSON.parse(JSON.stringify(decoded))).toEqual(JSON.parse(JSON.stringify(DEFAULT_STATE)));
+    expect(JSON.stringify(decoded)).toBe(JSON.stringify(DEFAULT_STATE));
   });
 
   it('shortens the payload vs raw percent-encoded JSON', async () => {
@@ -49,17 +49,18 @@ describe('share-link round trip', () => {
   });
 
   it('rejects malformed / tampered payload types', async () => {
-    // state: string envelope
     shimWindow('https://example.com/#scenario=' + btoa(encodeURIComponent(JSON.stringify({ v: 1, state: 'oops' }))));
     expect(await decodeStateFromUrl()).toBeNull();
-    // array
     shimWindow('https://example.com/#scenario=' + btoa(encodeURIComponent(JSON.stringify([1, 2]))));
     expect(await decodeStateFromUrl()).toBeNull();
-    // primitive
     shimWindow('https://example.com/#scenario=' + btoa(encodeURIComponent(JSON.stringify(42))));
     expect(await decodeStateFromUrl()).toBeNull();
-    // broken base64
     shimWindow('https://example.com/#scenario=zzzz!!!');
+    expect(await decodeStateFromUrl()).toBeNull();
+  });
+
+  it('rejects an oversized hash payload', async () => {
+    shimWindow('https://example.com/#scenario=' + 'A'.repeat(200001));
     expect(await decodeStateFromUrl()).toBeNull();
   });
 

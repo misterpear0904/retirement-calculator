@@ -48,7 +48,7 @@ const formatYAxis = (num: number) => {
 
 const fmt$ = (n: number) => `$${Math.round(n).toLocaleString()}`;
 
-const CustomTooltip = React.memo(({ active, payload }: any) => {
+const CustomTooltip = React.memo(({ active, payload }: { active?: boolean; payload?: Array<{ payload: YearlyProjection }> }) => {
   if (active && payload && payload.length) {
     const data: YearlyProjection = payload[0].payload;
     return (
@@ -223,7 +223,7 @@ export const RetirementChart: React.FC<Props> = React.memo(({
     return () => el.removeEventListener('wheel', onWheel);
   }, [zoomAround]);
 
-  const trackAnchor = useCallback((s: any) => {
+  const trackAnchor = useCallback((s: { activeLabel?: unknown } | null) => {
     const label = s?.activeLabel;
     anchorAgeRef.current = typeof label === 'number' ? label : null;
   }, []);

@@ -88,6 +88,26 @@ describe('sanitizeRetirementState — hostile payloads', () => {
     expect(Number.isFinite(out.partner.ssMonthlyAt67)).toBe(true);
   });
 
+  it('sanitizes malformed children/debts/customCategories without throwing', () => {
+    const s = asState(clone(DEFAULT_STATE));
+    s.children = 'nope' as unknown as RetirementState['children'];
+    s.debts = 42 as unknown as RetirementState['debts'];
+    s.customCategories = { a: 1 } as unknown as RetirementState['customCategories'];
+    s.children = [{ currentAge: NaN, schoolType: 'martian', collegeTier: 'gold' } as unknown as RetirementState['children'][number]];
+    const out = sanitizeRetirementState(s);
+    expect(Array.isArray(out.children)).toBe(true);
+    expect(Array.isArray(out.debts)).toBe(true);
+    expect(Array.isArray(out.customCategories)).toBe(true);
+    expect(out.children[0].schoolType).toBe('public');
+    expect(out.children[0].collegeTier).toBe('in_state');
+  });
+
+  it('caps array sizes on import', () => {
+    const s = asState(clone(DEFAULT_STATE));
+    s.debts = Array.from({ length: 200 }, (_, i) => ({ id: `d${i}`, name: `debt${i}`, balance: 1000, monthlyPayment: 50, interestRate: 5 }));
+    const out = sanitizeRetirementState(s);
+    expect(out.debts.length).toBe(50);
+  });
   it('produces JSON-safe output (no NaN leaking into storage)', () => {
     const s = asState(clone(DEFAULT_STATE));
     s.preTax401k = NaN;

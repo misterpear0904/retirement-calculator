@@ -370,3 +370,13 @@ describe('Monte Carlo', () => {
     expect(preShare).toBeLessThan(0.999);
   });
 });
+
+
+describe('Monte Carlo determinism', () => {
+  it('same state produces the identical success rate on repeat', () => {
+    const s = mkState({ returnMode: 'monte_carlo' });
+    const a = runRetirementSimulation(s, { trials: 120 }).successRate;
+    const b = runRetirementSimulation(s, { trials: 120 }).successRate;
+    expect(a).toBe(b);
+  });
+});
