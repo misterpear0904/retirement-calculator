@@ -26,3 +26,7 @@ dist-ssr/
 *.njsproj
 *.sln
 *.sw?
+
+# Generated PDF exports (fixups from pdf export smoke tests / manual exports)
+ApexRetire_Plan_*.pdf
+/dashboard-export*.pdf
