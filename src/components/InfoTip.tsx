@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Info } from 'lucide-react';
-import { glossary } from '../data/glossary';
+import { glossary, glossaryLabel } from '../data/glossary';
 
 interface Props {
   term: string;
@@ -119,7 +119,7 @@ export const InfoTip: React.FC<Props> = ({ term, label }) => {
   }, [open, hide]);
 
   const ariaLabel =
-    label ?? `What is ${humanizeTerm(term)}?`;
+    label ?? `What is ${glossaryLabel(term)}?`;
 
   return (
     <>
