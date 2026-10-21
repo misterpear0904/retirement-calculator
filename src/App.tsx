@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { RetirementState, SimulationResult } from './types/retirement';
+import { RetirementState, SimulationResult, TaxFilingStatus } from './types/retirement';
 import { runRetirementSimulation } from './utils/calculatorEngine';
 import { decodeStateFromUrl, clearScenarioFromUrl } from './utils/urlEncoder';
 import { listScenarios } from './utils/scenarios';
@@ -59,6 +59,10 @@ export function App() {
   const [state, setState] = useState<RetirementState>(DEFAULT_STATE);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isDark, setIsDark] = useState<boolean>(true);
+
+  // Keeps heavy recalcs (e.g. spending-strategy switches) interruptible so the
+  // UI never freezes while a synchronous simulation re-runs.
+  const [isRecalculating, startTransition] = React.useTransition();
 
   // Accordion Section Open/Close States
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
@@ -158,15 +162,53 @@ export function App() {
   // save pristine defaults over a good saved session before the load effect
   // applies (StrictMode double-mounts effects in dev, making the race certain).
   const dirtyRef = React.useRef(false);
+  // Remembers the tax filing status chosen before a partner was enabled so it
+  // can be restored when the partner is toggled off again.
+  const filingBeforePartnerRef = React.useRef<string | null>(null);
 
   const handleChange = (updates: Partial<RetirementState>) => {
     dirtyRef.current = true;
-    setState((prev) => {
-      const next = sanitizeRetirementState({ ...prev, ...updates });
-      const notice = describeClamp(updates, next);
-      if (notice) setToastMessage(notice);
-      return next;
-    });
+
+    // Partner toggle bookkeeping: snapshot the pre-partner filing status when a
+    // partner is enabled and force joint brackets; restore the snapshot (or
+    // 'single') when the partner is disabled. This prevents headline drift
+    // after an on->off toggle.
+    let mergedUpdates: Partial<RetirementState> = { ...updates };
+    const turningOn =
+      updates.hasPartner === true || updates.partner?.enabled === true;
+    const turningOff =
+      updates.hasPartner === false || updates.partner?.enabled === false;
+    if (turningOn && !turningOff) {
+      if (filingBeforePartnerRef.current === null) {
+        // state is the latest committed value at call time
+        filingBeforePartnerRef.current = state.taxFilingStatus;
+      }
+      mergedUpdates = { ...mergedUpdates, taxFilingStatus: 'joint' };
+    } else if (turningOff && !turningOn) {
+      const restored = (filingBeforePartnerRef.current ?? 'single') as TaxFilingStatus;
+      mergedUpdates = { ...mergedUpdates, taxFilingStatus: restored };
+      filingBeforePartnerRef.current = null;
+    }
+
+    const hasSpendingStrategy = Object.prototype.hasOwnProperty.call(
+      mergedUpdates,
+      'spendingStrategy',
+    );
+
+    const apply = () => {
+      setState((prev) => {
+        const next = sanitizeRetirementState({ ...prev, ...mergedUpdates });
+        const notice = describeClamp(mergedUpdates, next);
+        if (notice) setToastMessage(notice);
+        return next;
+      });
+    };
+
+    if (hasSpendingStrategy) {
+      startTransition(apply);
+    } else {
+      apply();
+    }
   };
 
   const toggleSection = (key: string) => {
@@ -353,6 +395,11 @@ export function App() {
       />
 
       <main className="flex-1 max-w-[1920px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 space-y-8 sm:space-y-10">
+        {isRecalculating && (
+          <div role="status" aria-live="polite" className="text-xs dark:text-slate-400 text-slate-500 px-1">
+            Recalculating…
+          </div>
+        )}
         {validationIssues.length > 0 && (
           <div
             role="alert"

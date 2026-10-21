@@ -200,6 +200,8 @@ export const Header: React.FC<Props> = ({
           <button
             type="button"
             onClick={() => {
+              setPresetValue('');
+              presetSnapshotRef.current = null;
               onResetDefault();
               onTriggerToast('Reset all parameters to default.');
             }}
