@@ -1,8 +1,9 @@
 import React from 'react';
-import { ShieldCheck, Calendar, DollarSign, Flame, MapPin, Plus, Minus, TrendingUp } from 'lucide-react';
+import { ShieldCheck, Calendar, DollarSign, Flame, MapPin, Plus, Minus, TrendingUp, PiggyBank } from 'lucide-react';
 import { SimulationResult, RetirementState } from '../../types/retirement';
 import { getRiskLabel, getRiskCardClasses } from '../../utils/risk';
 import { FINANCIAL_CONSTANTS, VALIDATION_LIMITS } from '../../utils/constants';
+import { DIE_WITH_ZERO_MIN_SUCCESS_RATE, calcDieWithZero } from '../../utils/dieWithZero';
 import { InfoTip } from '../InfoTip';
 
 interface Props {
@@ -30,6 +31,11 @@ export const SummaryCards: React.FC<Props> = ({ result, state, onChange }) => {
 
   const statusLabel = getRiskLabel(successRate);
   const statusClasses = getRiskCardClasses(successRate);
+
+  // Die with Zero: only suggest spending the leftover from a plan that's on
+  // track — never from one that's already at risk.
+  const dieWithZero =
+    successRate >= DIE_WITH_ZERO_MIN_SUCCESS_RATE ? calcDieWithZero(state, result) : null;
 
   return (
     <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 w-full">
@@ -260,6 +266,34 @@ export const SummaryCards: React.FC<Props> = ({ result, state, onChange }) => {
             Stop saving, stay invested — the portfolio reaches your FIRE number on its own.
           </p>
         </div>
+
+        {/* Tile 2F: Die with Zero — only when the plan is on track with money left over */}
+        {dieWithZero != null && (
+          <div className="glass-panel p-5 sm:p-6 rounded-2xl flex flex-col justify-between group hover:border-emerald-500/40 transition-colors">
+            <div>
+              <div className="flex justify-between items-start gap-2">
+                <span className="text-xs font-semibold dark:text-slate-300 text-slate-600 flex items-center gap-2">
+                  <PiggyBank className="w-4 h-4 text-emerald-500 shrink-0" /> Die with Zero
+                  <InfoTip term="dieWithZero" />
+                </span>
+              </div>
+
+              <div className="my-3">
+                <span className="text-3xl font-extrabold text-emerald-400 tracking-tight">
+                  ${dieWithZero.extraAnnualToday.toLocaleString()}
+                </span>
+                <span className="text-xs text-slate-400 font-medium"> /yr more</span>
+                <span className="block text-[11px] font-bold text-emerald-300/80 mt-1 uppercase tracking-wide">
+                  Today&apos;s $
+                </span>
+              </div>
+            </div>
+
+            <p className="text-xs dark:text-slate-400 text-slate-500 border-t dark:border-slate-800/80 border-slate-200 pt-3 mt-3 leading-relaxed">
+              On track to leave <strong className="dark:text-slate-200 text-slate-800">${dieWithZero.surplus.toLocaleString()}</strong> at age {dieWithZero.horizonAge} — spendable over {dieWithZero.retiredYears} retired years. Rough estimate; spending more lowers success.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

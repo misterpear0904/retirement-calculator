@@ -46,6 +46,8 @@ export const GLOSSARY: Record<string, string> = {
     'The spend-down phase after retirement: living off savings, Social Security, and pensions instead of a paycheck.',
   survivorBenefit:
     'When one partner dies, the survivor keeps the larger of the two Social Security checks — modeled automatically here.',
+  dieWithZero:
+    'Takes your projected leftover at the end of the plan and converts it into extra yearly retirement spending (today\u2019s dollars) that would roughly spend it down to $0. Median-path estimate — spending more lowers your success rate.',
 };
 
 export function glossary(term: string): string {
