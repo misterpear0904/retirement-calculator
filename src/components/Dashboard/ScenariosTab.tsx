@@ -358,7 +358,7 @@ export const ScenariosTab: React.FC<Props> = ({ state, currentResult, onLoadStat
                 <Tooltip
                   contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: 12, fontSize: 12 }}
                   labelFormatter={(age) => `Age ${age}`}
-                  formatter={(value: any, label: any) => [`$${Math.round(value).toLocaleString()}`, label === 'current' ? 'Current (A)' : `${compareName} (B)`]}
+                  formatter={(value: unknown, label: unknown) => [`$${Math.round(Number(value)).toLocaleString()}`, String(label) === 'current' ? 'Current (A)' : `${compareName} (B)`]}
                 />
                 <Area type="monotone" dataKey="current" name="current" stroke="#38bdf8" strokeWidth={2.5} fill="#38bdf8" fillOpacity={0.15} dot={false} activeDot={{ r: 4 }} isAnimationActive={false} connectNulls />
                 <Area type="monotone" dataKey="compare" name="compare" stroke="#c084fc" strokeWidth={2} strokeDasharray="5 4" fill="none" dot={false} activeDot={{ r: 4 }} isAnimationActive={false} connectNulls />

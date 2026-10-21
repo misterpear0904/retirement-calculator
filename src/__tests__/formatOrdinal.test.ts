@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatOrdinal, ordinal } from '../utils/formatOrdinal';
+import { formatOrdinal } from '../utils/formatOrdinal';
 
 describe('formatOrdinal', () => {
   it('handles 11/12/13 as th', () => {
@@ -20,8 +20,8 @@ describe('formatOrdinal', () => {
     expect(formatOrdinal(22)).toBe('22nd');
     expect(formatOrdinal(23)).toBe('23rd');
   });
-  it('ordinal alias works', () => {
-    expect(ordinal(5)).toBe('5th');
+  it('non-integer rounds', () => {
+    expect(formatOrdinal(4.6)).toBe('5th');
   });
   it('NaN/Infinity -> 0', () => {
     expect(formatOrdinal(NaN)).toBe('0th');

@@ -25,7 +25,7 @@ export const BaselineAssetsSection: React.FC<Props> = ({
   const totalDebts = state.debts.reduce((sum, d) => sum + d.balance, 0);
   const netStartingAssets = totalAssets - totalDebts;
 
-  const handleDebtChange = (id: string, field: keyof DebtItem, value: any) => {
+  const handleDebtChange = (id: string, field: keyof DebtItem, value: string | number) => {
     const updated = state.debts.map((debt) =>
       debt.id === id ? { ...debt, [field]: value } : debt
     );

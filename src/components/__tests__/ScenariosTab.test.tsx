@@ -22,7 +22,7 @@ describe('ScenariosTab helpers', () => {
   it('computeStateDiff', () => {
     const a = { ...DEFAULT_STATE };
     const b = { ...DEFAULT_STATE, currentAge: 40 };
-    const rows = helpers.computeStateDiff(a as any, b as any);
+    const rows = helpers.computeStateDiff(a, b);
     expect(rows.length).toBeGreaterThan(0);
   });
   it('formatDelta', () => {

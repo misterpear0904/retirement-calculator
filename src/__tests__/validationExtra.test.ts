@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { sanitizeRetirementState, validateRetirementState } from '../utils/validation';
+import { validateRetirementState } from '../utils/validation';
 import { DEFAULT_STATE } from '../data/presets';
 import { RetirementState } from '../types/retirement';
 
@@ -8,10 +8,8 @@ const clone = (o: unknown) => JSON.parse(JSON.stringify(o));
 
 describe('validation extra', () => {
   it('flags targetRetirementAge', () => {
-    const s = sanitizeRetirementState(asState({ ...clone(DEFAULT_STATE), currentAge: 40, targetRetirementAge: 35 }));
-    // sanitize may clamp; force via direct? validate checks. Instead construct state with target <= current by bypassing sanitize? validate on sanitized result may not trigger. Use raw-ish:
+    // sanitize may clamp; construct state with target <= current bypassing sanitize
     const raw = asState({ ...clone(DEFAULT_STATE), currentAge: 40, targetRetirementAge: 39 });
-    // sanitize clamps target to current+1, so instead call validate on unsanitized? validate expects RetirementState. Call with raw.
     const issues = validateRetirementState(raw);
     expect(issues.some((i) => i.field === 'targetRetirementAge')).toBe(true);
   });

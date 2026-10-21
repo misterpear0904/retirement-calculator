@@ -6,7 +6,6 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { DEFAULT_STATE } from '../data/presets';
 import { encodeStateToUrl, decodeStateFromUrl, SHARE_URL_WARN_LENGTH, clearScenarioFromUrl } from '../utils/urlEncoder';
 
-type WinShim = { location: { href: string; hash: string }; history: { replaceState: (...a: unknown[]) => void } };
 const originalWindow = globalThis.window;
 
 function shimWindow(href: string) {

@@ -2,6 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { YearlyTable, csvCell, buildCsv } from '../Dashboard/YearlyTable';
+import { YearlyProjection } from '../../types/retirement';
 
 const row = (age: number, retired: boolean) => ({
   year: 2025 + (age - 32),
@@ -31,22 +32,22 @@ const row = (age: number, retired: boolean) => ({
   rothConverted: 0,
   spendingCutApplied: false,
   milestones: [],
-}) as any;
+}) as YearlyProjection;
 
 describe('YearlyTable', () => {
   it('renders rows', () => {
-    render(<YearlyTable yearlyProjections={[row(32, false), row(65, true)] as any} />);
+    render(<YearlyTable yearlyProjections={[row(32, false), row(65, true)]} />);
     expect(screen.getByText(/Yearly Financial Cash Flow/)).toBeTruthy();
     expect(screen.getByText('Age 32')).toBeTruthy();
   });
   it('filter retired only', () => {
-    render(<YearlyTable yearlyProjections={[row(32, false), row(65, true)] as any} />);
+    render(<YearlyTable yearlyProjections={[row(32, false), row(65, true)]} />);
     fireEvent.click(screen.getByText('Show retirement years only'));
     expect(screen.queryByText('Age 32')).toBeNull();
     expect(screen.getByText('Age 65')).toBeTruthy();
   });
   it('export csv button', () => {
-    render(<YearlyTable yearlyProjections={[row(32, false)] as any} />);
+    render(<YearlyTable yearlyProjections={[row(32, false)]} />);
     const btn = screen.getByText('Export CSV');
     expect(btn).toBeTruthy();
   });
@@ -59,7 +60,7 @@ describe('YearlyTable helpers', () => {
     expect(csvCell(5)).toBe('5');
   });
   it('buildCsv includes header', () => {
-    const csv = buildCsv([row(32, false)] as any);
+    const csv = buildCsv([row(32, false)]);
     expect(csv).toContain('Year');
     expect(csv.split('\r\n').length).toBe(2);
   });

@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 if (typeof globalThis.ResizeObserver === 'undefined') {
   globalThis.ResizeObserver = class { observe() {} unobserve() {} disconnect() {} } as unknown as typeof ResizeObserver;
 }
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { ScenariosTab } from '../Dashboard/ScenariosTab';
 import { DEFAULT_STATE } from '../../data/presets';
 import { runRetirementSimulation } from '../../utils/calculatorEngine';

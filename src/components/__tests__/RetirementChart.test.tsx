@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 if (typeof globalThis.ResizeObserver === 'undefined') {
   globalThis.ResizeObserver = class { observe() {} unobserve() {} disconnect() {} } as unknown as typeof ResizeObserver;
 }
-import { render, screen } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import { RetirementChart } from '../Dashboard/RetirementChart';
 import { DEFAULT_STATE } from '../../data/presets';
 import { runRetirementSimulation } from '../../utils/calculatorEngine';

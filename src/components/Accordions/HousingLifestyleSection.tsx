@@ -39,7 +39,7 @@ export const HousingLifestyleSection: React.FC<Props> = ({
     onChange({ customCategories: [...state.customCategories, newCat] });
   };
 
-  const handleUpdateCustomCategory = (id: string, field: keyof CustomExpenseCategory, value: any) => {
+  const handleUpdateCustomCategory = (id: string, field: keyof CustomExpenseCategory, value: string | number) => {
     const updated = state.customCategories.map((cat) =>
       cat.id === id ? { ...cat, [field]: value } : cat
     );

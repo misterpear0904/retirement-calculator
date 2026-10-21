@@ -33,7 +33,7 @@ export const DependentsSection: React.FC<Props> = ({
     });
   };
 
-  const handleUpdateChild = (id: string, field: keyof ChildItem, value: any) => {
+  const handleUpdateChild = (id: string, field: keyof ChildItem, value: string | number) => {
     const updated = state.children.map((c) => (c.id === id ? { ...c, [field]: value } : c));
     onChange({ children: updated });
   };

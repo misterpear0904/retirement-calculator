@@ -512,7 +512,7 @@ export function App() {
                     aria-selected={activeTab === tab.id}
                     onClick={() => setActiveTab(tab.id)}
                     onKeyDown={(e) => {
-                      let nextIndex = index;
+                      let nextIndex: number;
                       if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
                         nextIndex = (index + 1) % DASHBOARD_TABS.length;
                       } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {

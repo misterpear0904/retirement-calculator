@@ -4,7 +4,6 @@ import { DEFAULT_STATE } from '../data/presets';
 import { sanitizeRetirementState } from '../utils/validation';
 import { encodeStateToUrl, decodeStateFromUrl } from '../utils/urlEncoder';
 
-type WinShim = { location: { href: string; hash: string }; history: { replaceState: (...a: unknown[]) => void } };
 const originalWindow = globalThis.window;
 
 function shimWindow(href: string) {

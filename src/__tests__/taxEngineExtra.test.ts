@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { medicareTierIndex, seniorDeduction, calcWithdrawalTaxes, bracketFill } from '../utils/taxEngine';
+import { medicareTierIndex, seniorDeduction, calcWithdrawalTaxes } from '../utils/taxEngine';
 
 describe('taxEngine extra', () => {
   it('medicareTierIndex high magi returns last', () => {

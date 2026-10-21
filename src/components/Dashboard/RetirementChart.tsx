@@ -17,7 +17,6 @@ import { Eye, EyeOff, ZoomIn, ZoomOut, Maximize2, Expand } from 'lucide-react';
 import { FullscreenModal } from '../FullscreenModal';
 import { InfoTip } from '../InfoTip';
 import { formatCurrency } from '../../utils/formatCurrency';
-import { formatOrdinal } from '../../utils/formatOrdinal';
 
 interface Props {
   yearlyProjections: YearlyProjection[];
@@ -201,36 +200,11 @@ export const RetirementChart: React.FC<Props> = React.memo(({
 
   const zoomIn = useCallback(() => zoomAround(0.7), [zoomAround]);
   const zoomOut = useCallback(() => zoomAround(1.4), [zoomAround]);
-  // brushKey remounts the (uncontrolled) Brush so its travellers reset.
-  const [brushKey, setBrushKey] = useState(0);
   const resetZoom = useCallback(() => {
     clearedRef.current = true;
     clearedAtRef.current = Date.now();
     setZoomRange(null);
-    setBrushKey((k) => k + 1);
   }, []);
-
-  // Brush drives zoom in one direction only (brush -> chart). Feeding the
-  // zoom range back into the Brush as controlled props is what made dragging
-  // fight the cursor, so the Brush stays uncontrolled and only remounts on
-  // reset / horizon change.
-  const handleBrushChange = useCallback(
-    (range: { startIndex?: number; endIndex?: number } | null) => {
-      if (!fullRange || range?.startIndex == null || range?.endIndex == null) return;
-      // Suppress resurrection right after a reset.
-      if (clearedRef.current && Date.now() - clearedAtRef.current < 250) return;
-      const lo = fullRange[0] + range.startIndex;
-      const hi = fullRange[0] + range.endIndex;
-      if (hi - lo < 2) return;
-      if (lo === fullRange[0] && hi === fullRange[1]) {
-        setZoomRange(null);
-      } else {
-        clearedRef.current = false;
-        setZoomRange([lo, hi]);
-      }
-    },
-    [fullRange]
-  );
 
   // Scroll-to-zoom anchored at the hovered age. A native non-passive wheel
   // listener is required so the page doesn't scroll while zooming.

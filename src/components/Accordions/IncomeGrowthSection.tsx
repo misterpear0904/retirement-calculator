@@ -1,5 +1,5 @@
 import React from 'react';
-import { TrendingUp, Percent, DollarSign } from 'lucide-react';
+import { TrendingUp, Percent } from 'lucide-react';
 import { RetirementState, RealIncomeGrowthMode } from '../../types/retirement';
 import { AccordionWrapper } from './AccordionWrapper';
 import { InfoTip } from '../InfoTip';
