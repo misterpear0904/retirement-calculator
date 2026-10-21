@@ -82,7 +82,7 @@ const CustomTooltip = React.memo(({ active, payload }: { active?: boolean; paylo
     return (
       <div className="dark:bg-slate-900 bg-white border dark:border-slate-700/80 border-slate-300/80 p-3.5 rounded-xl shadow-2xl text-xs space-y-2 min-w-[250px]">
         <div className="flex justify-between items-center border-b dark:border-slate-800 border-slate-200 pb-2">
-          <span className="font-extrabold dark:text-slate-100 text-slate-900">
+          <span className="font-extrabold dark:text-slate-100 text-slate-900" aria-label={`Age ${data.age} (${data.year})`}>
             Age {data.age} ({data.year})
           </span>
           <span
@@ -626,7 +626,8 @@ export const RetirementChart: React.FC<Props> = React.memo(({
                   key={`${p.age}_${idx}`}
                   type="button"
                   onClick={() => handleBadgeClick(m.category)}
-                  className="flex items-center gap-1.5 text-xs dark:bg-slate-800/80 bg-slate-200/80 hover:bg-slate-700 px-2.5 py-1 rounded-lg border dark:border-slate-700/60 border-slate-300/60 hover:border-blue-500/50 dark:text-slate-200 text-slate-800 transition-all text-left"
+                  aria-label={`Age ${p.age}: ${m.title}`}
+                  className="flex items-center gap-1.5 text-xs dark:bg-slate-800/80 bg-slate-200/80 hover:bg-slate-700 px-2.5 py-1 rounded-lg border dark:border-slate-700/60 border-slate-300/60 hover:border-blue-500/50 dark:text-slate-200 text-slate-800 transition-all text-left min-h-[44px]"
                 >
                   <span className="font-bold text-blue-400">Age {p.age}:</span>
                   <span>{m.title}</span>

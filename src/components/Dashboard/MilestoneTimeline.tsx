@@ -84,7 +84,7 @@ export const MilestoneTimeline: React.FC<Props> = ({ yearlyProjections, onSelect
                 <span className="font-bold dark:text-slate-100 text-slate-900 text-sm group-hover:text-blue-400 transition-colors">
                   {item.milestone.title}
                 </span>
-                <span className="text-xs font-semibold text-blue-400 px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 shrink-0">
+                <span className="text-xs font-semibold text-blue-400 px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 shrink-0 min-h-[44px] inline-flex items-center" aria-label={`Age ${item.age} (${item.year})`}>
                   Age {item.age} ({item.year})
                 </span>
               </div>

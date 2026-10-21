@@ -586,7 +586,7 @@ export function App() {
                 ))}
               </div>
 
-              <div className="text-[11px] dark:text-slate-400 text-slate-500 pr-2 hidden sm:block">
+              <div className="text-[11px] dark:text-slate-400 text-slate-500 pr-2 hidden sm:block" aria-label={`Target: Age ${state.targetRetirementAge}`}>
                 Target: <strong className="dark:text-slate-200 text-slate-800">Age {state.targetRetirementAge}</strong>
               </div>
             </div>

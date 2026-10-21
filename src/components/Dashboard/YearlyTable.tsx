@@ -145,7 +145,7 @@ export const YearlyTable: React.FC<Props> = ({ yearlyProjections }) => {
           <tbody className="divide-y divide-slate-800/60 font-mono">
             {displayedProjections.map((p) => (
               <tr key={p.age} className="hover:bg-slate-800/40 transition-colors">
-                <td className="px-4 py-3 font-sans font-medium dark:text-slate-300 text-slate-700 whitespace-nowrap">
+                <td className="px-4 py-3 font-sans font-medium dark:text-slate-300 text-slate-700 whitespace-nowrap" aria-label={`Age ${p.age} (${p.year})`}>
                   Age {p.age} <span className="text-xs text-slate-500">({p.year})</span>
                 </td>
                 <td className="px-4 py-3 font-sans whitespace-nowrap">

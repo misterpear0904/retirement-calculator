@@ -54,6 +54,7 @@ export const LocationColSection: React.FC<Props> = ({
                   ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
                   : 'dark:bg-slate-800 bg-slate-200 dark:text-slate-400 text-slate-600 border dark:border-slate-700 border-slate-300'
               }`}
+              aria-label={`COL Index: ${selectedLocation.colIndex} (${colDelta > 0 ? `+${colDelta}%` : `${colDelta}%`} vs US Baseline)`}
             >
               COL Index: {selectedLocation.colIndex} ({colDelta > 0 ? `+${colDelta}%` : `${colDelta}%`} vs US Baseline)
               <InfoTip term="col" />
@@ -105,14 +106,14 @@ export const LocationColSection: React.FC<Props> = ({
               </span>
             </div>
 
-            <p className="text-[11px] text-slate-500 leading-relaxed">
+            <p className="text-[11px] text-slate-500 leading-relaxed" aria-label={`Fine-tune your cost of living within ${selectedLocation.name}. Slide left for more affordable neighborhoods, right for premium areas.`}>
               Fine-tune your cost of living within {selectedLocation.name}. Slide left for more affordable neighborhoods, right for premium areas.
             </p>
 
             <div className="space-y-1.5">
               <div className="flex justify-between text-[11px] dark:text-slate-400 text-slate-600 font-medium">
                 <span>Adjustment</span>
-                <span className="font-bold text-cyan-400">
+                <span className="font-bold text-cyan-400" aria-label={`Effective COL: ${Math.round(selectedLocation.colIndex * (1 + state.colAdjustmentPct / 100))} (base: ${selectedLocation.colIndex})`}>
                   Effective COL: {Math.round(selectedLocation.colIndex * (1 + state.colAdjustmentPct / 100))}
                   <span className="text-slate-500 font-normal ml-1">(base: {selectedLocation.colIndex})</span>
                 </span>
@@ -208,7 +209,7 @@ export const LocationColSection: React.FC<Props> = ({
               </div>
 
               <div className="space-y-1.5 pt-1">
-                <div className="flex justify-between text-xs dark:text-slate-400 text-slate-600">
+                <div className="flex justify-between text-xs dark:text-slate-400 text-slate-600" aria-label={`Social Security claiming start age ${state.socialSecurityStartAge}`}>
                   <span>Claiming Start Age</span>
                   <span className="font-bold text-emerald-400">Age {state.socialSecurityStartAge}</span>
                 </div>
@@ -350,7 +351,7 @@ export const LocationColSection: React.FC<Props> = ({
               </div>
 
               <div className="space-y-1.5 pt-1">
-                <div className="flex justify-between text-xs dark:text-slate-400 text-slate-600">
+                <div className="flex justify-between text-xs dark:text-slate-400 text-slate-600" aria-label={`Pension start age ${state.pensionStartAge}`}>
                   <span>Pension Start Age</span>
                   <span className="font-bold text-purple-400">Age {state.pensionStartAge}</span>
                 </div>

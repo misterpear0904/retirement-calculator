@@ -141,7 +141,7 @@ export const IncomeGrowthSection: React.FC<Props> = ({
                 }}
                 className="w-full cursor-pointer min-h-[44px]"
               />
-              <p className="text-xs dark:text-slate-400 text-slate-600 leading-relaxed">
+              <p className="text-xs dark:text-slate-400 text-slate-600 leading-relaxed" aria-label={`Saves $${Math.round(calculatedSavingsAmount).toLocaleString()} per year out of $${state.currentAnnualIncome.toLocaleString()} salary.`}>
                 Saves <strong className="text-emerald-400">${Math.round(calculatedSavingsAmount).toLocaleString()}</strong> / year out of ${state.currentAnnualIncome.toLocaleString()} salary.
               </p>
             </div>

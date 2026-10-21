@@ -92,7 +92,7 @@ export const SummaryCards: React.FC<Props> = ({ result, state, onChange }) => {
 
           <div className="flex items-baseline gap-3 my-3">
             <span className="text-4xl sm:text-5xl font-black tracking-tight dark:text-white text-slate-900">{successRate}%</span>
-            <span className="text-xs dark:text-slate-400 text-slate-500 font-medium">{modeLabel} Confidence</span>
+            <span className="text-xs dark:text-slate-400 text-slate-500 font-medium" aria-label={`${modeLabel} Confidence`}>{modeLabel} Confidence</span>
           </div>
           <div className="text-[11px] dark:text-slate-400 text-slate-500 font-medium">
             Historical: {historicalSuccessRate ?? 0}% of start years succeeded
@@ -128,14 +128,14 @@ export const SummaryCards: React.FC<Props> = ({ result, state, onChange }) => {
                 <Calendar className="w-4 h-4 text-emerald-500 shrink-0" /> Target Retirement Age
               </span>
               {fireAgeAchievable && (
-                <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 shrink-0">
+                <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 shrink-0" aria-label={`FIRE Age ${fireAgeAchievable}`}>
                   FIRE Age {fireAgeAchievable}
                   <InfoTip term="fireAge" />
                 </span>
               )}
             </div>
 
-            <div className="flex items-baseline gap-2.5 my-3">
+            <div className="flex items-baseline gap-2.5 my-3" aria-label={`Age ${state.targetRetirementAge} (${state.targetRetirementAge - state.currentAge} years away)`}>
               <span className="text-3xl font-extrabold dark:text-slate-100 text-slate-900">Age {state.targetRetirementAge}</span>
               <span className="text-xs dark:text-slate-400 text-slate-500">({state.targetRetirementAge - state.currentAge} yrs away)</span>
             </div>
@@ -213,7 +213,7 @@ export const SummaryCards: React.FC<Props> = ({ result, state, onChange }) => {
               <InfoTip term="todaysDollars" />
             </span>
 
-            <div className="my-3">
+            <div className="my-3" aria-label={`${formatCurrency(monthlyRetirementSpending)} per month, today's dollars`}>
               <span className="text-3xl font-extrabold text-cyan-400 tracking-tight">
                 {formatCurrency(monthlyRetirementSpending)}
               </span>
@@ -226,7 +226,7 @@ export const SummaryCards: React.FC<Props> = ({ result, state, onChange }) => {
 
           <p className="text-xs dark:text-slate-400 text-slate-600 flex items-center gap-1.5 border-t dark:border-slate-800/80 border-slate-200/80 pt-3 mt-3 leading-relaxed truncate" title={`Entered: ${formatCurrency(enteredMonthly)}/mo × ${colMultiplier} = ${formatCurrency(enteredMonthly * colMultiplier)}/mo. Sustainable: ${formatCurrency(sustainableMonthly)}/mo × ${colMultiplier} = ${formatCurrency(sustainableMonthly * colMultiplier)}/mo.`}>
             <MapPin className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-            <span className="truncate">Adjusted for {targetLocationName} ({colMultiplier}x COL)</span>
+            <span className="truncate" aria-label={`Adjusted for ${targetLocationName} (${colMultiplier}x COL)`}>Adjusted for {targetLocationName} ({colMultiplier}x COL)</span>
           </p>
           <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
             Sustainable spending at your target success rate
@@ -241,12 +241,12 @@ export const SummaryCards: React.FC<Props> = ({ result, state, onChange }) => {
                 <Flame className="w-4 h-4 text-amber-400 shrink-0" /> Savings Rate &amp; Spend Rate
                 <InfoTip term="swr" />
               </span>
-              <span className="text-[11px] font-bold text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded border border-amber-500/20 shrink-0">
+              <span className="text-[11px] font-bold text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded border border-amber-500/20 shrink-0" aria-label={`Spend Rate: ${safeWithdrawalRatePct}%`}>
                 Spend Rate: {safeWithdrawalRatePct}%
               </span>
             </div>
 
-            <div className="flex items-baseline gap-2 my-3">
+            <div className="flex items-baseline gap-2 my-3" aria-label={`${state.savingsRatePct ?? 0}% of salary saved`}>
               <span className="text-3xl font-extrabold text-emerald-400">{state.savingsRatePct ?? 0}%</span>
               <span className="text-xs dark:text-slate-400 text-slate-600 font-medium">of salary saved</span>
             </div>
@@ -292,7 +292,7 @@ export const SummaryCards: React.FC<Props> = ({ result, state, onChange }) => {
             <div className="my-3">
               {coastFireAge != null ? (
                 <>
-                  <span className="text-3xl font-extrabold text-sky-400 tracking-tight">
+                  <span className="text-3xl font-extrabold text-sky-400 tracking-tight" aria-label={`Age ${coastFireAge}`}>
                     Age {coastFireAge}
                   </span>
                   <span className="block text-[11px] dark:text-slate-400 text-slate-500 mt-1 leading-relaxed">
@@ -340,7 +340,7 @@ export const SummaryCards: React.FC<Props> = ({ result, state, onChange }) => {
               </div>
             </div>
 
-            <p className="text-xs dark:text-slate-400 text-slate-500 border-t dark:border-slate-800/80 border-slate-200 pt-3 mt-3 leading-relaxed">
+            <p className="text-xs dark:text-slate-400 text-slate-500 border-t dark:border-slate-800/80 border-slate-200 pt-3 mt-3 leading-relaxed" aria-label={`On track to leave ${formatCurrency(dieWithZero.surplus)} at age ${dieWithZero.horizonAge} — spendable over ${dieWithZero.retiredYears} retired years. Rough estimate; spending more lowers success.`}>
               On track to leave <strong className="dark:text-slate-200 text-slate-800">{formatCurrency(dieWithZero.surplus)}</strong> at age {dieWithZero.horizonAge} — spendable over {dieWithZero.retiredYears} retired years. Rough estimate; spending more lowers success.
             </p>
           </div>

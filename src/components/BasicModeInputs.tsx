@@ -75,7 +75,7 @@ export const BasicModeInputs: React.FC<Props> = ({ state, onChange, onSwitchToAd
             <h3 className="text-base font-semibold dark:text-slate-100 text-slate-800">
               Basic Mode — Essentials
             </h3>
-            <p className="text-xs dark:text-slate-400 text-slate-500 mt-1 leading-relaxed">
+            <p className="text-xs dark:text-slate-400 text-slate-500 mt-1 leading-relaxed" aria-label={`${yearsToRetire} years to retire · 7 high-level inputs · details use sensible defaults`}>
               {yearsToRetire} yrs to retire · 7 high-level inputs · details use sensible defaults
             </p>
           </div>
@@ -364,7 +364,7 @@ export const BasicModeInputs: React.FC<Props> = ({ state, onChange, onSwitchToAd
                 <TrendingUp className="w-4 h-4 text-purple-400 shrink-0" />
                 <label htmlFor="basic-mix">Invested in stocks</label>
               </span>
-              <span className="text-sm font-bold text-purple-400">
+              <span className="text-sm font-bold text-purple-400" aria-label={`${state.stockPct}% · ${mixLabel(state.stockPct)}`}>
                 {state.stockPct}% · {mixLabel(state.stockPct)}
               </span>
             </div>

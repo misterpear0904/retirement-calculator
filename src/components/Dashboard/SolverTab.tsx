@@ -69,7 +69,7 @@ export function SolverTab({ state, onTriggerToast, onSelectRetirementAge }: Solv
       </p>
 
       <div className={cardCls}>
-        <label className="text-xs font-semibold dark:text-slate-300 text-slate-700 flex items-center justify-between" htmlFor="solve-target-rate">
+        <label className="text-xs font-semibold dark:text-slate-300 text-slate-700 flex items-center justify-between" htmlFor="solve-target-rate" aria-label={`Target success rate ${targetRate}%`}>
           Target success rate
           <span className="font-bold text-blue-400">{targetRate}%</span>
         </label>
@@ -95,7 +95,7 @@ export function SolverTab({ state, onTriggerToast, onSelectRetirementAge }: Solv
             ) : ageResult === null ? (
               <div className="text-sm text-amber-400">No plan reaches this target — loosen it.</div>
             ) : (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2" aria-label={`Earliest safe retirement age: ${ageResult}. Apply to plan.`}>
                 <span className="text-2xl font-bold text-emerald-400">Age {ageResult}</span>
                 <button type="button" className={btnCls} onClick={() => onSelectRetirementAge?.(ageResult)}>
                   Apply to plan
@@ -116,7 +116,7 @@ export function SolverTab({ state, onTriggerToast, onSelectRetirementAge }: Solv
             ) : savingsResult === null ? (
               <div className="text-sm text-amber-400">No plan reaches this target — loosen it.</div>
             ) : (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2" aria-label={`Minimum savings rate: ${savingsResult}% of household income`}>
                 <span className="text-2xl font-bold text-emerald-400">{savingsResult}%</span>
                 <span className="text-xs text-slate-500">of household income</span>
               </div>

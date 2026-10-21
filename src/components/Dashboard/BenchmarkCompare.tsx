@@ -65,7 +65,7 @@ export const BenchmarkCompare: React.FC<Props> = ({ state }) => {
         <h3 className="text-base sm:text-lg font-bold dark:text-slate-100 text-slate-900 flex items-center gap-2">
           <Globe2 className="w-4 h-4 text-blue-400 shrink-0" /> How You Compare Globally
         </h3>
-        <p className="text-xs dark:text-slate-400 text-slate-500 mt-1 leading-relaxed">
+        <p className="text-xs dark:text-slate-400 text-slate-500 mt-1 leading-relaxed" aria-label={`You (age ${state.currentAge}, wealth band ${band.label}) vs typical households in 4 regions. Percentiles are illustrative estimates from a lognormal model — see sources below.`}>
           You (age {state.currentAge}, wealth band “{band.label}”) vs typical households in 4 regions.
           Percentiles are illustrative estimates from a lognormal model — see sources below.
         </p>
@@ -81,7 +81,7 @@ export const BenchmarkCompare: React.FC<Props> = ({ state }) => {
               <span className="text-sm font-extrabold dark:text-slate-100 text-slate-900">
                 {region.flagEmoji} {region.name}
               </span>
-              <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30">
+              <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30" aria-label={`Wealth: top ${100 - wealthPct}% ≈ ${formatOrdinal(wealthPct)} pct`}>
                 Wealth: top {100 - wealthPct}% ≈ {formatOrdinal(wealthPct)} pct
               </span>
             </div>
@@ -89,10 +89,10 @@ export const BenchmarkCompare: React.FC<Props> = ({ state }) => {
             {/* Net worth (age-adjusted) */}
             <div className="space-y-1.5">
               <div className="flex justify-between text-xs">
-                <span className="dark:text-slate-300 text-slate-600 font-semibold">
+                <span className="dark:text-slate-300 text-slate-600 font-semibold" aria-label={`Net worth (age ${band.label})`}>
                   Net worth (age {band.label})
                 </span>
-                <span className="dark:text-slate-400 text-slate-500">
+                <span className="dark:text-slate-400 text-slate-500" aria-label={`You ${fmt$(userNetWorth)} · typical ${fmt$(wealthMedian)} · ${multipleOfMedian(userNetWorth, wealthMedian)}×`}>
                   You {fmt$(userNetWorth)} · typical {fmt$(wealthMedian)} ·{' '}
                   {multipleOfMedian(userNetWorth, wealthMedian)}×
                 </span>
@@ -104,7 +104,7 @@ export const BenchmarkCompare: React.FC<Props> = ({ state }) => {
             <div className="space-y-1.5">
               <div className="flex justify-between text-xs">
                 <span className="dark:text-slate-300 text-slate-600 font-semibold">Annual income</span>
-                <span className="dark:text-slate-400 text-slate-500">
+                <span className="dark:text-slate-400 text-slate-500" aria-label={`You ${fmt$(state.currentAnnualIncome)} · typical ${fmt$(region.medianHouseholdIncomeUSD)} · ${multipleOfMedian(state.currentAnnualIncome, region.medianHouseholdIncomeUSD)}×`}>
                   You {fmt$(state.currentAnnualIncome)} · typical{' '}
                   {fmt$(region.medianHouseholdIncomeUSD)} ·{' '}
                   {multipleOfMedian(state.currentAnnualIncome, region.medianHouseholdIncomeUSD)}×
@@ -117,7 +117,7 @@ export const BenchmarkCompare: React.FC<Props> = ({ state }) => {
             <div className="space-y-1.5">
               <div className="flex justify-between text-xs">
                 <span className="dark:text-slate-300 text-slate-600 font-semibold">Savings rate</span>
-                <span className="dark:text-slate-400 text-slate-500">
+                <span className="dark:text-slate-400 text-slate-500" aria-label={`You ${state.savingsRatePct}% · typical ${region.avgSavingsRatePct}%`}>
                   You {state.savingsRatePct}% · typical {region.avgSavingsRatePct}%
                 </span>
               </div>

@@ -162,10 +162,10 @@ export const DemographicsSection: React.FC<Props> = ({
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3 p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl text-xs dark:text-slate-300 text-slate-700 mt-3 leading-relaxed">
-        <div>
+        <div aria-label={`Accumulation Window: ${yearsToRetire} years (Age ${state.currentAge} to ${state.targetRetirementAge})`}>
           Accumulation Window: <strong className="text-blue-400">{yearsToRetire} years</strong> (Age {state.currentAge} → {state.targetRetirementAge})
         </div>
-        <div>
+        <div aria-label={`Decumulation Horizon: ${yearsInRetirement} years (Age ${state.targetRetirementAge} to ${state.lifeExpectancy})`}>
           Decumulation Horizon: <strong className="text-emerald-400">{yearsInRetirement} years</strong> (Age {state.targetRetirementAge} → {state.lifeExpectancy})
         </div>
       </div>
@@ -262,7 +262,7 @@ export const DemographicsSection: React.FC<Props> = ({
                 className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg px-3 py-2 font-bold dark:text-slate-100 text-slate-900 focus:border-pink-500 focus:outline-none"
               />
             </div>
-            <div className="sm:col-span-2">
+            <div className="sm:col-span-2" aria-label={`Partner's Social Security claiming age ${state.partner.ssStartAge}`}>
               <div className="flex justify-between dark:text-slate-400 text-slate-600 mb-1">
                 <span>Partner&apos;s SS Claiming Age</span>
                 <span className="font-bold text-pink-400">Age {state.partner.ssStartAge}</span>

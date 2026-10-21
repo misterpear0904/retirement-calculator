@@ -51,7 +51,7 @@ export const MarketInflationSection: React.FC<Props> = ({
             <h4 className="text-xs font-semibold dark:text-slate-300 text-slate-700 uppercase tracking-wider flex items-center gap-2">
               <PieChart className="w-4 h-4 text-blue-400 shrink-0" /> Portfolio Asset Allocation
             </h4>
-            <span className="text-xs font-bold dark:text-slate-400 text-slate-600">
+            <span className="text-xs font-bold dark:text-slate-400 text-slate-600" aria-label={`Total: ${state.stockPct + state.bondPct + state.cashPct}%`}>
               Total: {state.stockPct + state.bondPct + state.cashPct}%
             </span>
           </div>
