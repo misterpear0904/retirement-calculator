@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { YearlyProjection } from '../../types/retirement';
 import { Table, Download } from 'lucide-react';
+import { formatCurrency } from '../../utils/formatCurrency';
 
 interface Props {
   yearlyProjections: YearlyProjection[];
@@ -120,6 +121,14 @@ export const YearlyTable: React.FC<Props> = ({ yearlyProjections }) => {
         </div>
       </div>
 
+      {yearlyProjections.some((p) =>
+        [p.totalPortfolio, p.netWorth50, p.netWorth95, p.netWorth10].some((v) => Math.abs(v) >= 1_000_000_000)
+      ) && (
+        <p className="text-xs dark:text-amber-300 text-amber-700 leading-relaxed px-1">
+          Note: Portfolio values of $1B or more reflect a compounding artifact of the historical replay — the final-year returns are held for the rest of the horizon — not a forecast.
+        </p>
+      )}
+
       <div className="overflow-x-auto max-h-[380px] overflow-y-auto rounded-xl border dark:border-slate-800 border-slate-200">
         <table className="w-full text-left text-xs border-collapse">
           <thead className="sticky top-0 dark:bg-slate-900/95 bg-white/95 backdrop-blur-md dark:text-slate-300 text-slate-700 font-semibold border-b dark:border-slate-800 border-slate-200">
@@ -148,16 +157,20 @@ export const YearlyTable: React.FC<Props> = ({ yearlyProjections }) => {
                     {p.isRetired ? 'Retirement' : 'Work'}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-right dark:text-slate-300 text-slate-700 whitespace-nowrap">${p.grossIncome.toLocaleString()}</td>
-                <td className="px-4 py-3 text-right text-emerald-400 whitespace-nowrap">
-                  {p.totalContributions > 0 ? `+$${p.totalContributions.toLocaleString()}` : '-'}
+                <td className="px-4 py-3 text-right dark:text-slate-300 text-slate-700 whitespace-nowrap" title={String(p.grossIncome)}>
+                  {formatCurrency(p.grossIncome)}
                 </td>
-                <td className="px-4 py-3 text-right dark:text-slate-300 text-slate-700 whitespace-nowrap">${p.totalExpenses.toLocaleString()}</td>
-                <td className="px-4 py-3 text-right text-amber-400 whitespace-nowrap">
-                  {p.netWithdrawalNeeded > 0 ? `-$${p.netWithdrawalNeeded.toLocaleString()}` : '-'}
+                <td className="px-4 py-3 text-right text-emerald-400 whitespace-nowrap" title={String(p.totalContributions)}>
+                  {p.totalContributions > 0 ? `+${formatCurrency(p.totalContributions)}` : '-'}
                 </td>
-                <td className="px-4 py-3 text-right font-bold text-cyan-400 whitespace-nowrap">
-                  ${p.totalPortfolio.toLocaleString()}
+                <td className="px-4 py-3 text-right dark:text-slate-300 text-slate-700 whitespace-nowrap" title={String(p.totalExpenses)}>
+                  {formatCurrency(p.totalExpenses)}
+                </td>
+                <td className="px-4 py-3 text-right text-amber-400 whitespace-nowrap" title={String(p.netWithdrawalNeeded)}>
+                  {p.netWithdrawalNeeded > 0 ? `-${formatCurrency(p.netWithdrawalNeeded)}` : '-'}
+                </td>
+                <td className="px-4 py-3 text-right font-bold text-cyan-400 whitespace-nowrap" title={String(p.totalPortfolio)}>
+                  {formatCurrency(p.totalPortfolio)}
                 </td>
               </tr>
             ))}

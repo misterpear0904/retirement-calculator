@@ -6,6 +6,7 @@ import { FINANCIAL_CONSTANTS, VALIDATION_LIMITS } from '../../utils/constants';
 import { DIE_WITH_ZERO_MIN_SUCCESS_RATE, calcDieWithZero } from '../../utils/dieWithZero';
 import { InfoTip } from '../InfoTip';
 import { formatCurrency } from '../../utils/formatCurrency';
+import { HISTORICAL_PRESETS } from '../../data/historicalReturns';
 
 interface Props {
   result: SimulationResult;
@@ -42,11 +43,22 @@ export const SummaryCards: React.FC<Props> = ({ result, state, onChange }) => {
       : returnMode === 'historical_real'
         ? 'Historical Real'
         : 'Monte Carlo';
+  const historicalPreset =
+    HISTORICAL_PRESETS.find((p) => p.id === (state.historicalInflationPreset ?? 'stagflation_1970s')) ??
+    HISTORICAL_PRESETS.find((p) => p.id === 'stagflation_1970s') ??
+    HISTORICAL_PRESETS[0];
+  const presetLabel = historicalPreset ? `${historicalPreset.name} (${historicalPreset.yearsRange})` : '';
+  const finalYear = historicalPreset?.data?.length
+    ? historicalPreset.data[historicalPreset.data.length - 1]
+    : null;
+  const finalYearNote = finalYear
+    ? ` — final year ${finalYear.year}: stock ${finalYear.stock >= 0 ? '+' : ''}${finalYear.stock}%, bond ${finalYear.bond >= 0 ? '+' : ''}${finalYear.bond}%, inflation ${finalYear.inflation}%`
+    : '';
   const modeDescription =
     returnMode === 'deterministic'
       ? 'Calculated across 3 deterministic scenario paths (target, conservative, stress).'
       : returnMode === 'historical_real'
-        ? 'Calculated by replaying historical market returns and inflation year by year.'
+        ? `Calculated by replaying historical market returns and inflation year by year — ${presetLabel}; the final-year returns are held for the rest of the horizon${finalYearNote}.`
         : `Calculated across ${FINANCIAL_CONSTANTS.MONTE_CARLO_TRIALS} stochastic market return & inflation trials.`;
 
   // Die with Zero: only suggest spending the leftover from a plan that's on

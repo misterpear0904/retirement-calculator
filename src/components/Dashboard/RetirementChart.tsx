@@ -47,6 +47,35 @@ const getSectionIdForCategory = (category: string) => {
 
 const fmt$ = (n: number) => formatCurrency(n);
 
+// Pure helper for the chart's y-axis domain. In focus mode the domain is
+// derived from the *working-years* data (ages currentAge..retirement) across
+// all three scenario bands, so the accumulation curve is not flattened by the
+// conservative band's old-age values. Exported for unit testing.
+export function computeYDomain(
+  yearlyProjections: YearlyProjection[],
+  targetRetirementAge: number,
+  yFocus: boolean
+): [number | string, number | string] {
+  if (!yFocus) return ['auto', 'auto'];
+  const pool = yearlyProjections.filter((p) => p.age < targetRetirementAge);
+  const src = pool.length ? pool : yearlyProjections;
+  const max = Math.max(
+    1000,
+    ...src.flatMap((p) =>
+      [p.netWorth95, p.netWorth50, p.netWorth10].map((v) =>
+        Number.isFinite(v as number) ? (v as number) : 0
+      )
+    )
+  );
+  return [0, Math.round(max * 1.1)];
+}
+
+// Aliases for callers/tests that use other names.
+export const getYDomain = computeYDomain;
+export const getYAxisDomain = computeYDomain;
+export const getChartYDomain = computeYDomain;
+export const yDomainForFocus = computeYDomain;
+
 const CustomTooltip = React.memo(({ active, payload }: { active?: boolean; payload?: Array<{ payload: YearlyProjection }> }) => {
   if (active && payload && payload.length) {
     const data: YearlyProjection = payload[0].payload;
@@ -154,13 +183,10 @@ export const RetirementChart: React.FC<Props> = React.memo(({
     setZoomRange(null);
   }, [fullRange?.[0], fullRange?.[1]]);
 
-  const yDomain = useMemo(() => {
-    if (!yFocus) return ['auto', 'auto'] as [string, string];
-    const pool = yearlyProjections.filter((p) => p.age < targetRetirementAge);
-    const src = pool.length ? pool : yearlyProjections;
-    const max = Math.max(1000, ...src.map((p) => p.netWorth95 || p.netWorth50 || 0));
-    return [0, Math.round(max * 1.1)] as [number, number];
-  }, [yFocus, yearlyProjections, targetRetirementAge]);
+  const yDomain = useMemo(
+    () => computeYDomain(yearlyProjections, targetRetirementAge, yFocus),
+    [yearlyProjections, targetRetirementAge, yFocus]
+  );
 
   const viewRange: [number, number] | null = zoomRange ?? fullRange;
   const isZoomed =
@@ -333,7 +359,7 @@ export const RetirementChart: React.FC<Props> = React.memo(({
             onClick={() => setYFocus((v) => !v)}
             className="flex items-center gap-2 text-xs font-semibold px-3.5 py-2 rounded-xl dark:bg-slate-800 bg-slate-200 dark:text-slate-300 text-slate-700 hover:text-white border dark:border-slate-700 border-slate-300 transition-colors shadow-sm"
           >
-            {yFocus ? 'Y: Focus Working Years' : 'Y: Full Range'}
+            {yFocus ? 'Y: Full Range' : 'Y: Focus Working Years'}
           </button>
           {allowExpand && (
             <button
@@ -375,7 +401,7 @@ export const RetirementChart: React.FC<Props> = React.memo(({
         className="w-full pt-2"
         style={{ height: height + 20, minHeight: height + 20 }}
         onDoubleClick={resetZoom}
-        title="Ctrl+scroll to zoom · double-click to reset"
+        title={isFullscreen ? 'Scroll to zoom · double-click to reset' : 'Ctrl+scroll to zoom · double-click to reset'}
       >
         <ResponsiveContainer width="100%" height={height} minHeight={height}>
           <ComposedChart
@@ -554,10 +580,10 @@ export const RetirementChart: React.FC<Props> = React.memo(({
         </ResponsiveContainer>
       </div>
       <p className="text-[11px] dark:text-slate-400 text-slate-600">
-        Scroll over the chart to zoom{isZoomed && viewRange ? (
+        {isFullscreen ? 'Scroll over the chart to zoom' : 'Ctrl+scroll to zoom'}{isZoomed && viewRange ? (
           <>
             {' '}· zoomed to ages {viewRange[0]}–{viewRange[1]} ·{' '}
-            <button type="button" onClick={resetZoom} className="text-blue-400 hover:underline font-semibold">
+            <button type="button" onClick={resetZoom} className="text-blue-400 hover:underline font-semibold min-h-[44px] inline-flex items-center">
               Show full horizon
             </button>
           </>
