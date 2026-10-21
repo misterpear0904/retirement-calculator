@@ -130,7 +130,7 @@ export const IncomeGrowthSection: React.FC<Props> = ({
               <input
                 type="range"
                 min={0}
-                max={75}
+                max={100}
                 value={state.savingsRatePct}
                 aria-label="Savings rate percentage of income"
                 onChange={(e) => {

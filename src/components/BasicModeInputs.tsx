@@ -201,7 +201,7 @@ export const BasicModeInputs: React.FC<Props> = ({ state, onChange, onSwitchToAd
               id="basic-save"
               type="range"
               min={0}
-              max={75}
+              max={100}
               value={state.savingsRatePct}
               onChange={(e) => {
                 const raw = e.target.value;

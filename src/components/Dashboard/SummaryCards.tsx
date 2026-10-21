@@ -2,7 +2,7 @@ import React from 'react';
 import { ShieldCheck, Calendar, DollarSign, Flame, MapPin, Plus, Minus, TrendingUp } from 'lucide-react';
 import { SimulationResult, RetirementState } from '../../types/retirement';
 import { getRiskLabel, getRiskCardClasses } from '../../utils/risk';
-import { FINANCIAL_CONSTANTS } from '../../utils/constants';
+import { FINANCIAL_CONSTANTS, VALIDATION_LIMITS } from '../../utils/constants';
 import { InfoTip } from '../InfoTip';
 
 interface Props {
@@ -206,7 +206,7 @@ export const SummaryCards: React.FC<Props> = ({ result, state, onChange }) => {
               <button
                 type="button"
                 aria-label="Decrease savings rate"
-                onClick={() => onChange({ savingsRatePct: Math.max(0, state.savingsRatePct - 1) })}
+                onClick={() => onChange({ savingsRatePct: Math.max(VALIDATION_LIMITS.MIN_SAVINGS_RATE_PCT, state.savingsRatePct - 1) })}
                 className="w-8 h-8 flex items-center justify-center rounded-lg dark:bg-slate-800 bg-white hover:bg-blue-50 dark:hover:bg-slate-700 dark:text-slate-200 text-slate-700 font-bold border border-slate-200 dark:border-slate-700 transition-colors"
               >
                 <Minus className="w-4 h-4" />
@@ -214,7 +214,7 @@ export const SummaryCards: React.FC<Props> = ({ result, state, onChange }) => {
               <button
                 type="button"
                 aria-label="Increase savings rate"
-                onClick={() => onChange({ savingsRatePct: Math.min(75, state.savingsRatePct + 1) })}
+                onClick={() => onChange({ savingsRatePct: Math.min(VALIDATION_LIMITS.MAX_SAVINGS_RATE_PCT, state.savingsRatePct + 1) })}
                 className="w-8 h-8 flex items-center justify-center rounded-lg dark:bg-slate-800 bg-white hover:bg-blue-50 dark:hover:bg-slate-700 dark:text-slate-200 text-slate-700 font-bold border border-slate-200 dark:border-slate-700 transition-colors"
               >
                 <Plus className="w-4 h-4" />
