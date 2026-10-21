@@ -15,6 +15,8 @@ interface Props {
 
 export const TaxStrategySection: React.FC<Props> = ({ state, onChange, isOpen, onToggle }) => {
   const [exploring, setExploring] = useState(false);
+  const [moneyText, setMoneyText] = useState<Record<string, string>>({});
+  const [moneyError, setMoneyError] = useState<Record<string, boolean>>({});
   const [explorer, setExplorer] = useState<{
     withRate: number;
     withoutRate: number;
@@ -103,13 +105,13 @@ export const TaxStrategySection: React.FC<Props> = ({ state, onChange, isOpen, o
           </div>
 
           <div>
-            <span className="text-xs font-medium text-slate-300 block mb-1">
+            <span className="text-xs font-medium dark:text-slate-300 text-slate-700 block mb-1">
               Retirement Spending Strategy
             </span>
             <select
               value={state.spendingStrategy ?? 'fixed_real'}
               onChange={(e) => onChange({ spendingStrategy: e.target.value as SpendingStrategy })}
-              className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs font-semibold text-slate-100 focus:border-blue-500 focus:outline-none cursor-pointer"
+              className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold dark:text-slate-100 text-slate-900 focus:border-blue-500 focus:outline-none cursor-pointer"
             >
               <option value="fixed_real">Fixed real spending (inflation-adjusted)</option>
               <option value="vpw">Variable Percentage Withdrawal (VPW)</option>
@@ -214,16 +216,43 @@ export const TaxStrategySection: React.FC<Props> = ({ state, onChange, isOpen, o
               <div>
                 <label className="text-[11px] dark:text-slate-400 text-slate-600 block mb-1">Convert per year ($)</label>
                 <input
-                  type="number"
+                  type="text" inputMode="decimal"
                   step={1000}
-                  value={state.rothConversionAnnual}
+                  value={moneyText['rothConversionAnnual'] ?? state.rothConversionAnnual}
                   onChange={(e) => {
-                    const v = parseFloat(e.target.value);
-                    if (Number.isFinite(v)) onChange({ rothConversionAnnual: Math.max(0, v) });
+                    const raw = e.target.value;
+                    setMoneyText((prev) => ({ ...prev, rothConversionAnnual: raw }));
+                    const badInput = e.target.validity?.badInput ?? false;
+                  if (raw === '' && !badInput) {
+                      setMoneyError((prev) => ({ ...prev, rothConversionAnnual: false }));
+                      return;
+                    }
+                    const v = parseFloat(raw);
+                    if (!Number.isFinite(v) || v < 0) {
+                      setMoneyError((prev) => ({ ...prev, rothConversionAnnual: true }));
+                      return;
+                    }
+                    setMoneyError((prev) => ({ ...prev, rothConversionAnnual: false }));
+                    setMoneyText((prev) => {
+                      const next = { ...prev };
+                      delete next.rothConversionAnnual;
+                      return next;
+                    });
+                    onChange({ rothConversionAnnual: Math.max(0, v) });
+                  }}
+                  onBlur={() => {
+                    setMoneyText((prev) => {
+                      const next = { ...prev };
+                      delete next.rothConversionAnnual;
+                      return next;
+                    });
                   }}
                   aria-label="Roth conversion amount per year in dollars"
-                  className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg px-3 py-2 font-bold dark:text-slate-100 text-slate-900 focus:border-purple-500 focus:outline-none"
+                  className={`w-full dark:bg-slate-900 bg-white border ${moneyError['rothConversionAnnual'] ? 'border-red-500' : 'dark:border-slate-700 border-slate-300'} rounded-lg px-3 py-2 font-bold dark:text-slate-100 text-slate-900 focus:border-purple-500 focus:outline-none`}
                 />
+                {moneyError['rothConversionAnnual'] && (
+                  <p className="text-xs text-red-400 mt-1">Enter a number 0 or greater</p>
+                )}
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>

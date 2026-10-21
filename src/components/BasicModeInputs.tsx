@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Wallet, Briefcase, PiggyBank, TrendingUp, Calendar, User, Sparkles } from 'lucide-react';
 import { RetirementState } from '../types/retirement';
 
@@ -60,6 +60,9 @@ export const BasicModeInputs: React.FC<Props> = ({ state, onChange, onSwitchToAd
   );
 
   const yearsToRetire = Math.max(0, state.targetRetirementAge - state.currentAge);
+
+  const [moneyText, setMoneyText] = useState<Record<string, string>>({});
+  const [moneyError, setMoneyError] = useState<Record<string, boolean>>({});
 
   return (
     <div className="space-y-4">
@@ -174,17 +177,43 @@ export const BasicModeInputs: React.FC<Props> = ({ state, onChange, onSwitchToAd
               <span className="absolute left-3 top-1/2 -translate-y-1/2 dark:text-slate-400 text-slate-600 text-sm">$</span>
               <input
                 id="basic-income"
-                type="number"
+                type="text" inputMode="decimal"
                 min={0}
                 step={1000}
-                value={state.currentAnnualIncome}
+                value={moneyText['currentAnnualIncome'] ?? state.currentAnnualIncome}
                 onChange={(e) => {
-                  const v = parseFloat(e.target.value);
-                  // Ignore empty / mid-typing input; keep the previous value.
-                  if (Number.isFinite(v)) onChange({ currentAnnualIncome: Math.max(0, v) });
+                  const raw = e.target.value;
+                  setMoneyText((prev) => ({ ...prev, currentAnnualIncome: raw }));
+                  const badInput = e.target.validity?.badInput ?? false;
+                  if (raw === '' && !badInput) {
+                    setMoneyError((prev) => ({ ...prev, currentAnnualIncome: false }));
+                    return;
+                  }
+                  const v = parseFloat(raw);
+                  if (!Number.isFinite(v) || v < 0) {
+                    setMoneyError((prev) => ({ ...prev, currentAnnualIncome: true }));
+                    return;
+                  }
+                  setMoneyError((prev) => ({ ...prev, currentAnnualIncome: false }));
+                  setMoneyText((prev) => {
+                    const next = { ...prev };
+                    delete next.currentAnnualIncome;
+                    return next;
+                  });
+                  onChange({ currentAnnualIncome: Math.max(0, v) });
                 }}
-                className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg pl-7 pr-3 py-2 text-sm font-bold dark:text-slate-100 text-slate-900 focus:border-blue-500 focus:outline-none"
+                onBlur={() => {
+                  setMoneyText((prev) => {
+                    const next = { ...prev };
+                    delete next.currentAnnualIncome;
+                    return next;
+                  });
+                }}
+                className={`w-full dark:bg-slate-900 bg-white border ${moneyError['currentAnnualIncome'] ? 'border-red-500' : 'dark:border-slate-700 border-slate-300'} rounded-lg pl-7 pr-3 py-2 text-sm font-bold dark:text-slate-100 text-slate-900 focus:border-blue-500 focus:outline-none`}
               />
+              {moneyError['currentAnnualIncome'] && (
+                <p className="text-xs text-red-400 mt-1">Enter a number 0 or greater</p>
+              )}
             </div>
           </div>
 
@@ -228,16 +257,43 @@ export const BasicModeInputs: React.FC<Props> = ({ state, onChange, onSwitchToAd
               <span className="absolute left-3 top-1/2 -translate-y-1/2 dark:text-slate-400 text-slate-600 text-sm">$</span>
               <input
                 id="basic-savings"
-                type="number"
+                type="text" inputMode="decimal"
                 min={0}
                 step={1000}
-                value={totalSavings}
+                value={moneyText['totalSavings'] ?? totalSavings}
                 onChange={(e) => {
-                  const v = parseFloat(e.target.value);
-                  if (Number.isFinite(v)) onChange(distributeTotalSavings(state, Math.max(0, v)));
+                  const raw = e.target.value;
+                  setMoneyText((prev) => ({ ...prev, totalSavings: raw }));
+                  const badInput = e.target.validity?.badInput ?? false;
+                  if (raw === '' && !badInput) {
+                    setMoneyError((prev) => ({ ...prev, totalSavings: false }));
+                    return;
+                  }
+                  const v = parseFloat(raw);
+                  if (!Number.isFinite(v) || v < 0) {
+                    setMoneyError((prev) => ({ ...prev, totalSavings: true }));
+                    return;
+                  }
+                  setMoneyError((prev) => ({ ...prev, totalSavings: false }));
+                  setMoneyText((prev) => {
+                    const next = { ...prev };
+                    delete next.totalSavings;
+                    return next;
+                  });
+                  onChange(distributeTotalSavings(state, Math.max(0, v)));
                 }}
-                className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg pl-7 pr-3 py-2 text-sm font-bold dark:text-slate-100 text-slate-900 focus:border-cyan-500 focus:outline-none"
+                onBlur={() => {
+                  setMoneyText((prev) => {
+                    const next = { ...prev };
+                    delete next.totalSavings;
+                    return next;
+                  });
+                }}
+                className={`w-full dark:bg-slate-900 bg-white border ${moneyError['totalSavings'] ? 'border-red-500' : 'dark:border-slate-700 border-slate-300'} rounded-lg pl-7 pr-3 py-2 text-sm font-bold dark:text-slate-100 text-slate-900 focus:border-cyan-500 focus:outline-none`}
               />
+              {moneyError['totalSavings'] && (
+                <p className="text-xs text-red-400 mt-1">Enter a number 0 or greater</p>
+              )}
             </div>
             <p className="text-[11px] text-slate-500">Split across cash, taxable, 401k & Roth automatically.</p>
           </div>
@@ -254,13 +310,30 @@ export const BasicModeInputs: React.FC<Props> = ({ state, onChange, onSwitchToAd
               <span className="absolute left-3 top-1/2 -translate-y-1/2 dark:text-slate-400 text-slate-600 text-sm">$</span>
               <input
                 id="basic-spend"
-                type="number"
+                type="text" inputMode="decimal"
                 min={0}
                 step={100}
-                value={monthlySpending}
+                value={moneyText['monthlySpending'] ?? monthlySpending}
                 onChange={(e) => {
-                  const v = parseFloat(e.target.value);
-                  if (Number.isFinite(v) && v !== monthlySpending) {
+                  const raw = e.target.value;
+                  setMoneyText((prev) => ({ ...prev, monthlySpending: raw }));
+                  const badInput = e.target.validity?.badInput ?? false;
+                  if (raw === '' && !badInput) {
+                    setMoneyError((prev) => ({ ...prev, monthlySpending: false }));
+                    return;
+                  }
+                  const v = parseFloat(raw);
+                  if (!Number.isFinite(v) || v < 0) {
+                    setMoneyError((prev) => ({ ...prev, monthlySpending: true }));
+                    return;
+                  }
+                  setMoneyError((prev) => ({ ...prev, monthlySpending: false }));
+                  setMoneyText((prev) => {
+                    const next = { ...prev };
+                    delete next.monthlySpending;
+                    return next;
+                  });
+                  if (v !== monthlySpending) {
                     onChange({
                       essentialExpensesMonthly: Math.max(0, v),
                       discretionaryExpensesMonthly: 0,
@@ -269,8 +342,18 @@ export const BasicModeInputs: React.FC<Props> = ({ state, onChange, onSwitchToAd
                     });
                   }
                 }}
-                className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg pl-7 pr-3 py-2 text-sm font-bold dark:text-slate-100 text-slate-900 focus:border-amber-500 focus:outline-none"
+                onBlur={() => {
+                  setMoneyText((prev) => {
+                    const next = { ...prev };
+                    delete next.monthlySpending;
+                    return next;
+                  });
+                }}
+                className={`w-full dark:bg-slate-900 bg-white border ${moneyError['monthlySpending'] ? 'border-red-500' : 'dark:border-slate-700 border-slate-300'} rounded-lg pl-7 pr-3 py-2 text-sm font-bold dark:text-slate-100 text-slate-900 focus:border-amber-500 focus:outline-none`}
               />
+              {moneyError['monthlySpending'] && (
+                <p className="text-xs text-red-400 mt-1">Enter a number 0 or greater</p>
+              )}
             </div>
           </div>
 

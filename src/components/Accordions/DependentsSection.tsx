@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Baby, Plus, Trash2, GraduationCap } from 'lucide-react';
 import { RetirementState, ChildItem, SchoolType, CollegeTier } from '../../types/retirement';
 import { AccordionWrapper } from './AccordionWrapper';
@@ -16,6 +16,8 @@ export const DependentsSection: React.FC<Props> = ({
   isOpen,
   onToggle,
 }) => {
+  const [moneyText, setMoneyText] = useState<Record<string, string>>({});
+  const [moneyError, setMoneyError] = useState<Record<string, boolean>>({});
   const handleAddChild = () => {
     const newChild: ChildItem = {
       id: `child_${Date.now()}`,
@@ -186,16 +188,45 @@ export const DependentsSection: React.FC<Props> = ({
                     <div className="flex items-center gap-1.5">
                       <span className="text-slate-500 font-bold">$</span>
                       <input
-                        type="number"
+                        type="text" inputMode="decimal"
                         step={1000}
-                        value={child.privateAnnualCost}
+                        value={moneyText[`${child.id}-private`] ?? child.privateAnnualCost}
                         onChange={(e) => {
-                          const v = parseFloat(e.target.value);
-                          if (Number.isFinite(v)) handleUpdateChild(child.id, 'privateAnnualCost', Math.max(0, v));
+                          const raw = e.target.value;
+                          const key = `${child.id}-private`;
+                          setMoneyText((prev) => ({ ...prev, [key]: raw }));
+                          const badInput = e.target.validity?.badInput ?? false;
+                  if (raw === '' && !badInput) {
+                            setMoneyError((prev) => ({ ...prev, [key]: false }));
+                            return;
+                          }
+                          const v = parseFloat(raw);
+                          if (!Number.isFinite(v) || v < 0) {
+                            setMoneyError((prev) => ({ ...prev, [key]: true }));
+                            return;
+                          }
+                          setMoneyError((prev) => ({ ...prev, [key]: false }));
+                          setMoneyText((prev) => {
+                            const next = { ...prev };
+                            delete next[key];
+                            return next;
+                          });
+                          handleUpdateChild(child.id, 'privateAnnualCost', Math.max(0, v));
+                        }}
+                        onBlur={() => {
+                          const key = `${child.id}-private`;
+                          setMoneyText((prev) => {
+                            const next = { ...prev };
+                            delete next[key];
+                            return next;
+                          });
                         }}
                         aria-label={`Private K-12 annual cost for ${child.name || 'child'}`}
-                        className="w-28 bg-slate-950 border dark:border-slate-700 border-slate-300 rounded-lg px-2.5 py-1 dark:text-slate-100 text-slate-900 font-bold"
+                        className={`w-28 dark:bg-slate-900 bg-white border ${moneyError[`${child.id}-private`] ? 'border-red-500' : 'dark:border-slate-700 border-slate-300'} rounded-lg px-2.5 py-1 dark:text-slate-100 text-slate-900 font-bold`}
                       />
+                      {moneyError[`${child.id}-private`] && (
+                        <span className="text-xs text-red-400 ml-2">Enter a number 0 or greater</span>
+                      )}
                       <span className="dark:text-slate-400 text-slate-600">/yr</span>
                     </div>
                   </div>
@@ -209,16 +240,45 @@ export const DependentsSection: React.FC<Props> = ({
                     <div className="flex items-center gap-1.5">
                       <span className="text-slate-500 font-bold">$</span>
                       <input
-                        type="number"
+                        type="text" inputMode="decimal"
                         step={2500}
-                        value={child.collegeAnnualCost}
+                        value={moneyText[`${child.id}-college`] ?? child.collegeAnnualCost}
                         onChange={(e) => {
-                          const v = parseFloat(e.target.value);
-                          if (Number.isFinite(v)) handleUpdateChild(child.id, 'collegeAnnualCost', Math.max(0, v));
+                          const raw = e.target.value;
+                          const key = `${child.id}-college`;
+                          setMoneyText((prev) => ({ ...prev, [key]: raw }));
+                          const badInput = e.target.validity?.badInput ?? false;
+                  if (raw === '' && !badInput) {
+                            setMoneyError((prev) => ({ ...prev, [key]: false }));
+                            return;
+                          }
+                          const v = parseFloat(raw);
+                          if (!Number.isFinite(v) || v < 0) {
+                            setMoneyError((prev) => ({ ...prev, [key]: true }));
+                            return;
+                          }
+                          setMoneyError((prev) => ({ ...prev, [key]: false }));
+                          setMoneyText((prev) => {
+                            const next = { ...prev };
+                            delete next[key];
+                            return next;
+                          });
+                          handleUpdateChild(child.id, 'collegeAnnualCost', Math.max(0, v));
+                        }}
+                        onBlur={() => {
+                          const key = `${child.id}-college`;
+                          setMoneyText((prev) => {
+                            const next = { ...prev };
+                            delete next[key];
+                            return next;
+                          });
                         }}
                         aria-label={`College annual cost for ${child.name || 'child'}`}
-                        className="w-32 bg-slate-950 border dark:border-slate-700 border-slate-300 rounded-lg px-2.5 py-1 dark:text-slate-100 text-slate-900 font-bold text-right"
+                        className={`w-32 dark:bg-slate-900 bg-white border ${moneyError[`${child.id}-college`] ? 'border-red-500' : 'dark:border-slate-700 border-slate-300'} rounded-lg px-2.5 py-1 dark:text-slate-100 text-slate-900 font-bold text-right`}
                       />
+                      {moneyError[`${child.id}-college`] && (
+                        <span className="text-xs text-red-400 ml-2">Enter a number 0 or greater</span>
+                      )}
                       <span className="dark:text-slate-400 text-slate-600">/yr</span>
                     </div>
                   </div>

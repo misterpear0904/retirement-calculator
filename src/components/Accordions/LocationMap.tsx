@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { Expand } from 'lucide-react';
 import { feature } from 'topojson-client';
 import type { Topology } from 'topojson-specification';
@@ -155,6 +155,19 @@ export const LocationMap: React.FC<Props> = ({
   const lastHoverId = useRef<string | null>(null);
   const [expanded, setExpanded] = useState(false);
 
+  const [isDark, setIsDark] = useState<boolean>(() => {
+    if (typeof document === 'undefined') return true;
+    return document.documentElement.classList.contains('dark');
+  });
+  useEffect(() => {
+    const el = document.documentElement;
+    const update = () => setIsDark(el.classList.contains('dark'));
+    update();
+    const obs = new MutationObserver(update);
+    obs.observe(el, { attributes: true, attributeFilter: ['class'] });
+    return () => obs.disconnect();
+  }, []);
+
   const selected = resolveLocation(selectedId);
   const hovered = hoverId ? resolveLocation(hoverId) : null;
 
@@ -209,16 +222,19 @@ export const LocationMap: React.FC<Props> = ({
 
   // Static backdrop: memoized once so hover updates never reconcile land.
   const backdrop = useMemo(() => {
+    const gridStroke = isDark ? '#162032' : '#cbd5e1';
+    const landFill = isDark ? '#223148' : '#bae6fd';
+    const landStroke = isDark ? '#3b4f6e' : '#38bdf8';
     const gx: React.ReactNode[] = [];
     for (let lon = -180; lon <= 180; lon += 30) {
       gx.push(
-        <line key={`v${lon}`} x1={lonToX(lon)} y1={0} x2={lonToX(lon)} y2={H} stroke="#162032" strokeWidth={1} />
+        <line key={`v${lon}`} x1={lonToX(lon)} y1={0} x2={lonToX(lon)} y2={H} stroke={gridStroke} strokeWidth={1} />
       );
     }
     const gy: React.ReactNode[] = [];
     for (let lat = -60; lat <= 60; lat += 30) {
       gy.push(
-        <line key={`h${lat}`} x1={0} y1={latToY(lat)} x2={W} y2={latToY(lat)} stroke="#162032" strokeWidth={1} />
+        <line key={`h${lat}`} x1={0} y1={latToY(lat)} x2={W} y2={latToY(lat)} stroke={gridStroke} strokeWidth={1} />
       );
     }
     return (
@@ -226,15 +242,15 @@ export const LocationMap: React.FC<Props> = ({
         {gx}
         {gy}
         {LAND_PATHS.map((d, i) => (
-          <path key={i} d={d} fill="#223148" stroke="#3b4f6e" strokeWidth={0.8} />
+          <path key={i} d={d} fill={landFill} stroke={landStroke} strokeWidth={0.8} />
         ))}
       </>
     );
-  }, []);
+  }, [isDark]);
 
   return (
     <div className="space-y-2">
-      <div className="relative rounded-xl border dark:border-slate-800 border-slate-200 bg-[#0b1220] overflow-hidden">
+      <div className={`relative rounded-xl border ${isDark ? 'dark:border-slate-800 border-slate-200 bg-[#0b1220]' : 'border-slate-200 bg-sky-50'} overflow-hidden`}>
         {allowExpand && (
           <button
             type="button"

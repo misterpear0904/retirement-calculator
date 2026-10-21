@@ -133,7 +133,7 @@ export function sanitizeRetirementState(state: RetirementState): RetirementState
     customBondReturn: clamp(state.customBondReturn ?? 4.5, -50, 100, 4.5),
     mortgageInterestRate: clamp(state.mortgageInterestRate ?? 6, 0, 30, 6),
     // Arrays arrive from localStorage / share links / imported files, so the
-    // element type must be verified before mapping — `?? []` does not catch a
+    // element type must be verified before mapping â€” `?? []` does not catch a
     // string or number, and mapping one throws inside a React state updater.
     debts: (Array.isArray(state.debts) ? state.debts : [])
       .slice(0, 50)
@@ -206,12 +206,13 @@ export function describeClamp(
     if (typeof raw !== 'number') continue;
     const final = sanitized[key as keyof RetirementState];
     if (typeof final !== 'number') continue;
-    if (!Number.isFinite(raw) || raw !== final) {
+    const invalid = !Number.isFinite(raw) || (meta.money && raw < 0);
+    if (invalid || raw !== final) {
       const shown = meta.money
         ? `$${Math.round(final).toLocaleString()}`
         : `${final}%`;
-      return !Number.isFinite(raw)
-        ? `Invalid entry for ${meta.label} — reverted to ${shown}`
+      return invalid
+        ? `Invalid entry for ${meta.label} \u2014 reverted to ${shown}`
         : `Capped ${meta.label} at ${shown}`;
     }
   }

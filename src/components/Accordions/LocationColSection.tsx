@@ -25,6 +25,8 @@ export const LocationColSection: React.FC<Props> = ({
   const colDelta = selectedLocation.colIndex - 100;
 
   const [showOptimizer, setShowOptimizer] = useState(false);
+  const [moneyText, setMoneyText] = useState<Record<string, string>>({});
+  const [moneyError, setMoneyError] = useState<Record<string, boolean>>({});
   const optimization = showOptimizer ? optimizeHousehold(state) : null;
 
   return (
@@ -166,16 +168,43 @@ export const LocationColSection: React.FC<Props> = ({
               <div>
                 <label className="text-[11px] dark:text-slate-400 text-slate-600 block mb-1">Estimated Monthly Benefit at Age 67 ($)</label>
                 <input
-                  type="number"
+                  type="text" inputMode="decimal"
                   step={100}
-                  value={state.socialSecurityMonthlyAt67}
+                  value={moneyText['socialSecurityMonthlyAt67'] ?? state.socialSecurityMonthlyAt67}
                   onChange={(e) => {
-                    const v = parseFloat(e.target.value);
-                    if (Number.isFinite(v)) onChange({ socialSecurityMonthlyAt67: Math.max(0, v) });
+                    const raw = e.target.value;
+                    setMoneyText((prev) => ({ ...prev, socialSecurityMonthlyAt67: raw }));
+                    const badInput = e.target.validity?.badInput ?? false;
+                  if (raw === '' && !badInput) {
+                      setMoneyError((prev) => ({ ...prev, socialSecurityMonthlyAt67: false }));
+                      return;
+                    }
+                    const v = parseFloat(raw);
+                    if (!Number.isFinite(v) || v < 0) {
+                      setMoneyError((prev) => ({ ...prev, socialSecurityMonthlyAt67: true }));
+                      return;
+                    }
+                    setMoneyError((prev) => ({ ...prev, socialSecurityMonthlyAt67: false }));
+                    setMoneyText((prev) => {
+                      const next = { ...prev };
+                      delete next.socialSecurityMonthlyAt67;
+                      return next;
+                    });
+                    onChange({ socialSecurityMonthlyAt67: Math.max(0, v) });
+                  }}
+                  onBlur={() => {
+                    setMoneyText((prev) => {
+                      const next = { ...prev };
+                      delete next.socialSecurityMonthlyAt67;
+                      return next;
+                    });
                   }}
                   aria-label="Estimated monthly Social Security benefit at 67 in dollars"
-                  className="w-full bg-slate-950 border dark:border-slate-700 border-slate-300 rounded-lg px-3 py-2 font-bold dark:text-slate-100 text-slate-900 focus:border-emerald-500 focus:outline-none"
+                  className={`w-full dark:bg-slate-900 bg-white border ${moneyError['socialSecurityMonthlyAt67'] ? 'border-red-500' : 'dark:border-slate-700 border-slate-300'} rounded-lg px-3 py-2 font-bold dark:text-slate-100 text-slate-900 focus:border-emerald-500 focus:outline-none`}
                 />
+                {moneyError['socialSecurityMonthlyAt67'] && (
+                  <p className="text-xs text-red-400 mt-1">Enter a number 0 or greater</p>
+                )}
               </div>
 
               <div className="space-y-1.5 pt-1">
@@ -281,16 +310,43 @@ export const LocationColSection: React.FC<Props> = ({
               <div>
                 <label className="text-[11px] dark:text-slate-400 text-slate-600 block mb-1">Estimated Monthly Pension ($)</label>
                 <input
-                  type="number"
+                  type="text" inputMode="decimal"
                   step={100}
-                  value={state.pensionMonthly}
+                  value={moneyText['pensionMonthly'] ?? state.pensionMonthly}
                   onChange={(e) => {
-                    const v = parseFloat(e.target.value);
-                    if (Number.isFinite(v)) onChange({ pensionMonthly: Math.max(0, v) });
+                    const raw = e.target.value;
+                    setMoneyText((prev) => ({ ...prev, pensionMonthly: raw }));
+                    const badInput = e.target.validity?.badInput ?? false;
+                  if (raw === '' && !badInput) {
+                      setMoneyError((prev) => ({ ...prev, pensionMonthly: false }));
+                      return;
+                    }
+                    const v = parseFloat(raw);
+                    if (!Number.isFinite(v) || v < 0) {
+                      setMoneyError((prev) => ({ ...prev, pensionMonthly: true }));
+                      return;
+                    }
+                    setMoneyError((prev) => ({ ...prev, pensionMonthly: false }));
+                    setMoneyText((prev) => {
+                      const next = { ...prev };
+                      delete next.pensionMonthly;
+                      return next;
+                    });
+                    onChange({ pensionMonthly: Math.max(0, v) });
+                  }}
+                  onBlur={() => {
+                    setMoneyText((prev) => {
+                      const next = { ...prev };
+                      delete next.pensionMonthly;
+                      return next;
+                    });
                   }}
                   aria-label="Estimated monthly pension in dollars"
-                  className="w-full bg-slate-950 border dark:border-slate-700 border-slate-300 rounded-lg px-3 py-2 font-bold dark:text-slate-100 text-slate-900 focus:border-purple-500 focus:outline-none"
+                  className={`w-full dark:bg-slate-900 bg-white border ${moneyError['pensionMonthly'] ? 'border-red-500' : 'dark:border-slate-700 border-slate-300'} rounded-lg px-3 py-2 font-bold dark:text-slate-100 text-slate-900 focus:border-purple-500 focus:outline-none`}
                 />
+                {moneyError['pensionMonthly'] && (
+                  <p className="text-xs text-red-400 mt-1">Enter a number 0 or greater</p>
+                )}
               </div>
 
               <div className="space-y-1.5 pt-1">
