@@ -138,7 +138,7 @@ export const LocationColSection: React.FC<Props> = ({
                   }
                 }}
                 aria-valuetext={`${state.colAdjustmentPct > 0 ? '+' : ''}${state.colAdjustmentPct}% adjustment`}
-                className="w-full cursor-pointer accent-cyan-500"
+                className="w-full cursor-pointer accent-cyan-500 min-h-[44px]"
               />
               <div className="flex justify-between text-[10px] text-slate-500 font-medium">
                 <span>−50% (Budget)</span>
@@ -195,7 +195,7 @@ export const LocationColSection: React.FC<Props> = ({
                     const v = parseInt(raw);
                     if (Number.isFinite(v)) onChange({ socialSecurityStartAge: v });
                   }}
-                  className="w-full cursor-pointer"
+                  className="w-full cursor-pointer min-h-[44px]"
                 />
                 <div className="flex justify-between text-[10px] text-slate-500 font-medium pt-0.5">
                   <span>62 (Reduced 30%)</span>
@@ -310,7 +310,7 @@ export const LocationColSection: React.FC<Props> = ({
                     const v = parseInt(raw);
                     if (Number.isFinite(v)) onChange({ pensionStartAge: v });
                   }}
-                  className="w-full cursor-pointer"
+                  className="w-full cursor-pointer min-h-[44px]"
                 />
               </div>
             </div>

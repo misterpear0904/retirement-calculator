@@ -97,6 +97,9 @@ input[type=range] {
   -webkit-appearance: none;
   appearance: none;
   background: transparent;
+  /* Enlarge the hit area to >=44px without changing the visual thumb size. */
+  padding: 19px 0;
+  cursor: pointer;
 }
 
 input[type=range]:focus {

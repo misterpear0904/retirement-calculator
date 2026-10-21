@@ -104,7 +104,7 @@ export const BasicModeInputs: React.FC<Props> = ({ state, onChange, onSwitchToAd
                   targetRetirementAge: Math.max(val + 1, state.targetRetirementAge),
                 });
               }}
-              className="w-full cursor-pointer"
+              className="w-full cursor-pointer min-h-[44px]"
             />
           </div>
 
@@ -133,7 +133,7 @@ export const BasicModeInputs: React.FC<Props> = ({ state, onChange, onSwitchToAd
                   lifeExpectancy: Math.max(val + 5, state.lifeExpectancy),
                 });
               }}
-              className="w-full cursor-pointer"
+              className="w-full cursor-pointer min-h-[44px]"
             />
           </div>
 
@@ -158,7 +158,7 @@ export const BasicModeInputs: React.FC<Props> = ({ state, onChange, onSwitchToAd
                 const val = parseInt(raw);
                 if (Number.isFinite(val)) onChange({ lifeExpectancy: val });
               }}
-              className="w-full cursor-pointer"
+              className="w-full cursor-pointer min-h-[44px]"
             />
           </div>
 
@@ -209,7 +209,7 @@ export const BasicModeInputs: React.FC<Props> = ({ state, onChange, onSwitchToAd
                 const val = parseInt(raw);
                 if (Number.isFinite(val)) onChange({ savingsRatePct: val, useFixedContribution: false });
               }}
-              className="w-full cursor-pointer"
+              className="w-full cursor-pointer min-h-[44px]"
             />
             <p className="text-[11px] text-slate-500">
               ≈ ${Math.round((state.currentAnnualIncome * state.savingsRatePct) / 100).toLocaleString()}/yr saved
@@ -310,7 +310,7 @@ export const BasicModeInputs: React.FC<Props> = ({ state, onChange, onSwitchToAd
                 }
               }}
               aria-valuetext={`${state.stockPct}% stocks`}
-              className="w-full cursor-pointer"
+              className="w-full cursor-pointer min-h-[44px]"
             />
             <div className="flex justify-between text-[10px] text-slate-500 font-medium">
               <span>Conservative</span>

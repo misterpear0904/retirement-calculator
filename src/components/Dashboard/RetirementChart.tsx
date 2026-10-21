@@ -527,7 +527,7 @@ export const RetirementChart: React.FC<Props> = React.memo(({
                       if (v >= hi) return;
                       setZoomRange([v, hi]);
                     }}
-                    className="ml-2 align-middle"
+                    className="ml-2 align-middle min-h-[44px]"
                   />
                 </label>
                 <label className="text-xs dark:text-slate-300 text-slate-700">
@@ -545,7 +545,7 @@ export const RetirementChart: React.FC<Props> = React.memo(({
                       if (v <= lo) return;
                       setZoomRange([lo, v]);
                     }}
-                    className="ml-2 align-middle"
+                    className="ml-2 align-middle min-h-[44px]"
                   />
                 </label>
               </div>

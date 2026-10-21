@@ -81,7 +81,7 @@ export function SolverTab({ state, onTriggerToast, onSelectRetirementAge }: Solv
           step={1}
           value={targetRate}
           onChange={(e) => setTargetRate(Number(e.target.value))}
-          className="w-full accent-blue-500"
+          className="w-full accent-blue-500 min-h-[44px]"
           aria-label="Target Monte Carlo success rate"
         />
 

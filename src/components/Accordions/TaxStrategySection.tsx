@@ -137,7 +137,7 @@ export const TaxStrategySection: React.FC<Props> = ({ state, onChange, isOpen, o
                   const v = parseInt(raw);
                   if (Number.isFinite(v)) onChange({ guardrailCutPct: v });
                 }}
-                className="w-full cursor-pointer"
+                className="w-full cursor-pointer min-h-[44px]"
               />
             </div>
           )}
@@ -247,7 +247,7 @@ export const TaxStrategySection: React.FC<Props> = ({ state, onChange, isOpen, o
                         rothConversionEndAge: Math.max(v, state.rothConversionEndAge),
                       });
                     }}
-                    className="w-full cursor-pointer"
+                    className="w-full cursor-pointer min-h-[44px]"
                   />
                 </div>
                 <div>
@@ -271,7 +271,7 @@ export const TaxStrategySection: React.FC<Props> = ({ state, onChange, isOpen, o
                         rothConversionStartAge: Math.min(v, state.rothConversionStartAge),
                       });
                     }}
-                    className="w-full cursor-pointer"
+                    className="w-full cursor-pointer min-h-[44px]"
                   />
                 </div>
               </div>

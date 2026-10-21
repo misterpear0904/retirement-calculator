@@ -85,7 +85,7 @@ export const MarketInflationSection: React.FC<Props> = ({
                   }
                 }}
                 aria-valuetext={`${state.stockPct}% stocks`}
-                className="w-full cursor-pointer"
+                className="w-full cursor-pointer min-h-[44px]"
               />
             </div>
 
@@ -117,7 +117,7 @@ export const MarketInflationSection: React.FC<Props> = ({
                   }
                 }}
                 aria-valuetext={`${state.bondPct}% bonds`}
-                className="w-full cursor-pointer"
+                className="w-full cursor-pointer min-h-[44px]"
               />
             </div>
 
@@ -134,7 +134,7 @@ export const MarketInflationSection: React.FC<Props> = ({
                 disabled
                 aria-label="Cash allocation percentage (auto-balancing remainder to 100%)"
                 title="Cash allocation is auto-balanced to 100%"
-                className="w-full opacity-60 cursor-not-allowed"
+                className="w-full opacity-60 cursor-not-allowed min-h-[44px]"
               />
             </div>
           </div>
@@ -198,7 +198,7 @@ export const MarketInflationSection: React.FC<Props> = ({
                   }
                 }}
                 aria-valuetext={`${state.customInflationRate}% inflation`}
-                className="w-full cursor-pointer"
+                className="w-full cursor-pointer min-h-[44px]"
               />
             </div>
           )}

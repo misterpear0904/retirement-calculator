@@ -13,7 +13,7 @@ interface Props {
  * Rendered via portal to document.body with viewport-aware placement, so it
  * is never clipped by overflow-hidden cards or covered by the sticky header.
  */
-function humanizeTerm(term: string): string {
+export function humanizeTerm(term: string): string {
   return term
     .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
     .replace(/_/g, ' ')
@@ -28,6 +28,11 @@ export const InfoTip: React.FC<Props> = ({ term, label }) => {
     below: false,
   });
   const btnRef = useRef<HTMLButtonElement>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const pinnedRef = useRef(false);
+  const tooltipHoveredRef = useRef(false);
+  const buttonHoveredRef = useRef(false);
+  const hideTimerRef = useRef<number | null>(null);
 
   const place = useCallback(() => {
     const el = btnRef.current;
@@ -52,7 +57,48 @@ export const InfoTip: React.FC<Props> = ({ term, label }) => {
     setOpen(true);
   }, [place]);
 
-  const hide = useCallback(() => setOpen(false), []);
+  const clearHideTimer = useCallback(() => {
+    if (hideTimerRef.current !== null) {
+      clearTimeout(hideTimerRef.current);
+      hideTimerRef.current = null;
+    }
+  }, []);
+
+  const hide = useCallback(() => {
+    clearHideTimer();
+    pinnedRef.current = false;
+    tooltipHoveredRef.current = false;
+    buttonHoveredRef.current = false;
+    setOpen(false);
+  }, [clearHideTimer]);
+
+  const scheduleHide = useCallback(() => {
+    clearHideTimer();
+    hideTimerRef.current = window.setTimeout(() => {
+      if (pinnedRef.current || buttonHoveredRef.current || tooltipHoveredRef.current) return;
+      setOpen(false);
+    }, 0);
+  }, [clearHideTimer]);
+
+  const handleClick = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      e.stopPropagation();
+      if (!open) {
+        place();
+        pinnedRef.current = true;
+        setOpen(true);
+        return;
+      }
+      if (pinnedRef.current) {
+        pinnedRef.current = false;
+        setOpen(false);
+        return;
+      }
+      // Hover-opened: pin it so it stays open.
+      pinnedRef.current = true;
+    },
+    [open, place]
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -72,27 +118,58 @@ export const InfoTip: React.FC<Props> = ({ term, label }) => {
     };
   }, [open, hide]);
 
+  const ariaLabel =
+    label ?? `What is ${humanizeTerm(term)}?`;
+
   return (
     <>
       <button
         ref={btnRef}
         type="button"
-        aria-label={label ?? `What is ${humanizeTerm(term)}?`}
+        aria-label={ariaLabel}
         aria-expanded={open}
-        onMouseEnter={show}
-        onMouseLeave={hide}
+        onMouseEnter={() => {
+          buttonHoveredRef.current = true;
+          clearHideTimer();
+          show();
+        }}
+        onMouseLeave={() => {
+          buttonHoveredRef.current = false;
+          if (pinnedRef.current || tooltipHoveredRef.current) return;
+          scheduleHide();
+        }}
         onFocus={show}
-        onBlur={hide}
-        onClick={() => (open ? hide() : show())}
-        className="text-slate-500 hover:text-blue-400 transition-colors focus:outline-none focus:text-blue-400 inline-flex items-center align-middle ml-1.5 p-2 -m-2 min-w-[44px] min-h-[44px] justify-center"
+        onBlur={(e) => {
+          if (pinnedRef.current) return;
+          const next = e.relatedTarget;
+          if (tooltipRef.current && next instanceof Node && tooltipRef.current.contains(next)) return;
+          hide();
+        }}
+        onClick={handleClick}
+        className="relative z-10 pointer-events-auto text-slate-500 hover:text-blue-400 transition-colors focus:outline-none focus:text-blue-400 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 inline-flex items-center align-middle ml-1.5 p-2 -m-2 min-w-[44px] min-h-[44px] justify-center cursor-pointer"
       >
         <Info className="w-3.5 h-3.5" />
       </button>
       {open &&
         createPortal(
           <div
+            ref={tooltipRef}
             role="tooltip"
-            className="fixed z-[70] w-60 p-3 rounded-xl dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 text-[11px] leading-relaxed dark:text-slate-200 text-slate-800 shadow-2xl"
+            onMouseEnter={() => {
+              tooltipHoveredRef.current = true;
+              clearHideTimer();
+              show();
+            }}
+            onMouseLeave={() => {
+              // Defer clearing the hovered flag so a button mouseleave that fires
+              // in the same event sequence still sees the tooltip as hovered.
+              window.setTimeout(() => {
+                tooltipHoveredRef.current = false;
+                if (pinnedRef.current || buttonHoveredRef.current) return;
+                scheduleHide();
+              }, 0);
+            }}
+            className="fixed z-[70] w-60 p-3 rounded-xl dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 text-[11px] leading-relaxed dark:text-slate-200 text-slate-800 shadow-2xl pointer-events-auto"
             style={{
               left: pos.left,
               top: pos.top,

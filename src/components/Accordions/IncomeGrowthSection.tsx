@@ -98,7 +98,7 @@ export const IncomeGrowthSection: React.FC<Props> = ({
                     const v = parseFloat(raw);
                     if (Number.isFinite(v)) onChange({ customIncomeGrowthRate: v });
                   }}
-                  className="w-full cursor-pointer"
+                  className="w-full cursor-pointer min-h-[44px]"
                 />
               </div>
             )}
@@ -139,7 +139,7 @@ export const IncomeGrowthSection: React.FC<Props> = ({
                   const v = parseInt(raw);
                   if (Number.isFinite(v)) onChange({ savingsRatePct: v });
                 }}
-                className="w-full cursor-pointer"
+                className="w-full cursor-pointer min-h-[44px]"
               />
               <p className="text-xs dark:text-slate-400 text-slate-600 leading-relaxed">
                 Saves <strong className="text-emerald-400">${Math.round(calculatedSavingsAmount).toLocaleString()}</strong> / year out of ${state.currentAnnualIncome.toLocaleString()} salary.

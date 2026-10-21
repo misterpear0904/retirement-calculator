@@ -408,7 +408,7 @@ export const HousingLifestyleSection: React.FC<Props> = ({
                         if (!Number.isFinite(v)) return;
                         onChange({ spendingSmile: { ...smile, [row.key]: v } });
                       }}
-                      className="w-full cursor-pointer accent-sky-500"
+                      className="w-full cursor-pointer accent-sky-500 min-h-[44px]"
                     />
                   </div>
                 ))}
@@ -438,7 +438,7 @@ export const HousingLifestyleSection: React.FC<Props> = ({
                         spendingSmileMidAge: Math.max(v + 1, state.spendingSmileMidAge),
                       });
                     }}
-                    className="w-full cursor-pointer accent-sky-500"
+                    className="w-full cursor-pointer accent-sky-500 min-h-[44px]"
                   />
                 </div>
                 <div>
@@ -464,7 +464,7 @@ export const HousingLifestyleSection: React.FC<Props> = ({
                         spendingSmileStartAge: Math.min(v - 1, state.spendingSmileStartAge),
                       });
                     }}
-                    className="w-full cursor-pointer accent-emerald-500"
+                    className="w-full cursor-pointer accent-emerald-500 min-h-[44px]"
                   />
                 </div>
               </div>

@@ -89,7 +89,7 @@ export const Header: React.FC<Props> = ({
             <Sparkles className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-lg font-extrabold tracking-tight dark:text-white text-slate-900 flex items-center gap-2">
+            <h1 aria-label="ApexRetire Pro" className="text-lg font-extrabold tracking-tight dark:text-white text-slate-900 flex items-center gap-2">
               ApexRetire <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 font-semibold tracking-wide">Pro</span>
             </h1>
             <p className="text-xs dark:text-slate-400 text-slate-500 hidden sm:block mt-0.5 leading-relaxed">
@@ -98,7 +98,7 @@ export const Header: React.FC<Props> = ({
           </div>
 
           {/* Sticky Success Confidence Score Badge */}
-          <div className="flex items-center gap-3 ml-3 px-4 py-2 rounded-xl dark:bg-slate-900/80 bg-slate-100 border dark:border-slate-700/60 border-slate-200 shadow-sm">
+          <div aria-label={`Confidence: ${successRate}% ${badgeLabel}`} className="flex items-center gap-3 ml-3 px-4 py-2 rounded-xl dark:bg-slate-900/80 bg-slate-100 border dark:border-slate-700/60 border-slate-200 shadow-sm">
             <ShieldCheck className="w-5 h-5 text-blue-400 shrink-0" />
             <div className="flex items-baseline gap-2">
               <span className="text-xs font-semibold dark:text-slate-400 text-slate-500 hidden md:inline">Confidence:</span>

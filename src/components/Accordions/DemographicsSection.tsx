@@ -67,7 +67,7 @@ export const DemographicsSection: React.FC<Props> = ({
             }}
             aria-label="Current age"
             aria-valuetext={`Age ${state.currentAge}`}
-            className="w-full cursor-pointer"
+            className="w-full cursor-pointer min-h-[44px]"
           />
           <div className="flex justify-between text-xs text-slate-500 font-medium pt-0.5">
             <span>18 yrs</span>
@@ -112,7 +112,7 @@ export const DemographicsSection: React.FC<Props> = ({
             }}
             aria-label="Target retirement age"
             aria-valuetext={`Age ${state.targetRetirementAge}`}
-            className="w-full cursor-pointer"
+            className="w-full cursor-pointer min-h-[44px]"
           />
           <div className="flex justify-between text-xs text-slate-500 font-medium pt-0.5">
             <span>{state.currentAge + 1} yrs</span>
@@ -151,7 +151,7 @@ export const DemographicsSection: React.FC<Props> = ({
             }}
             aria-label="Life expectancy"
             aria-valuetext={`Age ${state.lifeExpectancy}`}
-            className="w-full cursor-pointer"
+            className="w-full cursor-pointer min-h-[44px]"
           />
           <div className="flex justify-between text-xs text-slate-500 font-medium pt-0.5">
             <span>{state.targetRetirementAge + 1} yrs</span>
@@ -190,7 +190,7 @@ export const DemographicsSection: React.FC<Props> = ({
                 ...(next ? { taxFilingStatus: 'joint' as const } : {}),
               });
             }}
-            className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${
+            className={`relative w-11 h-6 rounded-full transition-colors shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 ${
               state.hasPartner && state.partner.enabled ? 'bg-pink-500' : 'dark:bg-slate-700 bg-slate-300'
             }`}
           >
@@ -279,7 +279,7 @@ export const DemographicsSection: React.FC<Props> = ({
                   const v = parseInt(raw);
                   if (Number.isFinite(v)) onChange({ partner: { ...state.partner, ssStartAge: v } });
                 }}
-                className="w-full cursor-pointer"
+                className="w-full cursor-pointer min-h-[44px]"
               />
             </div>
           </div>
