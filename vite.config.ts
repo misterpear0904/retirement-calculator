@@ -12,18 +12,6 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
-  build: {
-    rollupOptions: {
-      output: {
-        // Split the large charting library out of the app entry so it caches
-        // separately (the ~1.2 MB single chunk is the worst case otherwise).
-        manualChunks: {
-          recharts: ['recharts'],
-          vendor: ['react', 'react-dom', 'clsx', 'lucide-react', 'tailwind-merge', 'topojson-client'],
-        },
-      },
-    },
-  },
   test: {
     environment: 'jsdom',
     globals: true,
