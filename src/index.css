@@ -150,6 +150,20 @@ input[type=range]::-moz-range-thumb:hover {
   transform: scale(1.25);
 }
 
+/* Focus visibility for sliders and custom controls */
+input[type=range]:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.45);
+}
+input[type=range]:focus-visible::-moz-range-thumb {
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.45);
+}
+button:focus-visible,
+[role="switch"]:focus-visible,
+[role="tab"]:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
 /* Animations */
 @keyframes fadeIn {
   from {

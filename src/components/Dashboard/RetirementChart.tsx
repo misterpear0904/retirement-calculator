@@ -2,6 +2,7 @@ import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import {
   ResponsiveContainer,
   ComposedChart,
+  AreaChart,
   Area,
   Line,
   XAxis,
@@ -10,12 +11,13 @@ import {
   CartesianGrid,
   ReferenceLine,
   ReferenceDot,
-  Brush,
 } from 'recharts';
 import { YearlyProjection } from '../../types/retirement';
 import { Eye, EyeOff, ZoomIn, ZoomOut, Maximize2, Expand } from 'lucide-react';
 import { FullscreenModal } from '../FullscreenModal';
 import { InfoTip } from '../InfoTip';
+import { formatCurrency } from '../../utils/formatCurrency';
+import { formatOrdinal } from '../../utils/formatOrdinal';
 
 interface Props {
   yearlyProjections: YearlyProjection[];
@@ -25,6 +27,12 @@ interface Props {
   height?: number;
   /** Set false for the instance rendered inside the fullscreen modal (avoids nested modals). */
   allowExpand?: boolean;
+  /** When true, wheel over the chart zooms (fullscreen mode). */
+  isFullscreen?: boolean;
+  /** Optional saved scenarios to overlay as extra lines on the main chart. */
+  overlayScenarios?: Array<{ name: string; yearlyProjections: YearlyProjection[] }>;
+  /** Optional longevity probabilities for the engaging-data style visualization. */
+  longevityProbabilities?: Array<{ age: number; aliveWithMoney: number; aliveBroke: number; deceased: number }>;
 }
 
 // Map milestone category to accordion section id
@@ -38,23 +46,15 @@ const getSectionIdForCategory = (category: string) => {
   }
 };
 
-const formatYAxis = (num: number) => {
-  const sign = num < 0 ? '-' : '';
-  const abs = Math.abs(num);
-  if (abs >= 1000000) return `${sign}$${(abs / 1000000).toFixed(1)}M`;
-  if (abs >= 1000) return `${sign}$${(abs / 1000).toFixed(0)}k`;
-  return `${sign}$${abs}`;
-};
-
-const fmt$ = (n: number) => `$${Math.round(n).toLocaleString()}`;
+const fmt$ = (n: number) => formatCurrency(n);
 
 const CustomTooltip = React.memo(({ active, payload }: { active?: boolean; payload?: Array<{ payload: YearlyProjection }> }) => {
   if (active && payload && payload.length) {
     const data: YearlyProjection = payload[0].payload;
     return (
-      <div className="bg-slate-900 border border-slate-700/80 p-3.5 rounded-xl shadow-2xl text-xs space-y-2 min-w-[250px]">
-        <div className="flex justify-between items-center border-b border-slate-800 pb-2">
-          <span className="font-extrabold text-slate-100">
+      <div className="dark:bg-slate-900 bg-white border dark:border-slate-700/80 border-slate-300/80 p-3.5 rounded-xl shadow-2xl text-xs space-y-2 min-w-[250px]">
+        <div className="flex justify-between items-center border-b dark:border-slate-800 border-slate-200 pb-2">
+          <span className="font-extrabold dark:text-slate-100 text-slate-900">
             Age {data.age} ({data.year})
           </span>
           <span
@@ -78,29 +78,29 @@ const CustomTooltip = React.memo(({ active, payload }: { active?: boolean; paylo
         )}
 
         <div className="space-y-1 pt-1">
-          <div className="flex justify-between font-bold text-slate-100">
+          <div className="flex justify-between font-bold dark:text-slate-100 text-slate-900">
             <span>Net Worth (Target):</span>
             <span className="text-cyan-400">{fmt$(data.netWorth50)}</span>
           </div>
-          <div className="flex justify-between text-slate-400">
+          <div className="flex justify-between dark:text-slate-400 text-slate-600">
             <span>Conservative:</span>
             <span className="text-emerald-400">{fmt$(data.netWorth95)}</span>
           </div>
-          <div className="flex justify-between text-slate-400">
+          <div className="flex justify-between dark:text-slate-400 text-slate-600">
             <span>Stress Test:</span>
             <span className="text-amber-400">{fmt$(data.netWorth10)}</span>
           </div>
         </div>
 
-        <div className="border-t border-slate-800/80 pt-2 space-y-1 text-[11px]">
-          <div className="flex justify-between text-slate-400">
+        <div className="border-t dark:border-slate-800/80 border-slate-200/80 pt-2 space-y-1 text-[11px]">
+          <div className="flex justify-between dark:text-slate-400 text-slate-600">
             <span>Living Expenses:</span>
-            <span className="text-slate-200">{fmt$(data.livingExpenses)}</span>
+            <span className="dark:text-slate-200 text-slate-800">{fmt$(data.livingExpenses)}</span>
           </div>
           {data.housingExpenses > 0 && (
-            <div className="flex justify-between text-slate-400">
+            <div className="flex justify-between dark:text-slate-400 text-slate-600">
               <span>Housing Payment:</span>
-              <span className="text-slate-200">{fmt$(data.housingExpenses)}</span>
+              <span className="dark:text-slate-200 text-slate-800">{fmt$(data.housingExpenses)}</span>
             </div>
           )}
           {data.childEducationExpenses > 0 && (
@@ -130,12 +130,20 @@ export const RetirementChart: React.FC<Props> = React.memo(({
   onSelectSection,
   height = 360,
   allowExpand = true,
+  overlayScenarios = [],
+  longevityProbabilities = [],
+  isFullscreen = false,
 }) => {
   const [showConfidenceBand, setShowConfidenceBand] = useState(true);
   const [expanded, setExpanded] = useState(false);
+  const [yFocus, setYFocus] = useState(true);
 
   // Zoom range as [startAge, endAge]; null = full horizon.
   const [zoomRange, setZoomRange] = useState<[number, number] | null>(null);
+  // Single-source guard: once the user resets, ignore resurrecting brush
+  // events (e.g. from mode switches / remounts) for a short window.
+  const clearedRef = useRef(false);
+  const clearedAtRef = useRef(0);
 
   const fullRange = useMemo<[number, number] | null>(() => {
     if (yearlyProjections.length === 0) return null;
@@ -147,6 +155,14 @@ export const RetirementChart: React.FC<Props> = React.memo(({
     setZoomRange(null);
   }, [fullRange?.[0], fullRange?.[1]]);
 
+  const yDomain = useMemo(() => {
+    if (!yFocus) return ['auto', 'auto'] as [string, string];
+    const pool = yearlyProjections.filter((p) => p.age < targetRetirementAge);
+    const src = pool.length ? pool : yearlyProjections;
+    const max = Math.max(1000, ...src.map((p) => p.netWorth95 || p.netWorth50 || 0));
+    return [0, Math.round(max * 1.1)] as [number, number];
+  }, [yFocus, yearlyProjections, targetRetirementAge]);
+
   const viewRange: [number, number] | null = zoomRange ?? fullRange;
   const isZoomed =
     viewRange != null &&
@@ -156,6 +172,7 @@ export const RetirementChart: React.FC<Props> = React.memo(({
   const zoomAround = useCallback(
     (factor: number, center?: number | null) => {
       if (!viewRange || !fullRange) return;
+      clearedRef.current = false;
       const [lo, hi] = viewRange;
       const [fullLo, fullHi] = fullRange;
       const fullSpan = Math.max(1, fullHi - fullLo);
@@ -187,6 +204,8 @@ export const RetirementChart: React.FC<Props> = React.memo(({
   // brushKey remounts the (uncontrolled) Brush so its travellers reset.
   const [brushKey, setBrushKey] = useState(0);
   const resetZoom = useCallback(() => {
+    clearedRef.current = true;
+    clearedAtRef.current = Date.now();
     setZoomRange(null);
     setBrushKey((k) => k + 1);
   }, []);
@@ -198,11 +217,17 @@ export const RetirementChart: React.FC<Props> = React.memo(({
   const handleBrushChange = useCallback(
     (range: { startIndex?: number; endIndex?: number } | null) => {
       if (!fullRange || range?.startIndex == null || range?.endIndex == null) return;
+      // Suppress resurrection right after a reset.
+      if (clearedRef.current && Date.now() - clearedAtRef.current < 250) return;
       const lo = fullRange[0] + range.startIndex;
       const hi = fullRange[0] + range.endIndex;
       if (hi - lo < 2) return;
-      if (lo === fullRange[0] && hi === fullRange[1]) setZoomRange(null);
-      else setZoomRange([lo, hi]);
+      if (lo === fullRange[0] && hi === fullRange[1]) {
+        setZoomRange(null);
+      } else {
+        clearedRef.current = false;
+        setZoomRange([lo, hi]);
+      }
     },
     [fullRange]
   );
@@ -216,12 +241,15 @@ export const RetirementChart: React.FC<Props> = React.memo(({
     const el = chartBoxRef.current;
     if (!el) return;
     const onWheel = (e: WheelEvent) => {
+      // Wheel-zoom only with modifier (or in fullscreen). Otherwise let the
+      // page scroll normally.
+      if (!(e.ctrlKey || e.metaKey || isFullscreen)) return;
       e.preventDefault();
       zoomAround(e.deltaY > 0 ? 1.18 : 0.85, anchorAgeRef.current);
     };
     el.addEventListener('wheel', onWheel, { passive: false });
     return () => el.removeEventListener('wheel', onWheel);
-  }, [zoomAround]);
+  }, [zoomAround, isFullscreen]);
 
   const trackAnchor = useCallback((s: { activeLabel?: unknown } | null) => {
     const label = s?.activeLabel;
@@ -246,6 +274,17 @@ export const RetirementChart: React.FC<Props> = React.memo(({
       })),
     [milestoneProjections]
   );
+
+  const chartData = useMemo(() => {
+    return yearlyProjections.map((p) => {
+      const row: Record<string, unknown> = { ...p };
+      overlayScenarios.forEach((scn, idx) => {
+        const match = scn.yearlyProjections.find((q) => q.age === p.age);
+        row[`overlay_${idx}`] = match ? match.netWorth50 : null;
+      });
+      return row;
+    });
+  }, [yearlyProjections, overlayScenarios]);
 
   const handleBadgeClick = useCallback(
     (category: string) => {
@@ -275,14 +314,14 @@ export const RetirementChart: React.FC<Props> = React.memo(({
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-800 border border-slate-700" role="group" aria-label="Chart zoom">
+          <div className="flex items-center gap-1 p-1 rounded-xl dark:bg-slate-800 bg-slate-200 border dark:border-slate-700 border-slate-300" role="group" aria-label="Chart zoom">
             <button
               type="button"
               onClick={zoomIn}
               disabled={!viewRange}
               aria-label="Zoom chart in"
               title="Zoom in"
-              className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 disabled:opacity-40 transition-colors"
+              className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg dark:text-slate-300 text-slate-700 hover:text-white hover:bg-slate-700 disabled:opacity-40 transition-colors"
             >
               <ZoomIn className="w-4 h-4" />
             </button>
@@ -292,7 +331,7 @@ export const RetirementChart: React.FC<Props> = React.memo(({
               disabled={!isZoomed}
               aria-label="Zoom chart out"
               title="Zoom out"
-              className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 disabled:opacity-40 transition-colors"
+              className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg dark:text-slate-300 text-slate-700 hover:text-white hover:bg-slate-700 disabled:opacity-40 transition-colors"
             >
               <ZoomOut className="w-4 h-4" />
             </button>
@@ -302,7 +341,7 @@ export const RetirementChart: React.FC<Props> = React.memo(({
               disabled={!isZoomed}
               aria-label="Reset chart zoom"
               title="Reset zoom"
-              className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 disabled:opacity-40 transition-colors"
+              className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg dark:text-slate-300 text-slate-700 hover:text-white hover:bg-slate-700 disabled:opacity-40 transition-colors"
             >
               <Maximize2 className="w-4 h-4" />
             </button>
@@ -310,10 +349,17 @@ export const RetirementChart: React.FC<Props> = React.memo(({
           <button
             type="button"
             onClick={toggleBands}
-            className="flex items-center gap-2 text-xs font-semibold px-3.5 py-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white border border-slate-700 transition-colors shadow-sm"
+            className="flex items-center gap-2 text-xs font-semibold px-3.5 py-2 rounded-xl dark:bg-slate-800 bg-slate-200 dark:text-slate-300 text-slate-700 hover:text-white border dark:border-slate-700 border-slate-300 transition-colors shadow-sm"
           >
             {showConfidenceBand ? <EyeOff className="w-4 h-4 text-blue-400" /> : <Eye className="w-4 h-4 text-blue-400" />}
             {showConfidenceBand ? 'Hide Bands' : 'Show Confidence Bands'}
+          </button>
+          <button
+            type="button"
+            onClick={() => setYFocus((v) => !v)}
+            className="flex items-center gap-2 text-xs font-semibold px-3.5 py-2 rounded-xl dark:bg-slate-800 bg-slate-200 dark:text-slate-300 text-slate-700 hover:text-white border dark:border-slate-700 border-slate-300 transition-colors shadow-sm"
+          >
+            {yFocus ? 'Y: Focus Working Years' : 'Y: Full Range'}
           </button>
           {allowExpand && (
             <button
@@ -321,7 +367,7 @@ export const RetirementChart: React.FC<Props> = React.memo(({
               onClick={() => setExpanded(true)}
               aria-label="Expand chart fullscreen"
               title="Expand fullscreen"
-              className="p-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 border border-slate-700 transition-colors"
+              className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl dark:bg-slate-800 bg-slate-200 dark:text-slate-300 text-slate-700 hover:text-white hover:bg-slate-700 border dark:border-slate-700 border-slate-300 transition-colors"
             >
               <Expand className="w-4 h-4" />
             </button>
@@ -333,19 +379,19 @@ export const RetirementChart: React.FC<Props> = React.memo(({
       <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-xs dark:bg-slate-900/60 bg-slate-100 p-3.5 rounded-xl border dark:border-slate-800 border-slate-200">
         <div className="flex items-center gap-2">
           <span className="w-3 h-3 rounded-full bg-cyan-400 shadow-glow shrink-0"></span>
-          <span className="text-slate-200 font-semibold">Target Case</span>
+          <span className="dark:text-slate-200 text-slate-800 font-semibold">Target Case</span>
         </div>
         <div className="flex items-center gap-2">
           <span className="w-3 h-3 rounded-full bg-emerald-400 shrink-0"></span>
-          <span className="text-slate-300">Conservative</span>
+          <span className="dark:text-slate-300 text-slate-700">Conservative</span>
         </div>
         <div className="flex items-center gap-2">
           <span className="w-3 h-3 rounded-full bg-amber-400 shrink-0"></span>
-          <span className="text-slate-300">Stress Test</span>
+          <span className="dark:text-slate-300 text-slate-700">Stress Test</span>
         </div>
-        <div className="flex items-center gap-2 border-l border-slate-800 pl-4">
+        <div className="flex items-center gap-2 border-l dark:border-slate-800 border-slate-200 pl-4">
           <span className="w-2.5 h-2.5 rounded-full bg-purple-500 shrink-0"></span>
-          <span className="text-slate-400">Target Retirement Age ({targetRetirementAge})</span>
+          <span className="dark:text-slate-400 text-slate-600">Target Retirement Age ({targetRetirementAge})</span>
         </div>
       </div>
 
@@ -355,11 +401,11 @@ export const RetirementChart: React.FC<Props> = React.memo(({
         className="w-full pt-2"
         style={{ height: height + 20, minHeight: height + 20 }}
         onDoubleClick={resetZoom}
-        title="Scroll to zoom · double-click to reset"
+        title="Ctrl+scroll to zoom · double-click to reset"
       >
         <ResponsiveContainer width="100%" height={height} minHeight={height}>
           <ComposedChart
-            data={yearlyProjections}
+            data={chartData}
             margin={{ top: 15, right: 25, left: 25, bottom: 20 }}
             onMouseMove={trackAnchor}
             onMouseLeave={() => {
@@ -394,7 +440,8 @@ export const RetirementChart: React.FC<Props> = React.memo(({
               stroke="#64748b"
               width={70}
               tickLine={false}
-              tickFormatter={formatYAxis}
+              domain={yDomain}
+              tickFormatter={formatCurrency}
               tick={{ fontSize: 11, fill: '#94a3b8' }}
             />
             <Tooltip content={<CustomTooltip />} />
@@ -460,6 +507,20 @@ export const RetirementChart: React.FC<Props> = React.memo(({
               activeDot={{ r: 5, fill: '#38bdf8', stroke: '#ffffff', strokeWidth: 2 }}
               isAnimationActive={false}
             />
+            {overlayScenarios.map((scn, idx) => (
+              <Line
+                key={`overlay_${idx}`}
+                type="monotone"
+                dataKey={`overlay_${idx}`}
+                name={scn.name}
+                stroke={idx % 2 === 0 ? '#c084fc' : '#f472b6'}
+                strokeWidth={2}
+                strokeDasharray="6 4"
+                dot={false}
+                isAnimationActive={false}
+                connectNulls
+              />
+            ))}
 
             {milestoneDots.map((m) => (
               <ReferenceDot
@@ -474,31 +535,51 @@ export const RetirementChart: React.FC<Props> = React.memo(({
             ))}
             {/* Mini-overview zoom bar: drag the handles to zoom the main
                 view to specific dates. Uncontrolled by design (see above). */}
-            <Brush
-              key={`${fullRange?.[0] ?? 0}-${fullRange?.[1] ?? 0}-${brushKey}`}
-              dataKey="age"
-              height={28}
-              stroke="#38bdf8"
-              fill="#0f172a"
-              travellerWidth={12}
-              onChange={handleBrushChange}
-            >
-              <ComposedChart>
-                <Area
-                  type="monotone"
-                  dataKey="netWorth50"
-                  stroke="#38bdf8"
-                  fill="#38bdf8"
-                  fillOpacity={0.3}
-                  dot={false}
-                  isAnimationActive={false}
-                />
-              </ComposedChart>
-            </Brush>
+            {/* Accessible chart range controls */}
+            {fullRange && (
+              <div className="flex flex-wrap items-center gap-3 pt-2">
+                <label className="text-xs dark:text-slate-300 text-slate-700">
+                  Chart range start age: {viewRange?.[0] ?? fullRange?.[0]} yrs
+                  <input
+                    type="range"
+                    min={fullRange[0]}
+                    max={fullRange[1]}
+                    value={viewRange?.[0] ?? fullRange[0]}
+                    aria-label="Chart range start age"
+                    aria-valuetext={`Age ${viewRange?.[0] ?? fullRange[0]}`}
+                    onChange={(e) => {
+                      const v = Number(e.target.value);
+                      const hi = viewRange?.[1] ?? fullRange[1];
+                      if (v >= hi) return;
+                      setZoomRange([v, hi]);
+                    }}
+                    className="ml-2 align-middle"
+                  />
+                </label>
+                <label className="text-xs dark:text-slate-300 text-slate-700">
+                  Chart range end age: {viewRange?.[1] ?? fullRange?.[1]} yrs
+                  <input
+                    type="range"
+                    min={fullRange[0]}
+                    max={fullRange[1]}
+                    value={viewRange?.[1] ?? fullRange[1]}
+                    aria-label="Chart range end age"
+                    aria-valuetext={`Age ${viewRange?.[1] ?? fullRange[1]}`}
+                    onChange={(e) => {
+                      const v = Number(e.target.value);
+                      const lo = viewRange?.[0] ?? fullRange[0];
+                      if (v <= lo) return;
+                      setZoomRange([lo, v]);
+                    }}
+                    className="ml-2 align-middle"
+                  />
+                </label>
+              </div>
+            )}
           </ComposedChart>
         </ResponsiveContainer>
       </div>
-      <p className="text-[11px] text-slate-400">
+      <p className="text-[11px] dark:text-slate-400 text-slate-600">
         Scroll over the chart to zoom{isZoomed && viewRange ? (
           <>
             {' '}· zoomed to ages {viewRange[0]}–{viewRange[1]} ·{' '}
@@ -511,10 +592,31 @@ export const RetirementChart: React.FC<Props> = React.memo(({
         )}
       </p>
 
+      {longevityProbabilities.length > 0 && (
+        <div className="pt-2 border-t dark:border-slate-800 border-slate-200">
+          <h4 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">
+            Longevity outlook — probability alive with money vs. broke vs. deceased
+          </h4>
+          <div className="h-[180px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={longevityProbabilities} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
+                <XAxis dataKey="age" stroke="#64748b" tick={{ fontSize: 10, fill: '#94a3b8' }} />
+                <YAxis stroke="#64748b" tick={{ fontSize: 10, fill: '#94a3b8' }} domain={[0, 100]} unit="%" />
+                <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: 12, fontSize: 12 }} />
+                <Area type="monotone" dataKey="aliveWithMoney" stackId="1" stroke="#38bdf8" fill="#38bdf8" fillOpacity={0.5} />
+                <Area type="monotone" dataKey="aliveBroke" stackId="1" stroke="#f59e0b" fill="#f59e0b" fillOpacity={0.5} />
+                <Area type="monotone" dataKey="deceased" stackId="1" stroke="#64748b" fill="#64748b" fillOpacity={0.5} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+
       {/* Milestone Badges Timeline Strip Below Chart */}
       {milestoneProjections.length > 0 && (
         <div className="pt-2 border-t dark:border-slate-800 border-slate-200">
-          <h4 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">
+          <h4 className="text-[11px] font-semibold dark:text-slate-400 text-slate-600 uppercase tracking-wider mb-2">
             Clickable Timeline Event Badges (Scrolls to Input Section)
           </h4>
           <div className="flex flex-wrap gap-2">
@@ -524,7 +626,7 @@ export const RetirementChart: React.FC<Props> = React.memo(({
                   key={`${p.age}_${idx}`}
                   type="button"
                   onClick={() => handleBadgeClick(m.category)}
-                  className="flex items-center gap-1.5 text-xs bg-slate-800/80 hover:bg-slate-700 px-2.5 py-1 rounded-lg border border-slate-700/60 hover:border-blue-500/50 text-slate-200 transition-all text-left"
+                  className="flex items-center gap-1.5 text-xs dark:bg-slate-800/80 bg-slate-200/80 hover:bg-slate-700 px-2.5 py-1 rounded-lg border dark:border-slate-700/60 border-slate-300/60 hover:border-blue-500/50 dark:text-slate-200 text-slate-800 transition-all text-left"
                 >
                   <span className="font-bold text-blue-400">Age {p.age}:</span>
                   <span>{m.title}</span>
@@ -542,6 +644,7 @@ export const RetirementChart: React.FC<Props> = React.memo(({
             onSelectSection={onSelectSection}
             height={typeof window !== 'undefined' ? Math.max(480, window.innerHeight - 380) : 560}
             allowExpand={false}
+            isFullscreen
           />
         </FullscreenModal>
       )}

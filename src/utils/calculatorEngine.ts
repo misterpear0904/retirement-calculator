@@ -285,6 +285,7 @@ export function runRetirementSimulation(
   const baseMonthlyLifestyle = getBaseMonthlyLifestyle(state);
 
   const withdrawalStrategy = state.withdrawalStrategy ?? 'fixed_order';
+  const spendingStrategy = state.spendingStrategy ?? 'fixed_real';
   const guardrailCut = (state.guardrailCutPct ?? 15) / 100;
   const rothOn = !!state.useRothConversions;
   const rothAnnual = state.rothConversionAnnual ?? 0;
@@ -329,7 +330,8 @@ export function runRetirementSimulation(
   const runSingleTrajectory = (
     returnModifier: number = 0,
     inflationModifier: number = 0,
-    sequencePresetKey?: string
+    sequencePresetKey?: string,
+    forceHistoricalReturns: boolean = false
   ): YearlyProjection[] => {
     const projections: YearlyProjection[] = [];
 
@@ -382,7 +384,7 @@ export function runRetirementSimulation(
         if (presetData && i >= presetData.length) {
           const lastYear = presetData[presetData.length - 1];
           yearInflation = lastYear.inflation / 100.0;
-          if (returnMode === 'historical_real') {
+          if (returnMode === 'historical_real' || forceHistoricalReturns) {
             const sRet = lastYear.stock / 100.0;
             const bRet = lastYear.bond / 100.0;
             yearPortfolioReturn = stockW * sRet + bondW * bRet + cashW * 0.02;
@@ -390,7 +392,7 @@ export function runRetirementSimulation(
         } else if (presetData && presetData.length > 0) {
           const pYear = presetData[i];
           yearInflation = pYear.inflation / 100.0;
-          if (returnMode === 'historical_real') {
+          if (returnMode === 'historical_real' || forceHistoricalReturns) {
             const sRet = pYear.stock / 100.0;
             const bRet = pYear.bond / 100.0;
             yearPortfolioReturn = stockW * sRet + bondW * bRet + cashW * 0.02;
@@ -533,8 +535,18 @@ export function runRetirementSimulation(
 
       const totalPortfolioAfterGrowth = currentLiquid + currentTaxable + currentPreTax + currentPostTax;
 
+      if (isRetired) {
+        if (spendingStrategy === 'bernicke') {
+          annualLivingExpenses *= Math.pow(0.98, Math.max(0, age - 70));
+        } else if (spendingStrategy === 'vpw') {
+          const vpwRate = 1 / Math.max(1, lifeExpectancy - age + 1);
+          annualLivingExpenses = totalPortfolioAfterGrowth * vpwRate;
+        }
+      }
+
+      const guardrailsActive = withdrawalStrategy === 'guardrails' || spendingStrategy === 'guyton_klinger';
       if (
-        withdrawalStrategy === 'guardrails' &&
+        guardrailsActive &&
         isRetired &&
         i > 1 &&
         guardrailCut > 0
@@ -929,6 +941,9 @@ export function runRetirementSimulation(
   // Calculate Success Rate via Monte Carlo Simulation (shares outflow logic with main trajectory).
   let successfulTrials = 0;
   const totalTrials = opts?.trials ?? FINANCIAL_CONSTANTS.MONTE_CARLO_TRIALS;
+  const aliveMoneyCounts = new Array(numYears).fill(0);
+  const aliveBrokeCounts = new Array(numYears).fill(0);
+  const deceasedCounts = new Array(numYears).fill(0);
   const prng = createPRNG(hashStateSeed(state));
 
   for (let trial = 0; trial < totalTrials; trial++) {
@@ -981,7 +996,8 @@ export function runRetirementSimulation(
         else annualLiving *= spendingSmile.late;
         // Guardrails: cut spending when the portfolio falls below its
         // post-retirement peak (same peak-based rule as deterministic).
-        if (withdrawalStrategy === 'guardrails' && i > 1 && guardrailCut > 0) {
+        const mcGuardrailsActive = withdrawalStrategy === 'guardrails' || spendingStrategy === 'guyton_klinger';
+        if (mcGuardrailsActive && i > 1 && guardrailCut > 0) {
           const startPortfolio = simCurrentLiquid + simCurrentTaxable + simCurrentPreTax + simCurrentPostTax;
           if (!simPeakSet || startPortfolio > simPeak) {
             simPeak = startPortfolio;
@@ -990,6 +1006,13 @@ export function runRetirementSimulation(
           if (simPeak > 0 && startPortfolio < simPeak * (1 - guardrailCut)) {
             annualLiving *= 1 - guardrailCut;
           }
+        }
+        if (spendingStrategy === 'bernicke') {
+          annualLiving *= Math.pow(0.98, Math.max(0, age - 70));
+        } else if (spendingStrategy === 'vpw') {
+          const startPortfolio = simCurrentLiquid + simCurrentTaxable + simCurrentPreTax + simCurrentPostTax;
+          const vpwRate = 1 / Math.max(1, lifeExpectancy - age + 1);
+          annualLiving = startPortfolio * vpwRate;
         }
         annualLiving *= colMultiplier;
       }
@@ -1193,8 +1216,19 @@ export function runRetirementSimulation(
       const simNetWorth =
         simCurrentLiquid + simCurrentTaxable + simCurrentPreTax + simCurrentPostTax -
         simMortgageBal - simOtherDebt;
+      // Longevity accounting (primary life).
+      const primaryDeceased = age > lifeExpectancy;
+      if (primaryDeceased) deceasedCounts[i]++;
+      else if (simShortfall || simNetWorth <= 0) aliveBrokeCounts[i]++;
+      else aliveMoneyCounts[i]++;
       if (simShortfall || (simNetWorth <= 0 && isRetired)) {
         simFailed = true;
+        // Fill remaining years as broke/deceased for this trial.
+        for (let j = i + 1; j < numYears; j++) {
+          const a = currentAge + j;
+          if (a > lifeExpectancy) deceasedCounts[j]++;
+          else aliveBrokeCounts[j]++;
+        }
         break;
       }
     }
@@ -1203,6 +1237,23 @@ export function runRetirementSimulation(
   }
 
   const successRate = Math.round((successfulTrials / totalTrials) * 100);
+
+  // Historical success rate: share of historical start-year sequences that survive.
+  let histSuccessCount = 0;
+  for (const preset of HISTORICAL_PRESETS) {
+    const proj = runSingleTrajectory(0, 0, preset.id, true);
+    const failed = proj.some((p) => p.isRetired && p.netWorth50 <= 0);
+    if (!failed) histSuccessCount++;
+  }
+  const historicalSuccessRate = Math.round((histSuccessCount / HISTORICAL_PRESETS.length) * 100);
+
+  // Longevity probabilities normalized.
+  const longevityProbabilities = Array.from({ length: numYears }, (_, i) => ({
+    age: currentAge + i,
+    aliveWithMoney: Math.round((aliveMoneyCounts[i] / totalTrials) * 100),
+    aliveBroke: Math.round((aliveBrokeCounts[i] / totalTrials) * 100),
+    deceased: Math.round((deceasedCounts[i] / totalTrials) * 100),
+  }));
 
   // Key KPI metrics
   const retirementYearProj = mergedProjections.find((p) => p.age === targetRetirementAge);
@@ -1239,6 +1290,13 @@ export function runRetirementSimulation(
       ? Math.round((estimatedRetirementAnnualExpense / targetRetirementNetWorth) * 10000) / 100
       : 4.0;
 
+  let lifetimeTaxDeltaVsNoConversion: number | undefined;
+  if (rothOn) {
+    const noConvState = { ...state, useRothConversions: false };
+    const noConvResult = runRetirementSimulation(noConvState, { trials: 1 });
+    lifetimeTaxDeltaVsNoConversion = targetTaxes - noConvResult.lifetimeTaxesPaid;
+  }
+
   return {
     yearlyProjections: mergedProjections,
     successRate,
@@ -1254,5 +1312,9 @@ export function runRetirementSimulation(
     colMultiplier,
     lifetimeTaxesPaid: Math.round(targetTaxes),
     lifetimeRothConverted: Math.round(targetRoth),
+    historicalSuccessRate,
+    historicalRealSuccessRate: historicalSuccessRate,
+    longevityProbabilities,
+    lifetimeTaxDeltaVsNoConversion,
   };
 }

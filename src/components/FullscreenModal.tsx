@@ -78,7 +78,7 @@ export const FullscreenModal: React.FC<Props> = ({ title, onClose, children }) =
             type="button"
             onClick={onClose}
             aria-label="Close fullscreen view"
-            className="p-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 border border-slate-700 transition-colors"
+            className="p-2 rounded-xl dark:bg-slate-800 bg-slate-200 dark:text-slate-300 text-slate-700 hover:text-white hover:bg-slate-700 border dark:border-slate-700 border-slate-300 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>

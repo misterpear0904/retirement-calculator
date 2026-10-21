@@ -112,7 +112,11 @@ export const SensitivityTab: React.FC<Props> = ({ state }) => {
     }, 30);
   };
 
-  const maxAbs = rows ? Math.max(1, ...rows.flatMap((r) => [Math.abs(r.down), Math.abs(r.up)])) : 1;
+  // Scale bars against a fixed labeled reference so a 1-pt effect never
+  // fills the bar. Use at least 20 pts as the absolute floor.
+  const scaleMax = rows
+    ? Math.max(20, ...rows.flatMap((r) => [Math.abs(r.down), Math.abs(r.up)]))
+    : 20;
 
   return (
     <div className="glass-panel p-6 sm:p-7 rounded-2xl space-y-5">
@@ -125,7 +129,7 @@ export const SensitivityTab: React.FC<Props> = ({ state }) => {
           <p className="text-xs dark:text-slate-400 text-slate-500 mt-1 leading-relaxed">
             Which lever moves your success rate most? Each input is nudged while the rest freeze.
             {baseline != null && (
-              <> Baseline success: <strong className="text-slate-200">{baseline}%</strong> (150-trial quick estimate).</>
+              <> Baseline success: <strong className="dark:text-slate-200 text-slate-800">{baseline}%</strong> (150-trial quick estimate).</>
             )}
           </p>
         </div>
@@ -144,8 +148,8 @@ export const SensitivityTab: React.FC<Props> = ({ state }) => {
           {rows.map((r) => (
             <div key={r.id} className="space-y-1">
               <div className="flex justify-between text-xs">
-                <span className="text-slate-300 font-semibold">{r.label}</span>
-                <span className="font-mono text-slate-400">
+                <span className="dark:text-slate-300 text-slate-700 font-semibold">{r.label}</span>
+                <span className="font-mono dark:text-slate-400 text-slate-600">
                   <span className={r.down < 0 ? 'text-red-400' : 'text-emerald-400'}>
                     {r.down > 0 ? '+' : ''}{r.down}
                   </span>
@@ -161,18 +165,18 @@ export const SensitivityTab: React.FC<Props> = ({ state }) => {
                 {/* down bar (left) */}
                 <div
                   className={`absolute top-0 bottom-0 rounded-full ${r.down < 0 ? 'bg-red-500/80' : 'bg-emerald-500/80'}`}
-                  style={{ right: '50%', width: `${(Math.abs(r.down) / maxAbs) * 50}%` }}
+                  style={{ right: '50%', width: `${(Math.abs(r.down) / scaleMax) * 50}%` }}
                 />
                 {/* up bar (right) */}
                 <div
                   className={`absolute top-0 bottom-0 rounded-full ${r.up < 0 ? 'bg-red-500/80' : 'bg-emerald-500/80'}`}
-                  style={{ left: '50%', width: `${(Math.abs(r.up) / maxAbs) * 50}%` }}
+                  style={{ left: '50%', width: `${(Math.abs(r.up) / scaleMax) * 50}%` }}
                 />
               </div>
             </div>
           ))}
           <p className="text-[11px] text-slate-500 leading-relaxed pt-1">
-            Left = nudged down, right = nudged up, in success-rate points. Quick 150-trial estimates — expect ±2 pts of noise; re-run to confirm close calls.
+            Left = nudged down, right = nudged up, in success-rate points. Bars scaled to ±{scaleMax} pts. Quick 150-trial estimates — expect ±2 pts of noise; re-run to confirm close calls.
           </p>
         </div>
       )}

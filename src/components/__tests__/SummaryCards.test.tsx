@@ -89,7 +89,7 @@ describe('SummaryCards — Spend Rate labeling', () => {
     expect(screen.getByText(/Spend Rate: 3.8%/)).toBeTruthy();
     expect(screen.getByText(/4% = 25× coverage/)).toBeTruthy();
     expect(screen.queryByText(/SWR/)).toBeNull();
-    expect(screen.getByText(/\$60,000\/yr/)).toBeTruthy(); // retirementAnnualExpense context
+    expect(screen.getByText(/\$60\.0K\/yr/)).toBeTruthy(); // retirementAnnualExpense context
   });
 
   it('marks the monthly retirement spending figure as today\'s dollars', () => {

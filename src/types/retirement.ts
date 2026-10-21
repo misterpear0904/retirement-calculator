@@ -7,6 +7,7 @@ export type HousingType = 'rent' | 'mortgage';
 export type LifestyleTier = 'minimalist' | 'moderate' | 'luxury' | 'custom';
 export type TaxFilingStatus = 'single' | 'joint';
 export type WithdrawalStrategy = 'fixed_order' | 'proportional' | 'guardrails';
+export type SpendingStrategy = 'fixed_real' | 'vpw' | 'guyton_klinger' | 'bernicke';
 
 export interface SpendingSmile {
   early: number;  // multiplier for ages < spendingSmileStartAge
@@ -120,6 +121,8 @@ export interface RetirementState {
   taxFilingStatus: TaxFilingStatus;
   withdrawalStrategy: WithdrawalStrategy;
   guardrailCutPct: number; // spending cut applied after a down year (guardrails strategy)
+  /** Dynamic retirement spending strategy (default fixed_real = current behavior). */
+  spendingStrategy?: SpendingStrategy;
   useRothConversions: boolean;
   rothConversionAnnual: number;
   rothConversionStartAge: number;
@@ -210,4 +213,17 @@ export interface SimulationResult {
   colMultiplier: number;
   lifetimeTaxesPaid: number;
   lifetimeRothConverted: number;
+  /** Percent of historical start-year sequences in which the plan did not run out. */
+  historicalSuccessRate?: number;
+  /** Alias for historicalSuccessRate. */
+  historicalRealSuccessRate?: number;
+  /** Per-age longevity probabilities (Engaging-Data style). */
+  longevityProbabilities?: Array<{
+    age: number;
+    aliveWithMoney: number;
+    aliveBroke: number;
+    deceased: number;
+  }>;
+  /** Lifetime tax delta (conversions on minus off) when Roth conversions are modeled. */
+  lifetimeTaxDeltaVsNoConversion?: number;
 }

@@ -176,6 +176,27 @@ export function medicarePremiums(
   };
 }
 
+/** Per-bracket fill for a taxable income amount (P4 Roth ladder viz). */
+export interface BracketFill {
+  cap: number;
+  rate: number;
+  floor: number;
+  filled: number;
+}
+
+export function bracketFill(taxableIncome: number, filing: TaxFilingStatus): BracketFill[] {
+  const brackets = filing === 'joint' ? JOINT_BRACKETS : SINGLE_BRACKETS;
+  let floor = 0;
+  const income = Math.max(0, taxableIncome);
+  return brackets.map(([cap, rate]) => {
+    const width = cap === Infinity ? Math.max(0, income - floor) : Math.max(0, cap - floor);
+    const filled = Math.min(Math.max(0, income - floor), width);
+    const row = { cap, rate, floor, filled };
+    floor = cap;
+    return row;
+  });
+}
+
 function bracketTax(taxableIncome: number, brackets: Array<[number, number]>): number {
   if (taxableIncome <= 0) return 0;
   let tax = 0;

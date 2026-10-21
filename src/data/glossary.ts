@@ -12,7 +12,11 @@ export const GLOSSARY: Record<string, string> = {
   smile:
     'Spending smile: front-load or back-load retirement spending (travel early, more care late). The engine scales your lifestyle budget by the phase you are in each year.',
   historyReplay:
-    'Replays a real decade of returns and inflation year by year (e.g. the 1970s or the 2000s crashes) instead of smooth averages — a stress test on the actual sequence. After the preset ends, its last year holds.',
+    'Replays a real decade of returns and inflation year by year (e.g. the 1970s or the 2000s crashes) instead of smooth averages - a stress test on the actual sequence. After the preset ends, its last year holds.',
+  seqReplay:
+    'Sequence Replay (Seq. Replay): replays a multi-decade historical sequence of inflation (and optionally returns) year by year instead of a flat assumption - a stress test against real history.',
+  histReal:
+    'Historical Real (Hist. Real): replays both the returns and the inflation of a selected historical period, year by year, so the plan faces an actual historical market path.',
   fireAge:
     'The age your invested assets first cover 25x your yearly retirement spending — the classic Financial Independence threshold.',
   col: 'Cost-of-Living multiplier. 1.00 = US average; 0.62 (Lisbon) means retirement spending stretches ~38% further.',
@@ -47,7 +51,9 @@ export const GLOSSARY: Record<string, string> = {
   survivorBenefit:
     'When one partner dies, the survivor keeps the larger of the two Social Security checks — modeled automatically here.',
   dieWithZero:
-    'Takes your projected leftover at the end of the plan and converts it into extra yearly retirement spending (today\u2019s dollars) that would roughly spend it down to $0. Median-path estimate — spending more lowers your success rate.',
+    'Takes your projected leftover at the end of the plan and converts it into extra yearly retirement spending (today\u2019s dollars) that would roughly spend it down to $0. Median-path estimate - spending more lowers your success rate.',
+  todaysDollars:
+    "Today's dollars: amounts expressed in current purchasing power, with inflation stripped out, so a future dollar reads as what it buys today.",
 };
 
 export function glossary(term: string): string {

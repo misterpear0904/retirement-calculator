@@ -80,6 +80,7 @@ export const DEFAULT_STATE: RetirementState = {
   taxFilingStatus: 'single',
   withdrawalStrategy: 'fixed_order',
   guardrailCutPct: 15,
+  spendingStrategy: 'fixed_real',
   useRothConversions: false,
   rothConversionAnnual: 25000,
   rothConversionStartAge: 60,

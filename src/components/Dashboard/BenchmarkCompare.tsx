@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { Globe2, Info } from 'lucide-react';
 import { RetirementState } from '../../types/retirement';
+import { formatOrdinal } from '../../utils/formatOrdinal';
 import {
   REGION_BENCHMARKS,
   ageAdjustedWealthMedian,
@@ -28,7 +29,7 @@ function PercentileBar({ pct, color }: { pct: number; color: string }) {
         <div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
       </div>
       <span className="text-[11px] font-extrabold w-10 text-right dark:text-slate-100 text-slate-800">
-        {pct}th
+        {formatOrdinal(pct)}
       </span>
     </div>
   );
@@ -81,7 +82,7 @@ export const BenchmarkCompare: React.FC<Props> = ({ state }) => {
                 {region.flagEmoji} {region.name}
               </span>
               <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30">
-                Wealth: top {100 - wealthPct}% ≈ {wealthPct}th pct
+                Wealth: top {100 - wealthPct}% ≈ {formatOrdinal(wealthPct)} pct
               </span>
             </div>
 
@@ -126,7 +127,7 @@ export const BenchmarkCompare: React.FC<Props> = ({ state }) => {
         ))}
       </div>
 
-      <p className="text-[11px] dark:text-slate-500 text-slate-400 leading-relaxed flex items-start gap-1.5 border-t dark:border-slate-800 border-slate-200 pt-3">
+      <p className="text-[11px] dark:text-slate-500 dark:text-slate-400 text-slate-600 leading-relaxed flex items-start gap-1.5 border-t dark:border-slate-800 border-slate-200 pt-3">
         <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
         <span>
           Illustrative estimates, not exact statistics. Wealth medians are age-adjusted to your “{band.label}”

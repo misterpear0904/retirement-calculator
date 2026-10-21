@@ -39,9 +39,9 @@ export const LocationColSection: React.FC<Props> = ({
     >
       <div className="space-y-5 pt-2">
         {/* Target Location Selector */}
-        <div className="bg-slate-800/40 p-5 rounded-xl border border-slate-700/50 space-y-4">
+        <div className="dark:bg-slate-800/40 bg-slate-100 p-5 rounded-xl border dark:border-slate-700/50 border-slate-300/50 space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h4 className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+            <h4 className="text-xs font-semibold dark:text-slate-300 text-slate-700 uppercase tracking-wider flex items-center gap-2">
               <MapPin className="w-4 h-4 text-red-400 shrink-0" /> Target Retirement Destination
             </h4>
             <span
@@ -50,7 +50,7 @@ export const LocationColSection: React.FC<Props> = ({
                   ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
                   : colDelta > 0
                   ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                  : 'bg-slate-800 text-slate-400 border border-slate-700'
+                  : 'dark:bg-slate-800 bg-slate-200 dark:text-slate-400 text-slate-600 border dark:border-slate-700 border-slate-300'
               }`}
             >
               COL Index: {selectedLocation.colIndex} ({colDelta > 0 ? `+${colDelta}%` : `${colDelta}%`} vs US Baseline)
@@ -60,7 +60,7 @@ export const LocationColSection: React.FC<Props> = ({
 
           <div className="space-y-4">
             <div>
-              <span id="destination-map-label" className="text-[11px] text-slate-400 block mb-1">
+              <span id="destination-map-label" className="text-[11px] dark:text-slate-400 text-slate-600 block mb-1">
                 Click anywhere on the map — snaps to the nearest city of 1M+ people
               </span>
               <LocationMap
@@ -69,8 +69,8 @@ export const LocationColSection: React.FC<Props> = ({
               />
             </div>
 
-            <div className="bg-slate-900/70 p-3.5 rounded-xl border border-slate-800 flex flex-col justify-center text-xs space-y-1.5">
-              <span className="text-slate-200 font-medium leading-relaxed">
+            <div className="dark:bg-slate-900/70 bg-white/90 p-3.5 rounded-xl border dark:border-slate-800 border-slate-200 flex flex-col justify-center text-xs space-y-1.5">
+              <span className="dark:text-slate-200 text-slate-800 font-medium leading-relaxed">
                 {selectedLocation.description}
                 {selectedLocation.isEstimate && (
                   <span className="ml-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 align-middle">
@@ -78,23 +78,23 @@ export const LocationColSection: React.FC<Props> = ({
                   </span>
                 )}
               </span>
-              <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-slate-400 pt-0.5">
-                <span>Housing: <strong className="text-slate-200">{selectedLocation.housingIndex}%</strong></span>
-                <span>Healthcare: <strong className="text-slate-200">{selectedLocation.healthcareIndex}%</strong></span>
-                <span>State/Local Tax: <strong className="text-slate-200">{selectedLocation.stateTaxPct}%</strong></span>
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] dark:text-slate-400 text-slate-600 pt-0.5">
+                <span>Housing: <strong className="dark:text-slate-200 text-slate-800">{selectedLocation.housingIndex}%</strong></span>
+                <span>Healthcare: <strong className="dark:text-slate-200 text-slate-800">{selectedLocation.healthcareIndex}%</strong></span>
+                <span>State/Local Tax: <strong className="dark:text-slate-200 text-slate-800">{selectedLocation.stateTaxPct}%</strong></span>
               </div>
             </div>
           </div>
 
           {/* COL Percentile Adjustment Slider */}
-          <div className="bg-slate-900/60 p-4 rounded-xl border border-slate-700/40 space-y-2.5 mt-1">
+          <div className="dark:bg-slate-900/60 bg-slate-100 p-4 rounded-xl border dark:border-slate-700/40 border-slate-300/40 space-y-2.5 mt-1">
             <div className="flex justify-between items-center">
-              <h4 className="text-[11px] font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+              <h4 className="text-[11px] font-semibold dark:text-slate-300 text-slate-700 uppercase tracking-wider flex items-center gap-2">
                 <SlidersHorizontal className="w-3.5 h-3.5 text-cyan-400 shrink-0" /> Local COL Percentile Adjustment
               </h4>
               <span className={`text-xs font-bold px-2.5 py-1 rounded-lg shrink-0 ${
                 state.colAdjustmentPct === 0
-                  ? 'bg-slate-800 text-slate-400 border border-slate-700'
+                  ? 'dark:bg-slate-800 bg-slate-200 dark:text-slate-400 text-slate-600 border dark:border-slate-700 border-slate-300'
                   : state.colAdjustmentPct > 0
                   ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
                   : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
@@ -108,7 +108,7 @@ export const LocationColSection: React.FC<Props> = ({
             </p>
 
             <div className="space-y-1.5">
-              <div className="flex justify-between text-[11px] text-slate-400 font-medium">
+              <div className="flex justify-between text-[11px] dark:text-slate-400 text-slate-600 font-medium">
                 <span>Adjustment</span>
                 <span className="font-bold text-cyan-400">
                   Effective COL: {Math.round(selectedLocation.colIndex * (1 + state.colAdjustmentPct / 100))}
@@ -150,21 +150,21 @@ export const LocationColSection: React.FC<Props> = ({
         </div>
 
         {/* Guaranteed Retirement Income (Social Security & Pension) */}
-        <div className="bg-slate-800/40 p-5 rounded-xl border border-slate-700/50 space-y-4">
-          <h4 className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+        <div className="dark:bg-slate-800/40 bg-slate-100 p-5 rounded-xl border dark:border-slate-700/50 border-slate-300/50 space-y-4">
+          <h4 className="text-xs font-semibold dark:text-slate-300 text-slate-700 uppercase tracking-wider flex items-center gap-2">
             <Landmark className="w-4 h-4 text-blue-400 shrink-0" /> Social Security & Guaranteed Pension Income
           </h4>
 
           <div className="space-y-4 text-xs">
             {/* Social Security */}
-            <div className="space-y-3 bg-slate-900 p-4 rounded-xl border border-slate-800">
-              <div className="flex items-center gap-2 font-semibold text-slate-200 text-sm">
+            <div className="space-y-3 dark:bg-slate-900 bg-white p-4 rounded-xl border dark:border-slate-800 border-slate-200">
+              <div className="flex items-center gap-2 font-semibold dark:text-slate-200 text-slate-800 text-sm">
                 <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" /> Social Security Benefit
                 <InfoTip term="ssClaim" />
               </div>
 
               <div>
-                <label className="text-[11px] text-slate-400 block mb-1">Estimated Monthly Benefit at Age 67 ($)</label>
+                <label className="text-[11px] dark:text-slate-400 text-slate-600 block mb-1">Estimated Monthly Benefit at Age 67 ($)</label>
                 <input
                   type="number"
                   step={100}
@@ -174,12 +174,12 @@ export const LocationColSection: React.FC<Props> = ({
                     if (Number.isFinite(v)) onChange({ socialSecurityMonthlyAt67: Math.max(0, v) });
                   }}
                   aria-label="Estimated monthly Social Security benefit at 67 in dollars"
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 font-bold text-slate-100 focus:border-emerald-500 focus:outline-none"
+                  className="w-full bg-slate-950 border dark:border-slate-700 border-slate-300 rounded-lg px-3 py-2 font-bold dark:text-slate-100 text-slate-900 focus:border-emerald-500 focus:outline-none"
                 />
               </div>
 
               <div className="space-y-1.5 pt-1">
-                <div className="flex justify-between text-xs text-slate-400">
+                <div className="flex justify-between text-xs dark:text-slate-400 text-slate-600">
                   <span>Claiming Start Age</span>
                   <span className="font-bold text-emerald-400">Age {state.socialSecurityStartAge}</span>
                 </div>
@@ -218,8 +218,8 @@ export const LocationColSection: React.FC<Props> = ({
             </div>
 
             {showOptimizer && optimization && (
-              <div className="space-y-3 bg-slate-900 p-4 rounded-xl border border-emerald-500/30 animate-fade-in">
-                <p className="text-xs text-slate-300 leading-relaxed">
+              <div className="space-y-3 dark:bg-slate-900 bg-white p-4 rounded-xl border border-emerald-500/30 animate-fade-in">
+                <p className="text-xs dark:text-slate-300 text-slate-700 leading-relaxed">
                   Best household total:{' '}
                   <strong className="text-emerald-400">
                     ${(optimization.optimum.householdLifetimeTotal / 1000).toFixed(0)}k lifetime
@@ -238,11 +238,11 @@ export const LocationColSection: React.FC<Props> = ({
                           ? 'bg-emerald-500/20 border-emerald-500/50'
                           : r.isCurrent
                             ? 'bg-blue-500/15 border-blue-500/40'
-                            : 'bg-slate-800/60 border-slate-700/60'
+                            : 'dark:bg-slate-800/60 bg-slate-200/60 dark:border-slate-700/60 border-slate-300/60'
                       }`}
                       title={`Age ${r.claimAge}: $${r.monthlyBenefit.toLocaleString()}/mo, $${(r.lifetimeTotal / 1000).toFixed(0)}k lifetime`}
                     >
-                      <div className={`text-[11px] font-extrabold ${r.isBest ? 'text-emerald-400' : 'text-slate-200'}`}>
+                      <div className={`text-[11px] font-extrabold ${r.isBest ? 'text-emerald-400' : 'dark:text-slate-200 text-slate-800'}`}>
                         {r.claimAge}
                       </div>
                       <div className="text-[9px] text-slate-500">${(r.lifetimeTotal / 1000).toFixed(0)}k</div>
@@ -273,13 +273,13 @@ export const LocationColSection: React.FC<Props> = ({
             )}
 
             {/* Pension */}
-            <div className="space-y-3 bg-slate-900 p-4 rounded-xl border border-slate-800">
-              <div className="flex items-center gap-2 font-semibold text-slate-200 text-sm">
+            <div className="space-y-3 dark:bg-slate-900 bg-white p-4 rounded-xl border dark:border-slate-800 border-slate-200">
+              <div className="flex items-center gap-2 font-semibold dark:text-slate-200 text-slate-800 text-sm">
                 <Landmark className="w-4 h-4 text-purple-400 shrink-0" /> Corporate / State Pension
               </div>
 
               <div>
-                <label className="text-[11px] text-slate-400 block mb-1">Estimated Monthly Pension ($)</label>
+                <label className="text-[11px] dark:text-slate-400 text-slate-600 block mb-1">Estimated Monthly Pension ($)</label>
                 <input
                   type="number"
                   step={100}
@@ -289,12 +289,12 @@ export const LocationColSection: React.FC<Props> = ({
                     if (Number.isFinite(v)) onChange({ pensionMonthly: Math.max(0, v) });
                   }}
                   aria-label="Estimated monthly pension in dollars"
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 font-bold text-slate-100 focus:border-purple-500 focus:outline-none"
+                  className="w-full bg-slate-950 border dark:border-slate-700 border-slate-300 rounded-lg px-3 py-2 font-bold dark:text-slate-100 text-slate-900 focus:border-purple-500 focus:outline-none"
                 />
               </div>
 
               <div className="space-y-1.5 pt-1">
-                <div className="flex justify-between text-xs text-slate-400">
+                <div className="flex justify-between text-xs dark:text-slate-400 text-slate-600">
                   <span>Pension Start Age</span>
                   <span className="font-bold text-purple-400">Age {state.pensionStartAge}</span>
                 </div>

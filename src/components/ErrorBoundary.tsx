@@ -36,16 +36,16 @@ export class ErrorBoundary extends React.Component<{ children: React.ReactNode }
   render() {
     if (this.state.error) {
       return (
-        <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-8">
+        <div className="min-h-screen bg-slate-950 dark:text-slate-100 text-slate-900 flex items-center justify-center p-8">
           <div className="max-w-lg space-y-4 text-center">
             <h1 className="text-2xl font-bold">Something went wrong</h1>
-            <p className="text-slate-400 text-sm">
+            <p className="dark:text-slate-400 text-slate-600 text-sm">
               ApexRetire hit an unexpected error while rendering. Your inputs are saved locally
               automatically. If the problem repeats (often caused by a corrupted saved session,
               a share link, or an imported file), use the reset button — it clears the saved
               session and restores the defaults.
             </p>
-            <pre className="text-left text-xs bg-slate-900 border border-slate-800 rounded-lg p-3 overflow-auto max-h-40">
+            <pre className="text-left text-xs dark:bg-slate-900 bg-white border dark:border-slate-800 border-slate-200 rounded-lg p-3 overflow-auto max-h-40">
               {this.state.error.message}
             </pre>
             <div className="flex items-center justify-center gap-3">
@@ -59,7 +59,7 @@ export class ErrorBoundary extends React.Component<{ children: React.ReactNode }
               <button
                 type="button"
                 onClick={() => window.location.reload()}
-                className="px-4 py-2 rounded-xl bg-slate-800 border border-slate-700 font-semibold hover:bg-slate-700 transition"
+                className="px-4 py-2 rounded-xl dark:bg-slate-800 bg-slate-200 border dark:border-slate-700 border-slate-300 font-semibold hover:bg-slate-700 transition"
               >
                 Reload
               </button>

@@ -46,12 +46,12 @@ export const MarketInflationSection: React.FC<Props> = ({
     >
       <div className="space-y-4 pt-2">
         {/* Asset Allocation Sliders */}
-        <div className="bg-slate-800/40 p-5 rounded-xl border border-slate-700/50 space-y-4">
+        <div className="dark:bg-slate-800/40 bg-slate-100 p-5 rounded-xl border dark:border-slate-700/50 border-slate-300/50 space-y-4">
           <div className="flex justify-between items-center">
-            <h4 className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+            <h4 className="text-xs font-semibold dark:text-slate-300 text-slate-700 uppercase tracking-wider flex items-center gap-2">
               <PieChart className="w-4 h-4 text-blue-400 shrink-0" /> Portfolio Asset Allocation
             </h4>
-            <span className="text-xs font-bold text-slate-400">
+            <span className="text-xs font-bold dark:text-slate-400 text-slate-600">
               Total: {state.stockPct + state.bondPct + state.cashPct}%
             </span>
           </div>
@@ -132,6 +132,8 @@ export const MarketInflationSection: React.FC<Props> = ({
                 max={100 - state.stockPct - state.bondPct}
                 value={state.cashPct}
                 disabled
+                aria-label="Cash allocation percentage (auto-balancing remainder to 100%)"
+                title="Cash allocation is auto-balanced to 100%"
                 className="w-full opacity-60 cursor-not-allowed"
               />
             </div>
@@ -139,9 +141,10 @@ export const MarketInflationSection: React.FC<Props> = ({
         </div>
 
         {/* Inflation & Return Modes */}
-        <div className="bg-slate-800/40 p-5 rounded-xl border border-slate-700/50 space-y-4">
-          <h4 className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+        <div className="dark:bg-slate-800/40 bg-slate-100 p-5 rounded-xl border dark:border-slate-700/50 border-slate-300/50 space-y-4">
+          <h4 className="text-xs font-semibold dark:text-slate-300 text-slate-700 uppercase tracking-wider flex items-center gap-2">
             <Flame className="w-4 h-4 text-amber-400 shrink-0" /> Inflation Settings
+            <InfoTip term="seqReplay" />
           </h4>
 
           <div className="grid grid-cols-3 gap-2.5">
@@ -157,7 +160,7 @@ export const MarketInflationSection: React.FC<Props> = ({
                 className={`p-2.5 rounded-xl text-center transition-all text-xs border font-medium shadow-sm ${
                   state.inflationMode === item.id
                     ? 'bg-amber-500/20 border-amber-500/50 text-amber-400 font-semibold'
-                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                    : 'dark:bg-slate-900 bg-white dark:border-slate-800 border-slate-200 dark:text-slate-400 text-slate-600 hover:text-slate-200 hover:bg-slate-800/60'
                 }`}
               >
                 {item.label}
@@ -167,8 +170,8 @@ export const MarketInflationSection: React.FC<Props> = ({
 
           {/* Dynamic Reveal based on Inflation Mode */}
           {state.inflationMode === 'custom' && (
-            <div className="space-y-2 bg-slate-900/60 p-3.5 rounded-xl border border-slate-800 animate-fade-in">
-              <div className="flex justify-between text-xs text-slate-300">
+            <div className="space-y-2 dark:bg-slate-900/60 bg-slate-100 p-3.5 rounded-xl border dark:border-slate-800 border-slate-200 animate-fade-in">
+              <div className="flex justify-between text-xs dark:text-slate-300 text-slate-700">
                 <span>Custom Annual Inflation</span>
                 <span className="font-bold text-amber-400">{state.customInflationRate}%</span>
               </div>
@@ -201,14 +204,14 @@ export const MarketInflationSection: React.FC<Props> = ({
           )}
 
           {state.inflationMode === 'historical_replay' && (
-            <div className="space-y-2 bg-slate-900/60 p-3.5 rounded-xl border border-slate-800 animate-fade-in">
-              <label className="text-xs font-medium text-slate-400 block mb-1">
+            <div className="space-y-2 dark:bg-slate-900/60 bg-slate-100 p-3.5 rounded-xl border dark:border-slate-800 border-slate-200 animate-fade-in">
+              <label className="text-xs font-medium dark:text-slate-400 text-slate-600 block mb-1">
                 Select Multi-Decade Historical Sequence Preset
               </label>
               <select
                 value={state.historicalInflationPreset}
                 onChange={(e) => onChange({ historicalInflationPreset: e.target.value })}
-                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:border-amber-500 focus:outline-none transition-colors"
+                className="w-full bg-slate-950 border dark:border-slate-700 border-slate-300 rounded-lg px-3 py-2 text-xs dark:text-slate-100 text-slate-900 focus:border-amber-500 focus:outline-none transition-colors"
               >
                 {HISTORICAL_PRESETS.map((preset) => (
                   <option key={preset.id} value={preset.id}>
@@ -221,9 +224,10 @@ export const MarketInflationSection: React.FC<Props> = ({
 
           {/* Return Mode Selection */}
           <div className="pt-2 space-y-2">
-            <h4 className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+            <h4 className="text-xs font-semibold dark:text-slate-300 text-slate-700 uppercase tracking-wider flex items-center gap-2">
               <Activity className="w-4 h-4 text-blue-400 shrink-0" /> Return Simulation Mode
               <InfoTip term="monteCarlo" />
+            <InfoTip term="histReal" />
             </h4>
             <div className="grid grid-cols-3 gap-2.5">
               {[
@@ -238,7 +242,7 @@ export const MarketInflationSection: React.FC<Props> = ({
                   className={`p-2.5 rounded-xl text-center transition-all text-xs border font-medium shadow-sm ${
                     state.returnMode === m.id
                       ? 'bg-blue-500/20 border-blue-500/50 text-blue-400 font-semibold'
-                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                      : 'dark:bg-slate-900 bg-white dark:border-slate-800 border-slate-200 dark:text-slate-400 text-slate-600 hover:text-slate-200 hover:bg-slate-800/60'
                   }`}
                 >
                   {m.label}

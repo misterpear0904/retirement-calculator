@@ -59,17 +59,17 @@ export const BaselineAssetsSection: React.FC<Props> = ({
     >
       {/* Assets Breakdown Grid */}
       <div className="space-y-3">
-        <h4 className="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+        <h4 className="text-xs font-semibold dark:text-slate-300 text-slate-700 uppercase tracking-wider mb-2">
           Current Liquid & Investment Assets
         </h4>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Liquid Cash */}
-          <div className="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50 space-y-2">
-            <label className="text-xs font-medium text-slate-300 block">
+          <div className="dark:bg-slate-800/40 bg-slate-100 p-4 rounded-xl border dark:border-slate-700/50 border-slate-300/50 space-y-2">
+            <label className="text-xs font-medium dark:text-slate-300 text-slate-700 block">
               Liquid Cash & Emergency Fund
             </label>
             <div className="relative">
-              <span className="absolute left-3 top-2.5 text-xs text-slate-400 font-bold">$</span>
+              <span className="absolute left-3 top-2.5 text-xs dark:text-slate-400 text-slate-600 font-bold">$</span>
               <input
                 type="number"
                 min={0}
@@ -80,18 +80,18 @@ export const BaselineAssetsSection: React.FC<Props> = ({
                   if (Number.isFinite(v)) onChange({ liquidCash: Math.max(0, v) });
                 }}
                 aria-label="Liquid cash and emergency fund in dollars"
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-7 pr-2 py-2 text-sm font-bold text-slate-100 focus:border-blue-500 focus:outline-none transition-colors"
+                className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg pl-7 pr-2 py-2 text-sm font-bold dark:text-slate-100 text-slate-900 focus:border-blue-500 focus:outline-none transition-colors"
               />
             </div>
           </div>
 
           {/* Taxable Investments */}
-          <div className="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50 space-y-2">
-            <label className="text-xs font-medium text-slate-300 block">
+          <div className="dark:bg-slate-800/40 bg-slate-100 p-4 rounded-xl border dark:border-slate-700/50 border-slate-300/50 space-y-2">
+            <label className="text-xs font-medium dark:text-slate-300 text-slate-700 block">
               Taxable Brokerage / Stocks
             </label>
             <div className="relative">
-              <span className="absolute left-3 top-2.5 text-xs text-slate-400 font-bold">$</span>
+              <span className="absolute left-3 top-2.5 text-xs dark:text-slate-400 text-slate-600 font-bold">$</span>
               <input
                 type="number"
                 min={0}
@@ -102,18 +102,18 @@ export const BaselineAssetsSection: React.FC<Props> = ({
                   if (Number.isFinite(v)) onChange({ taxableInvestments: Math.max(0, v) });
                 }}
                 aria-label="Taxable brokerage investments in dollars"
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-7 pr-2 py-2 text-sm font-bold text-slate-100 focus:border-blue-500 focus:outline-none transition-colors"
+                className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg pl-7 pr-2 py-2 text-sm font-bold dark:text-slate-100 text-slate-900 focus:border-blue-500 focus:outline-none transition-colors"
               />
             </div>
           </div>
 
           {/* Pre-Tax Accounts */}
-          <div className="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50 space-y-2">
-            <label className="text-xs font-medium text-slate-300 block">
+          <div className="dark:bg-slate-800/40 bg-slate-100 p-4 rounded-xl border dark:border-slate-700/50 border-slate-300/50 space-y-2">
+            <label className="text-xs font-medium dark:text-slate-300 text-slate-700 block">
               Pre-Tax (401k / Trad IRA)
             </label>
             <div className="relative">
-              <span className="absolute left-3 top-2.5 text-xs text-slate-400 font-bold">$</span>
+              <span className="absolute left-3 top-2.5 text-xs dark:text-slate-400 text-slate-600 font-bold">$</span>
               <input
                 type="number"
                 min={0}
@@ -124,18 +124,18 @@ export const BaselineAssetsSection: React.FC<Props> = ({
                   if (Number.isFinite(v)) onChange({ preTax401k: Math.max(0, v) });
                 }}
                 aria-label="Pre-tax 401k and traditional IRA balance in dollars"
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-7 pr-2 py-2 text-sm font-bold text-slate-100 focus:border-blue-500 focus:outline-none transition-colors"
+                className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg pl-7 pr-2 py-2 text-sm font-bold dark:text-slate-100 text-slate-900 focus:border-blue-500 focus:outline-none transition-colors"
               />
             </div>
           </div>
 
           {/* Post-Tax Accounts */}
-          <div className="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50 space-y-2">
-            <label className="text-xs font-medium text-slate-300 block">
+          <div className="dark:bg-slate-800/40 bg-slate-100 p-4 rounded-xl border dark:border-slate-700/50 border-slate-300/50 space-y-2">
+            <label className="text-xs font-medium dark:text-slate-300 text-slate-700 block">
               Post-Tax (Roth IRA / HSA)
             </label>
             <div className="relative">
-              <span className="absolute left-3 top-2.5 text-xs text-slate-400 font-bold">$</span>
+              <span className="absolute left-3 top-2.5 text-xs dark:text-slate-400 text-slate-600 font-bold">$</span>
               <input
                 type="number"
                 min={0}
@@ -146,7 +146,7 @@ export const BaselineAssetsSection: React.FC<Props> = ({
                   if (Number.isFinite(v)) onChange({ postTaxRothHsa: Math.max(0, v) });
                 }}
                 aria-label="Post-tax Roth and HSA balance in dollars"
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-7 pr-2 py-2 text-sm font-bold text-slate-100 focus:border-blue-500 focus:outline-none transition-colors"
+                className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg pl-7 pr-2 py-2 text-sm font-bold dark:text-slate-100 text-slate-900 focus:border-blue-500 focus:outline-none transition-colors"
               />
             </div>
           </div>
@@ -156,7 +156,7 @@ export const BaselineAssetsSection: React.FC<Props> = ({
       {/* Debts & Liabilities Section */}
       <div className="pt-3 space-y-3">
         <div className="flex items-center justify-between">
-          <h4 className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+          <h4 className="text-xs font-semibold dark:text-slate-300 text-slate-700 uppercase tracking-wider flex items-center gap-2">
             <ShieldAlert className="w-4 h-4 text-amber-400 shrink-0" /> Debts & Non-Mortgage Liabilities
           </h4>
           <button
@@ -169,7 +169,7 @@ export const BaselineAssetsSection: React.FC<Props> = ({
         </div>
 
         {state.debts.length === 0 ? (
-          <p className="text-xs text-slate-400 italic bg-slate-800/30 p-4 rounded-xl text-center border border-slate-800 leading-relaxed">
+          <p className="text-xs dark:text-slate-400 text-slate-600 italic dark:bg-slate-800/30 bg-slate-100 p-4 rounded-xl text-center border dark:border-slate-800 border-slate-200 leading-relaxed">
             No active non-mortgage liabilities. (Mortgages are configured under Section F).
           </p>
         ) : (
@@ -177,19 +177,19 @@ export const BaselineAssetsSection: React.FC<Props> = ({
             {state.debts.map((debt) => (
               <div
                 key={debt.id}
-                className="grid grid-cols-1 sm:grid-cols-4 gap-3 bg-slate-800/40 p-4 rounded-xl border border-slate-700/40 items-center"
+                className="grid grid-cols-1 sm:grid-cols-4 gap-3 dark:bg-slate-800/40 bg-slate-100 p-4 rounded-xl border dark:border-slate-700/40 border-slate-300/40 items-center"
               >
                 <div>
-                  <label className="text-[11px] text-slate-400 block mb-1">Name</label>
+                  <label className="text-[11px] dark:text-slate-400 text-slate-600 block mb-1">Name</label>
                   <input
                     type="text"
                     value={debt.name}
                     onChange={(e) => handleDebtChange(debt.id, 'name', e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-100 font-medium"
+                    className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg px-2.5 py-1.5 text-xs dark:text-slate-100 text-slate-900 font-medium"
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] text-slate-400 block mb-1">Balance ($)</label>
+                  <label className="text-[11px] dark:text-slate-400 text-slate-600 block mb-1">Balance ($)</label>
                   <input
                     type="number"
                     min={0}
@@ -199,11 +199,11 @@ export const BaselineAssetsSection: React.FC<Props> = ({
                       if (Number.isFinite(v)) handleDebtChange(debt.id, 'balance', Math.max(0, v));
                     }}
                     aria-label={`Balance for ${debt.name || 'liability'}`}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-100 font-medium"
+                    className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg px-2.5 py-1.5 text-xs dark:text-slate-100 text-slate-900 font-medium"
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] text-slate-400 block mb-1">Interest Rate (%)</label>
+                  <label className="text-[11px] dark:text-slate-400 text-slate-600 block mb-1">Interest Rate (%)</label>
                   <input
                     type="number"
                     min={0}
@@ -214,12 +214,12 @@ export const BaselineAssetsSection: React.FC<Props> = ({
                       if (Number.isFinite(v)) handleDebtChange(debt.id, 'interestRate', v);
                     }}
                     aria-label={`Interest rate percentage for ${debt.name || 'liability'}`}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-100 font-medium"
+                    className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg px-2.5 py-1.5 text-xs dark:text-slate-100 text-slate-900 font-medium"
                   />
                 </div>
                 <div className="flex items-end gap-2">
                   <div className="flex-1">
-                    <label className="text-[11px] text-slate-400 block mb-1">Monthly ($)</label>
+                    <label className="text-[11px] dark:text-slate-400 text-slate-600 block mb-1">Monthly ($)</label>
                     <input
                       type="number"
                       min={0}
@@ -229,13 +229,13 @@ export const BaselineAssetsSection: React.FC<Props> = ({
                         if (Number.isFinite(v)) handleDebtChange(debt.id, 'monthlyPayment', Math.max(0, v));
                       }}
                       aria-label={`Monthly payment for ${debt.name || 'liability'}`}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-100 font-medium"
+                      className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg px-2.5 py-1.5 text-xs dark:text-slate-100 text-slate-900 font-medium"
                     />
                   </div>
                   <button
                     type="button"
                     onClick={() => handleRemoveDebt(debt.id)}
-                    className="p-2 text-slate-400 hover:text-red-400 rounded-lg hover:bg-red-500/10 transition-colors"
+                    className="p-2 dark:text-slate-400 text-slate-600 hover:text-red-400 rounded-lg hover:bg-red-500/10 transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>

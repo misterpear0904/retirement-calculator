@@ -32,14 +32,14 @@ const CSV_HEADERS = [
 ] as const;
 
 /** CSV cell: quote only when the value contains a comma, quote, or newline. */
-function csvCell(value: string | number): string {
+export function csvCell(value: string | number): string {
   const s = String(value);
   if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
   return s;
 }
 
 /** Serialize the currently shown yearly projections to CSV (raw numerics, one header row). */
-function buildCsv(rows: YearlyProjection[]): string {
+export function buildCsv(rows: YearlyProjection[]): string {
   const lines: string[] = [CSV_HEADERS.map(csvCell).join(',')];
   for (const p of rows) {
     const cells: (string | number)[] = [
@@ -104,25 +104,25 @@ export const YearlyTable: React.FC<Props> = ({ yearlyProjections }) => {
             className={`px-3.5 py-2 rounded-xl font-semibold border transition-all shadow-sm ${
               filterRetiredOnly
                 ? 'bg-purple-500/20 text-purple-300 border-purple-500/40'
-                : 'bg-slate-800 text-slate-300 border-slate-700 hover:text-white'
+                : 'dark:bg-slate-800 bg-slate-200 dark:text-slate-300 text-slate-700 dark:border-slate-700 border-slate-300 hover:text-white'
             }`}
           >
-            {filterRetiredOnly ? 'Showing Retirement Only' : 'Show All Years'}
+            {filterRetiredOnly ? 'Show all years' : 'Show retirement years only'}
           </button>
           <button
             type="button"
             onClick={() => downloadCsv(displayedProjections)}
             disabled={displayedProjections.length === 0}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-xl font-semibold border transition-all shadow-sm bg-slate-800 text-slate-300 border-slate-700 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-3.5 py-2 rounded-xl font-semibold border transition-all shadow-sm dark:bg-slate-800 bg-slate-200 dark:text-slate-300 text-slate-700 dark:border-slate-700 border-slate-300 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Download className="w-3.5 h-3.5" /> Export CSV
           </button>
         </div>
       </div>
 
-      <div className="overflow-x-auto max-h-[380px] overflow-y-auto rounded-xl border border-slate-800">
+      <div className="overflow-x-auto max-h-[380px] overflow-y-auto rounded-xl border dark:border-slate-800 border-slate-200">
         <table className="w-full text-left text-xs border-collapse">
-          <thead className="sticky top-0 bg-slate-900/95 backdrop-blur-md text-slate-300 font-semibold border-b border-slate-800">
+          <thead className="sticky top-0 dark:bg-slate-900/95 bg-white/95 backdrop-blur-md dark:text-slate-300 text-slate-700 font-semibold border-b dark:border-slate-800 border-slate-200">
             <tr>
               <th scope="col" className="px-4 py-3.5 whitespace-nowrap">Age (Year)</th>
               <th scope="col" className="px-4 py-3.5 whitespace-nowrap">Phase</th>
@@ -130,13 +130,13 @@ export const YearlyTable: React.FC<Props> = ({ yearlyProjections }) => {
               <th scope="col" className="px-4 py-3.5 text-right whitespace-nowrap">Contributions</th>
               <th scope="col" className="px-4 py-3.5 text-right whitespace-nowrap">Total Expenses</th>
               <th scope="col" className="px-4 py-3.5 text-right whitespace-nowrap">Net Withdrawal</th>
-              <th scope="col" className="px-4 py-3.5 text-right font-bold text-slate-100 whitespace-nowrap">Total Portfolio</th>
+              <th scope="col" className="px-4 py-3.5 text-right font-bold dark:text-slate-100 text-slate-900 whitespace-nowrap">Total Portfolio</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800/60 font-mono">
             {displayedProjections.map((p) => (
               <tr key={p.age} className="hover:bg-slate-800/40 transition-colors">
-                <td className="px-4 py-3 font-sans font-medium text-slate-300 whitespace-nowrap">
+                <td className="px-4 py-3 font-sans font-medium dark:text-slate-300 text-slate-700 whitespace-nowrap">
                   Age {p.age} <span className="text-xs text-slate-500">({p.year})</span>
                 </td>
                 <td className="px-4 py-3 font-sans whitespace-nowrap">
@@ -148,11 +148,11 @@ export const YearlyTable: React.FC<Props> = ({ yearlyProjections }) => {
                     {p.isRetired ? 'Retirement' : 'Work'}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-right text-slate-300 whitespace-nowrap">${p.grossIncome.toLocaleString()}</td>
+                <td className="px-4 py-3 text-right dark:text-slate-300 text-slate-700 whitespace-nowrap">${p.grossIncome.toLocaleString()}</td>
                 <td className="px-4 py-3 text-right text-emerald-400 whitespace-nowrap">
                   {p.totalContributions > 0 ? `+$${p.totalContributions.toLocaleString()}` : '-'}
                 </td>
-                <td className="px-4 py-3 text-right text-slate-300 whitespace-nowrap">${p.totalExpenses.toLocaleString()}</td>
+                <td className="px-4 py-3 text-right dark:text-slate-300 text-slate-700 whitespace-nowrap">${p.totalExpenses.toLocaleString()}</td>
                 <td className="px-4 py-3 text-right text-amber-400 whitespace-nowrap">
                   {p.netWithdrawalNeeded > 0 ? `-$${p.netWithdrawalNeeded.toLocaleString()}` : '-'}
                 </td>

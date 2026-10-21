@@ -13,6 +13,13 @@ interface Props {
  * Rendered via portal to document.body with viewport-aware placement, so it
  * is never clipped by overflow-hidden cards or covered by the sticky header.
  */
+function humanizeTerm(term: string): string {
+  return term
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .replace(/_/g, ' ')
+    .toLowerCase();
+}
+
 export const InfoTip: React.FC<Props> = ({ term, label }) => {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState<{ left: number; top: number; below: boolean }>({
@@ -70,14 +77,14 @@ export const InfoTip: React.FC<Props> = ({ term, label }) => {
       <button
         ref={btnRef}
         type="button"
-        aria-label={label ?? `What is ${term}?`}
+        aria-label={label ?? `What is ${humanizeTerm(term)}?`}
         aria-expanded={open}
         onMouseEnter={show}
         onMouseLeave={hide}
         onFocus={show}
         onBlur={hide}
         onClick={() => (open ? hide() : show())}
-        className="text-slate-500 hover:text-blue-400 transition-colors focus:outline-none focus:text-blue-400 inline-flex items-center align-middle ml-1.5"
+        className="text-slate-500 hover:text-blue-400 transition-colors focus:outline-none focus:text-blue-400 inline-flex items-center align-middle ml-1.5 p-2 -m-2 min-w-[44px] min-h-[44px] justify-center"
       >
         <Info className="w-3.5 h-3.5" />
       </button>
@@ -85,7 +92,7 @@ export const InfoTip: React.FC<Props> = ({ term, label }) => {
         createPortal(
           <div
             role="tooltip"
-            className="fixed z-[70] w-60 p-3 rounded-xl bg-slate-900 border border-slate-700 text-[11px] leading-relaxed text-slate-200 shadow-2xl"
+            className="fixed z-[70] w-60 p-3 rounded-xl dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 text-[11px] leading-relaxed dark:text-slate-200 text-slate-800 shadow-2xl"
             style={{
               left: pos.left,
               top: pos.top,

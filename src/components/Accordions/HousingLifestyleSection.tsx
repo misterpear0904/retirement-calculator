@@ -64,9 +64,9 @@ export const HousingLifestyleSection: React.FC<Props> = ({
     >
       <div className="space-y-5 pt-2">
         {/* Housing Choice Toggle */}
-        <div className="bg-slate-800/40 p-5 rounded-xl border border-slate-700/50 space-y-4">
+        <div className="dark:bg-slate-800/40 bg-slate-100 p-5 rounded-xl border dark:border-slate-700/50 border-slate-300/50 space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h4 className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+            <h4 className="text-xs font-semibold dark:text-slate-300 text-slate-700 uppercase tracking-wider flex items-center gap-2">
               <Home className="w-4 h-4 text-blue-400 shrink-0" /> Primary Housing Type
             </h4>
             <div className="flex gap-2">
@@ -81,7 +81,7 @@ export const HousingLifestyleSection: React.FC<Props> = ({
                   className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border shadow-sm ${
                     state.housingType === h.id
                       ? 'bg-blue-500/20 text-blue-400 border-blue-500/40'
-                      : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-slate-200'
+                      : 'dark:bg-slate-900 bg-white dark:text-slate-400 text-slate-600 dark:border-slate-800 border-slate-200 hover:text-slate-200'
                   }`}
                 >
                   {h.label}
@@ -94,7 +94,7 @@ export const HousingLifestyleSection: React.FC<Props> = ({
           {state.housingType === 'mortgage' ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1 animate-fade-in text-xs">
               <div>
-                <label className="text-xs font-medium text-slate-300 block mb-1">Mortgage Balance ($)</label>
+                <label className="text-xs font-medium dark:text-slate-300 text-slate-700 block mb-1">Mortgage Balance ($)</label>
                 <input
                   type="number"
                   step={10000}
@@ -102,12 +102,12 @@ export const HousingLifestyleSection: React.FC<Props> = ({
                   onChange={(e) =>
                     onChange({ mortgageBalance: parseNumberInput(e.target.value, state.mortgageBalance) })}
                   aria-label="Mortgage balance in dollars"
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 font-bold text-slate-100 focus:border-blue-500 focus:outline-none"
+                  className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg px-3 py-2 font-bold dark:text-slate-100 text-slate-900 focus:border-blue-500 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-medium text-slate-300 block mb-1">Monthly Payment (P&I+Tax+Ins)</label>
+                <label className="text-xs font-medium dark:text-slate-300 text-slate-700 block mb-1">Monthly Payment (P&I+Tax+Ins)</label>
                 <input
                   type="number"
                   step={100}
@@ -115,12 +115,12 @@ export const HousingLifestyleSection: React.FC<Props> = ({
                   onChange={(e) =>
                     onChange({ mortgageMonthly: parseNumberInput(e.target.value, state.mortgageMonthly) })}
                   aria-label="Monthly mortgage payment"
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 font-bold text-slate-100 focus:border-blue-500 focus:outline-none"
+                  className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg px-3 py-2 font-bold dark:text-slate-100 text-slate-900 focus:border-blue-500 focus:outline-none"
                 />
               </div>
 
               <div className="sm:col-span-2">
-                <label className="text-xs font-medium text-slate-300 block mb-1">Remaining Term (Years)</label>
+                <label className="text-xs font-medium dark:text-slate-300 text-slate-700 block mb-1">Remaining Term (Years)</label>
                 <input
                   type="number"
                   min={1}
@@ -129,14 +129,14 @@ export const HousingLifestyleSection: React.FC<Props> = ({
                   onChange={(e) =>
                     onChange({ mortgageRemainingYears: Math.max(1, Math.round(parseNumberInput(e.target.value, state.mortgageRemainingYears))) })}
                   aria-label="Mortgage remaining term in years"
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 font-bold text-slate-100 focus:border-blue-500 focus:outline-none"
+                  className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg px-3 py-2 font-bold dark:text-slate-100 text-slate-900 focus:border-blue-500 focus:outline-none"
                 />
               </div>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1 animate-fade-in text-xs">
               <div>
-                <label className="text-xs font-medium text-slate-300 block mb-1">Monthly Rent ($)</label>
+                <label className="text-xs font-medium dark:text-slate-300 text-slate-700 block mb-1">Monthly Rent ($)</label>
                 <input
                   type="number"
                   step={100}
@@ -144,12 +144,12 @@ export const HousingLifestyleSection: React.FC<Props> = ({
                   onChange={(e) =>
                     onChange({ rentMonthly: parseNumberInput(e.target.value, state.rentMonthly) })}
                   aria-label="Monthly rent in dollars"
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 font-bold text-slate-100 focus:border-blue-500 focus:outline-none"
+                  className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg px-3 py-2 font-bold dark:text-slate-100 text-slate-900 focus:border-blue-500 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-medium text-slate-300 block mb-1">Est. Annual Rent Inflation (%)</label>
+                <label className="text-xs font-medium dark:text-slate-300 text-slate-700 block mb-1">Est. Annual Rent Inflation (%)</label>
                 <input
                   type="number"
                   step={0.5}
@@ -157,7 +157,7 @@ export const HousingLifestyleSection: React.FC<Props> = ({
                   onChange={(e) =>
                     onChange({ rentInflationPct: parseNumberInput(e.target.value, state.rentInflationPct) })}
                   aria-label="Annual rent inflation percentage"
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 font-bold text-slate-100 focus:border-blue-500 focus:outline-none"
+                  className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg px-3 py-2 font-bold dark:text-slate-100 text-slate-900 focus:border-blue-500 focus:outline-none"
                 />
               </div>
             </div>
@@ -165,8 +165,8 @@ export const HousingLifestyleSection: React.FC<Props> = ({
         </div>
 
         {/* Lifestyle & Expense Tiering */}
-        <div className="bg-slate-800/40 p-5 rounded-xl border border-slate-700/50 space-y-4">
-          <h4 className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+        <div className="dark:bg-slate-800/40 bg-slate-100 p-5 rounded-xl border dark:border-slate-700/50 border-slate-300/50 space-y-4">
+          <h4 className="text-xs font-semibold dark:text-slate-300 text-slate-700 uppercase tracking-wider flex items-center gap-2">
             <ShoppingBag className="w-4 h-4 text-emerald-400 shrink-0" /> Lifestyle & Discretionary Expense Tier
           </h4>
 
@@ -184,7 +184,7 @@ export const HousingLifestyleSection: React.FC<Props> = ({
                 className={`p-2.5 rounded-xl text-center transition-all text-xs border font-medium shadow-sm ${
                   state.lifestyleTier === tier.id
                     ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400 font-semibold'
-                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                    : 'dark:bg-slate-900 bg-white dark:border-slate-800 border-slate-200 dark:text-slate-400 text-slate-600 hover:text-slate-200 hover:bg-slate-800/60'
                 }`}
               >
                 {tier.label}
@@ -195,7 +195,7 @@ export const HousingLifestyleSection: React.FC<Props> = ({
           {/* Essential & Discretionary Monthly Inputs */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
             <div>
-              <label className="text-[11px] text-slate-400 block mb-1">Essential Living ($/month)</label>
+              <label className="text-[11px] dark:text-slate-400 text-slate-600 block mb-1">Essential Living ($/month)</label>
               <input
                 type="number"
                 step={250}
@@ -203,12 +203,12 @@ export const HousingLifestyleSection: React.FC<Props> = ({
                 onChange={(e) =>
                   onChange({ essentialExpensesMonthly: parseNumberInput(e.target.value, state.essentialExpensesMonthly) })}
                 aria-label="Essential living expenses per month"
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 font-semibold text-slate-100 focus:border-blue-500 focus:outline-none"
+                className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg px-3 py-2 font-semibold dark:text-slate-100 text-slate-900 focus:border-blue-500 focus:outline-none"
               />
             </div>
 
             <div>
-              <label className="text-[11px] text-slate-400 block mb-1">Discretionary / Fun ($/month)</label>
+              <label className="text-[11px] dark:text-slate-400 text-slate-600 block mb-1">Discretionary / Fun ($/month)</label>
               <input
                 type="number"
                 step={250}
@@ -216,16 +216,16 @@ export const HousingLifestyleSection: React.FC<Props> = ({
                 onChange={(e) =>
                   onChange({ discretionaryExpensesMonthly: parseNumberInput(e.target.value, state.discretionaryExpensesMonthly) })}
                 aria-label="Discretionary expenses per month"
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 font-semibold text-slate-100 focus:border-blue-500 focus:outline-none"
+                className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg px-3 py-2 font-semibold dark:text-slate-100 text-slate-900 focus:border-blue-500 focus:outline-none"
               />
             </div>
           </div>
 
           {/* Custom Expense Categories */}
           {state.lifestyleTier === 'custom' && (
-            <div className="pt-3 space-y-3 border-t border-slate-700/50 animate-fade-in">
+            <div className="pt-3 space-y-3 border-t dark:border-slate-700/50 border-slate-300/50 animate-fade-in">
               <div className="flex justify-between items-center">
-                <span className="text-xs font-semibold text-slate-300">Custom Monthly Line Items</span>
+                <span className="text-xs font-semibold dark:text-slate-300 text-slate-700">Custom Monthly Line Items</span>
                 <button
                   type="button"
                   onClick={handleAddCustomCategory}
@@ -236,12 +236,12 @@ export const HousingLifestyleSection: React.FC<Props> = ({
               </div>
 
               {state.customCategories.map((cat) => (
-                <div key={cat.id} className="flex items-center gap-2.5 text-xs bg-slate-900 p-2.5 rounded-xl border border-slate-800">
+                <div key={cat.id} className="flex items-center gap-2.5 text-xs dark:bg-slate-900 bg-white p-2.5 rounded-xl border dark:border-slate-800 border-slate-200">
                   <input
                     type="text"
                     value={cat.name}
                     onChange={(e) => handleUpdateCustomCategory(cat.id, 'name', e.target.value)}
-                    className="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-100 focus:border-emerald-500 focus:outline-none"
+                    className="flex-1 bg-slate-950 border dark:border-slate-700 border-slate-300 rounded-lg px-2.5 py-1.5 dark:text-slate-100 text-slate-900 focus:border-emerald-500 focus:outline-none"
                   />
                   <div className="flex items-center gap-1">
                     <span className="text-slate-500 font-bold">$</span>
@@ -252,14 +252,14 @@ export const HousingLifestyleSection: React.FC<Props> = ({
                       onChange={(e) =>
                         handleUpdateCustomCategory(cat.id, 'monthlyAmount', parseNumberInput(e.target.value, cat.monthlyAmount))}
                       aria-label={`Monthly amount for ${cat.name || 'custom category'}`}
-                      className="w-24 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-slate-100 font-bold"
+                      className="w-24 bg-slate-950 border dark:border-slate-700 border-slate-300 rounded-lg px-2 py-1.5 dark:text-slate-100 text-slate-900 font-bold"
                     />
-                    <span className="text-slate-400">/mo</span>
+                    <span className="dark:text-slate-400 text-slate-600">/mo</span>
                   </div>
                   <button
                     type="button"
                     onClick={() => handleRemoveCustomCategory(cat.id)}
-                    className="p-1.5 text-slate-400 hover:text-red-400 rounded-lg hover:bg-red-500/10 transition-colors"
+                    className="p-1.5 dark:text-slate-400 text-slate-600 hover:text-red-400 rounded-lg hover:bg-red-500/10 transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -270,14 +270,14 @@ export const HousingLifestyleSection: React.FC<Props> = ({
         </div>
 
         {/* Healthcare costs */}
-        <div className="bg-slate-800/40 p-5 rounded-xl border border-slate-700/50 space-y-4">
-          <h4 className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+        <div className="dark:bg-slate-800/40 bg-slate-100 p-5 rounded-xl border dark:border-slate-700/50 border-slate-300/50 space-y-4">
+          <h4 className="text-xs font-semibold dark:text-slate-300 text-slate-700 uppercase tracking-wider flex items-center gap-2">
             <HeartPulse className="w-4 h-4 text-rose-400 shrink-0" /> Healthcare Costs
             <InfoTip term="healthcare" />
           </h4>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
             <div>
-              <label className="text-[11px] text-slate-400 block mb-1">Monthly Cost at 65 ($)</label>
+              <label className="text-[11px] dark:text-slate-400 text-slate-600 block mb-1">Monthly Cost at 65 ($)</label>
               <input
                 type="number"
                 step={50}
@@ -285,11 +285,11 @@ export const HousingLifestyleSection: React.FC<Props> = ({
                 onChange={(e) =>
                   onChange({ healthcareMonthlyAt65: parseNumberInput(e.target.value, state.healthcareMonthlyAt65) })}
                 aria-label="Healthcare monthly cost at 65"
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 font-bold text-slate-100 focus:border-rose-500 focus:outline-none"
+                className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg px-3 py-2 font-bold dark:text-slate-100 text-slate-900 focus:border-rose-500 focus:outline-none"
               />
             </div>
             <div>
-              <label className="text-[11px] text-slate-400 block mb-1">Medical Inflation (%/yr)</label>
+              <label className="text-[11px] dark:text-slate-400 text-slate-600 block mb-1">Medical Inflation (%/yr)</label>
               <input
                 type="number"
                 step={0.5}
@@ -297,11 +297,11 @@ export const HousingLifestyleSection: React.FC<Props> = ({
                 onChange={(e) =>
                   onChange({ healthcareInflationPct: parseNumberInput(e.target.value, state.healthcareInflationPct) })}
                 aria-label="Medical inflation percentage per year"
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 font-bold text-slate-100 focus:border-rose-500 focus:outline-none"
+                className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg px-3 py-2 font-bold dark:text-slate-100 text-slate-900 focus:border-rose-500 focus:outline-none"
               />
             </div>
             <div>
-              <label className="text-[11px] text-slate-400 block mb-1">Starts at Age</label>
+              <label className="text-[11px] dark:text-slate-400 text-slate-600 block mb-1">Starts at Age</label>
               <input
                 type="number"
                 min={40}
@@ -310,14 +310,14 @@ export const HousingLifestyleSection: React.FC<Props> = ({
                 onChange={(e) =>
                   onChange({ healthcareStartAge: Math.round(parseNumberInput(e.target.value, state.healthcareStartAge)) })}
                 aria-label="Healthcare costs start age"
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 font-bold text-slate-100 focus:border-rose-500 focus:outline-none"
+                className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg px-3 py-2 font-bold dark:text-slate-100 text-slate-900 focus:border-rose-500 focus:outline-none"
               />
             </div>
           </div>
           {/* Medicare premiums toggle */}
-          <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-900 p-3.5 rounded-xl border border-slate-800">
+          <div className="flex flex-wrap items-center justify-between gap-3 dark:bg-slate-900 bg-white p-3.5 rounded-xl border dark:border-slate-800 border-slate-200">
             <div>
-              <span className="text-xs font-semibold text-slate-200 block">
+              <span className="text-xs font-semibold dark:text-slate-200 text-slate-800 block">
                 Add Medicare premiums automatically
               </span>
               <span className="text-[11px] text-slate-500 block mt-0.5 leading-relaxed">
@@ -331,7 +331,7 @@ export const HousingLifestyleSection: React.FC<Props> = ({
               aria-label="Add Medicare premiums automatically from age 65"
               onClick={() => onChange({ includeMedicarePremiums: !medicareOn })}
               className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${
-                medicareOn ? 'bg-rose-500' : 'bg-slate-700'
+                medicareOn ? 'bg-rose-500' : 'dark:bg-slate-700 bg-slate-300'
               }`}
             >
               <span
@@ -348,14 +348,14 @@ export const HousingLifestyleSection: React.FC<Props> = ({
         </div>
 
         {/* Spending smile (early / mid / late retirement multipliers) */}
-        <div className="bg-slate-800/40 p-5 rounded-xl border border-slate-700/50 space-y-4">
+        <div className="dark:bg-slate-800/40 bg-slate-100 p-5 rounded-xl border dark:border-slate-700/50 border-slate-300/50 space-y-4">
           <button
             type="button"
             onClick={() => setSmileOpen((v) => !v)}
             aria-expanded={smileOpen}
             className="w-full flex items-center justify-between gap-3 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-lg"
           >
-            <h4 className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+            <h4 className="text-xs font-semibold dark:text-slate-300 text-slate-700 uppercase tracking-wider flex items-center gap-2">
               <Waves className="w-4 h-4 text-sky-400 shrink-0" /> Spending Curve Over Retirement
             </h4>
             <div className="flex items-center gap-2 shrink-0">
@@ -363,7 +363,7 @@ export const HousingLifestyleSection: React.FC<Props> = ({
                 {smile.early.toFixed(1)}× / {smile.mid.toFixed(1)}× / {smile.late.toFixed(1)}×
               </span>
               <ChevronDown
-                className={`w-4 h-4 text-slate-400 transition-transform duration-300 ${smileOpen ? 'rotate-180' : ''}`}
+                className={`w-4 h-4 dark:text-slate-400 text-slate-600 transition-transform duration-300 ${smileOpen ? 'rotate-180' : ''}`}
               />
             </div>
           </button>
@@ -416,7 +416,7 @@ export const HousingLifestyleSection: React.FC<Props> = ({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <div className="flex justify-between text-[11px] text-slate-400 mb-1">
+                  <div className="flex justify-between text-[11px] dark:text-slate-400 text-slate-600 mb-1">
                     <span>&ldquo;Early&rdquo; ends at age</span>
                     <span className="font-bold text-sky-400">{state.spendingSmileStartAge}</span>
                   </div>
@@ -442,7 +442,7 @@ export const HousingLifestyleSection: React.FC<Props> = ({
                   />
                 </div>
                 <div>
-                  <div className="flex justify-between text-[11px] text-slate-400 mb-1">
+                  <div className="flex justify-between text-[11px] dark:text-slate-400 text-slate-600 mb-1">
                     <span>&ldquo;Mid&rdquo; ends at age</span>
                     <span className="font-bold text-emerald-400">{state.spendingSmileMidAge}</span>
                   </div>

@@ -27,21 +27,21 @@ function isPlainObjectKey(key: string): boolean {
   return ['partner', 'contributionSplit', 'spendingSmile'].includes(key);
 }
 
-function humanizeKey(key: string): string {
+export function humanizeKey(key: string): string {
   return key
     .replace(/([A-Z])/g, ' $1')
     .replace(/^./, (c) => c.toUpperCase())
     .trim();
 }
 
-function formatDiffValue(v: unknown): string {
+export function formatDiffValue(v: unknown): string {
   if (v == null) return '—';
   if (typeof v === 'boolean') return v ? 'Yes' : 'No';
   if (typeof v === 'number') return Number.isInteger(v) ? v.toLocaleString() : String(v);
   return String(v);
 }
 
-function valuesDiffer(a: unknown, b: unknown): boolean {
+export function valuesDiffer(a: unknown, b: unknown): boolean {
   return String(a) !== String(b);
 }
 
@@ -52,7 +52,7 @@ interface DiffRow {
 }
 
 /** Top-level state diff: scalars directly, objects per-field, arrays as counts. */
-function computeStateDiff(saved: RetirementState, current: RetirementState): DiffRow[] {
+export function computeStateDiff(saved: RetirementState, current: RetirementState): DiffRow[] {
   const rows: DiffRow[] = [];
   const keys = Array.from(new Set([...Object.keys(saved), ...Object.keys(current)])).sort();
 
@@ -93,7 +93,7 @@ function computeStateDiff(saved: RetirementState, current: RetirementState): Dif
   return rows;
 }
 
-function kpiRows(a: SimulationResult, b: SimulationResult) {
+export function kpiRows(a: SimulationResult, b: SimulationResult) {
   const fmt$ = (n: number) => `$${Math.round(n).toLocaleString()}`;
   const fmtAge = (v: number | null) => (v != null ? `Age ${v}` : '—');
   return [
@@ -101,12 +101,14 @@ function kpiRows(a: SimulationResult, b: SimulationResult) {
     { label: 'Net worth at retirement', a: fmt$(a.targetRetirementNetWorth), b: fmt$(b.targetRetirementNetWorth), delta: b.targetRetirementNetWorth - a.targetRetirementNetWorth, suffix: '$', higherIsBetter: true },
     { label: 'Net worth at horizon', a: fmt$(a.finalNetWorth), b: fmt$(b.finalNetWorth), delta: b.finalNetWorth - a.finalNetWorth, suffix: '$', higherIsBetter: true },
     // FIRE age and taxes: lower is better, but delta stays B − A like every row.
-    { label: 'FIRE age', a: fmtAge(a.fireAgeAchievable), b: fmtAge(b.fireAgeAchievable), delta: (b.fireAgeAchievable ?? 99) - (a.fireAgeAchievable ?? 99), suffix: 'yrs', higherIsBetter: false },
+    // When either side lacks a FIRE age, the delta is undefined (show "—").
+    { label: 'FIRE age', a: fmtAge(a.fireAgeAchievable), b: fmtAge(b.fireAgeAchievable), delta: (a.fireAgeAchievable == null || b.fireAgeAchievable == null) ? null : (b.fireAgeAchievable - a.fireAgeAchievable), suffix: 'yrs', higherIsBetter: false },
     { label: 'Lifetime taxes', a: fmt$(a.lifetimeTaxesPaid), b: fmt$(b.lifetimeTaxesPaid), delta: b.lifetimeTaxesPaid - a.lifetimeTaxesPaid, suffix: '$', higherIsBetter: false },
   ];
 }
 
-function formatDelta(delta: number, suffix: string): string {
+export function formatDelta(delta: number | null, suffix: string): string {
+  if (delta == null) return '—';
   const rounded = suffix === '$' ? Math.round(delta) : Math.round(delta * 10) / 10;
   if (rounded === 0) return '—';
   const sign = rounded < 0 ? '−' : '+';
@@ -118,7 +120,7 @@ function formatDelta(delta: number, suffix: string): string {
   return `${sign}${Math.abs(rounded)}${suffix === 'pts' ? ' pts' : ' yrs'}`;
 }
 
-function deltaIsGood(delta: number, higherIsBetter: boolean): boolean | null {
+export function deltaIsGood(delta: number, higherIsBetter: boolean): boolean | null {
   if (Math.abs(delta) < 0.005) return null;
   return higherIsBetter ? delta > 0 : delta < 0;
 }
@@ -221,7 +223,7 @@ export const ScenariosTab: React.FC<Props> = ({ state, currentResult, onLoadStat
           onChange={(e) => setName(e.target.value)}
           placeholder={`Name this snapshot (e.g. Retire ${state.targetRetirementAge} ${state.taxFilingStatus === 'joint' ? 'joint' : ''})`}
           maxLength={60}
-          className="flex-1 min-w-[200px] bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs font-semibold text-slate-100 placeholder:text-slate-500 focus:border-blue-500 focus:outline-none"
+          className="flex-1 min-w-[200px] dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold dark:text-slate-100 text-slate-900 placeholder:text-slate-500 focus:border-blue-500 focus:outline-none"
         />
         <button
           type="button"
@@ -234,7 +236,7 @@ export const ScenariosTab: React.FC<Props> = ({ state, currentResult, onLoadStat
 
       {/* Saved list */}
       {saved.length === 0 ? (
-        <p className="text-xs text-slate-500 border border-dashed border-slate-700 rounded-xl p-4 text-center">
+        <p className="text-xs text-slate-500 border border-dashed dark:border-slate-700 border-slate-300 rounded-xl p-4 text-center">
           No saved scenarios yet. Save one, change an input or two, then compare.
         </p>
       ) : (
@@ -245,11 +247,11 @@ export const ScenariosTab: React.FC<Props> = ({ state, currentResult, onLoadStat
               className={`flex flex-wrap items-center gap-2 p-3 rounded-xl border transition-colors ${
                 compareId === s.id
                   ? 'bg-purple-500/10 border-purple-500/40'
-                  : 'bg-slate-900/60 border-slate-800 hover:border-slate-700'
+                  : 'dark:bg-slate-900/60 bg-slate-100 dark:border-slate-800 border-slate-200 hover:border-slate-700'
               }`}
             >
               <div className="flex-1 min-w-[160px]">
-                <div className="text-xs font-bold text-slate-100">{s.name}</div>
+                <div className="text-xs font-bold dark:text-slate-100 text-slate-900">{s.name}</div>
                 <div className="text-[10px] text-slate-500">
                   Saved {new Date(s.savedAt).toLocaleDateString()} · retire {s.state.targetRetirementAge} · save {s.state.savingsRatePct}%
                 </div>
@@ -260,7 +262,7 @@ export const ScenariosTab: React.FC<Props> = ({ state, currentResult, onLoadStat
                 className={`flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-lg border transition-colors ${
                   compareId === s.id
                     ? 'bg-purple-500/20 text-purple-300 border-purple-500/40'
-                    : 'bg-slate-800 text-slate-300 border-slate-700 hover:text-white'
+                    : 'dark:bg-slate-800 bg-slate-200 dark:text-slate-300 text-slate-700 dark:border-slate-700 border-slate-300 hover:text-white'
                 }`}
               >
                 <Plus className="w-3.5 h-3.5" /> {compareId === s.id ? 'Comparing' : 'Compare'}
@@ -268,7 +270,7 @@ export const ScenariosTab: React.FC<Props> = ({ state, currentResult, onLoadStat
               <button
                 type="button"
                 onClick={() => handleLoad(s)}
-                className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 border border-slate-700 hover:text-white transition-colors"
+                className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-lg dark:bg-slate-800 bg-slate-200 dark:text-slate-300 text-slate-700 border dark:border-slate-700 border-slate-300 hover:text-white transition-colors"
               >
                 <FolderOpen className="w-3.5 h-3.5" /> Load
               </button>
@@ -288,7 +290,7 @@ export const ScenariosTab: React.FC<Props> = ({ state, currentResult, onLoadStat
       {/* Comparison */}
       {compareResult && compareState && (
         <div className="space-y-4 pt-2 border-t dark:border-slate-800 border-slate-200 animate-fade-in">
-          <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-400 flex items-center justify-between gap-3 flex-wrap">
+          <h4 className="text-xs font-extrabold uppercase tracking-wider dark:text-slate-400 text-slate-600 flex items-center justify-between gap-3 flex-wrap">
             <span>
               Current plan vs <span className="text-purple-400">{compareName}</span> <span className="font-medium normal-case">(B − A)</span>
             </span>
@@ -296,7 +298,7 @@ export const ScenariosTab: React.FC<Props> = ({ state, currentResult, onLoadStat
               type="button"
               onClick={() => setDiffOpen((v) => !v)}
               aria-expanded={diffOpen}
-              className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 border border-slate-700 hover:text-white normal-case tracking-normal transition-colors"
+              className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-lg dark:bg-slate-800 bg-slate-200 dark:text-slate-300 text-slate-700 border dark:border-slate-700 border-slate-300 hover:text-white normal-case tracking-normal transition-colors"
             >
               <ListChecks className="w-3.5 h-3.5" />
               What changed? {diffOpen ? '(hide)' : `(${stateDiff.length})`}
@@ -305,7 +307,7 @@ export const ScenariosTab: React.FC<Props> = ({ state, currentResult, onLoadStat
 
           {/* Saved-input diff drill-down: old (saved) → new (current) for every differing field */}
           {diffOpen && (
-            <div className="rounded-xl border border-slate-800 bg-slate-900/60 overflow-hidden animate-fade-in">
+            <div className="rounded-xl border dark:border-slate-800 border-slate-200 dark:bg-slate-900/60 bg-slate-100 overflow-hidden animate-fade-in">
               {stateDiff.length === 0 ? (
                 <p className="px-4 py-3 text-xs text-slate-500">
                   All inputs match the current plan — the difference is pure market math.
@@ -313,7 +315,7 @@ export const ScenariosTab: React.FC<Props> = ({ state, currentResult, onLoadStat
               ) : (
                 <div className="max-h-[300px] overflow-y-auto">
                   <table className="w-full text-xs">
-                    <thead className="bg-slate-900 text-slate-400 text-left sticky top-0">
+                    <thead className="dark:bg-slate-900 bg-white dark:text-slate-400 text-slate-600 text-left sticky top-0">
                       <tr>
                         <th scope="col" className="px-4 py-2 font-semibold">Input</th>
                         <th scope="col" className="px-4 py-2 font-semibold text-right">{compareName} (saved)</th>
@@ -323,7 +325,7 @@ export const ScenariosTab: React.FC<Props> = ({ state, currentResult, onLoadStat
                     <tbody className="divide-y divide-slate-800/60">
                       {stateDiff.map((row) => (
                         <tr key={row.label} className="hover:bg-slate-800/40">
-                          <td className="px-4 py-2 text-slate-300 font-medium">{row.label}</td>
+                          <td className="px-4 py-2 dark:text-slate-300 text-slate-700 font-medium">{row.label}</td>
                           <td className="px-4 py-2 text-right font-mono text-purple-300">{row.old}</td>
                           <td className="px-4 py-2 text-right font-mono text-amber-300">{row.new}</td>
                         </tr>
@@ -364,10 +366,10 @@ export const ScenariosTab: React.FC<Props> = ({ state, currentResult, onLoadStat
             </ResponsiveContainer>
           </div>
 
-          <div className="overflow-x-auto rounded-xl border border-slate-800">
+          <div className="overflow-x-auto rounded-xl border dark:border-slate-800 border-slate-200">
             <table className="w-full text-xs">
               <thead>
-                <tr className="bg-slate-900/80 text-slate-400 text-left">
+                <tr className="dark:bg-slate-900/80 bg-white/80 dark:text-slate-400 text-slate-600 text-left">
                   <th className="px-4 py-2.5 font-semibold">Metric</th>
                   <th className="px-4 py-2.5 font-semibold text-right">Current (A)</th>
                   <th className="px-4 py-2.5 font-semibold text-right">{compareName} (B)</th>
@@ -376,11 +378,11 @@ export const ScenariosTab: React.FC<Props> = ({ state, currentResult, onLoadStat
               </thead>
               <tbody className="divide-y divide-slate-800/60">
                 {kpiRows(currentResult, compareResult).map((r) => {
-                  const good = deltaIsGood(r.delta, r.higherIsBetter);
+                  const good = r.delta == null ? null : deltaIsGood(r.delta, r.higherIsBetter);
                   return (
                     <tr key={r.label} className="hover:bg-slate-800/40">
-                      <td className="px-4 py-2.5 text-slate-300 font-medium">{r.label}</td>
-                      <td className="px-4 py-2.5 text-right text-slate-200 font-mono">{r.a}</td>
+                      <td className="px-4 py-2.5 dark:text-slate-300 text-slate-700 font-medium">{r.label}</td>
+                      <td className="px-4 py-2.5 text-right dark:text-slate-200 text-slate-800 font-mono">{r.a}</td>
                       <td className="px-4 py-2.5 text-right text-purple-300 font-mono">{r.b}</td>
                       <td className={`px-4 py-2.5 text-right font-mono font-bold ${good == null ? 'text-slate-500' : good ? 'text-emerald-400' : 'text-red-400'}`}>
                         {formatDelta(r.delta, r.suffix)}

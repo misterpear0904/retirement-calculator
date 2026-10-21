@@ -41,7 +41,7 @@ export const MilestoneTimeline: React.FC<Props> = ({ yearlyProjections, onSelect
 
   if (allMilestones.length === 0) {
     return (
-      <div className="glass-panel p-5 rounded-2xl text-center text-xs text-slate-400">
+      <div className="glass-panel p-5 rounded-2xl text-center text-xs dark:text-slate-400 text-slate-600">
         No specific milestone events triggered in current horizon.
       </div>
     );
@@ -58,7 +58,7 @@ export const MilestoneTimeline: React.FC<Props> = ({ yearlyProjections, onSelect
       case 'income':
         return <Landmark className="w-4 h-4 text-amber-400" />;
       default:
-        return <Calendar className="w-4 h-4 text-slate-400" />;
+        return <Calendar className="w-4 h-4 dark:text-slate-400 text-slate-600" />;
     }
   };
 
@@ -68,27 +68,27 @@ export const MilestoneTimeline: React.FC<Props> = ({ yearlyProjections, onSelect
         <Calendar className="w-4 h-4 text-blue-400 shrink-0" /> Dynamic Milestone Event Timeline
       </h3>
 
-      <div className="relative border-l border-slate-800 ml-4 pl-6 space-y-5">
+      <div className="relative border-l dark:border-slate-800 border-slate-200 ml-4 pl-6 space-y-5">
         {allMilestones.map((item, idx) => (
           <div key={idx} className="relative group">
             {/* Timeline Dot Marker */}
-            <div className="absolute -left-[37px] top-1.5 p-1.5 rounded-full bg-slate-900 border border-slate-700 shadow-sm">
+            <div className="absolute -left-[37px] top-1.5 p-1.5 rounded-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 shadow-sm">
               {getIconComponent(item.milestone.category)}
             </div>
 
             <div
               onClick={() => handleMilestoneClick(item.milestone.category)}
-              className="bg-slate-900/60 p-4 sm:p-5 rounded-xl border border-slate-800 hover:border-blue-500/50 hover:bg-slate-900 cursor-pointer transition-all space-y-2"
+              className="dark:bg-slate-900/60 bg-slate-100 p-4 sm:p-5 rounded-xl border dark:border-slate-800 border-slate-200 hover:border-blue-500/50 hover:bg-slate-900 cursor-pointer transition-all space-y-2"
             >
               <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-                <span className="font-bold text-slate-100 text-sm group-hover:text-blue-400 transition-colors">
+                <span className="font-bold dark:text-slate-100 text-slate-900 text-sm group-hover:text-blue-400 transition-colors">
                   {item.milestone.title}
                 </span>
                 <span className="text-xs font-semibold text-blue-400 px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 shrink-0">
                   Age {item.age} ({item.year})
                 </span>
               </div>
-              <p className="text-xs text-slate-400 leading-relaxed">{item.milestone.description}</p>
+              <p className="text-xs dark:text-slate-400 text-slate-600 leading-relaxed">{item.milestone.description}</p>
             </div>
           </div>
         ))}

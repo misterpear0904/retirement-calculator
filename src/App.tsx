@@ -2,9 +2,10 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { RetirementState, SimulationResult } from './types/retirement';
 import { runRetirementSimulation } from './utils/calculatorEngine';
 import { decodeStateFromUrl, clearScenarioFromUrl } from './utils/urlEncoder';
+import { listScenarios } from './utils/scenarios';
 import { saveStateToStorage, loadStateFromStorage } from './utils/storage';
 import { exportStateToFile, importStateFromFile } from './utils/fileExportImport';
-import { sanitizeRetirementState, validateRetirementState } from './utils/validation';
+import { sanitizeRetirementState, validateRetirementState, describeClamp } from './utils/validation';
 import { DEFAULT_STATE, applyPreset } from './data/presets';
 
 import { Header } from './components/Header';
@@ -73,6 +74,29 @@ export function App() {
 
   const [activeTab, setActiveTab] = useState<DashboardTabId>('chart');
 
+  // Scenario overlay on the main chart (P4 task 32): off by default, capped
+  // at 5 overlays, recomputed only while the chart tab is active.
+  const [showOverlays, setShowOverlays] = useState(false);
+  const overlayScenarios = useMemo(() => {
+    if (!showOverlays || activeTab !== 'chart') return [];
+    try {
+      return listScenarios()
+        .slice(0, 5)
+        .map((s) => {
+          try {
+            const sim = runRetirementSimulation(sanitizeRetirementState({ ...s.state }), { trials: 1 });
+            return { name: s.name, yearlyProjections: sim.yearlyProjections };
+          } catch {
+            return null;
+          }
+        })
+        .filter((o): o is { name: string; yearlyProjections: SimulationResult['yearlyProjections'] } => o !== null);
+    } catch {
+      return [];
+    }
+  }, [showOverlays, activeTab, state]);
+  const tabRefs = React.useRef<Array<HTMLButtonElement | null>>([]);
+
   // Basic vs Advanced input mode. Basic is the default: 7 essentials only.
   const [mode, setMode] = useState<'basic' | 'advanced'>(() => {
     try {
@@ -137,7 +161,12 @@ export function App() {
 
   const handleChange = (updates: Partial<RetirementState>) => {
     dirtyRef.current = true;
-    setState((prev) => sanitizeRetirementState({ ...prev, ...updates }));
+    setState((prev) => {
+      const next = sanitizeRetirementState({ ...prev, ...updates });
+      const notice = describeClamp(updates, next);
+      if (notice) setToastMessage(notice);
+      return next;
+    });
   };
 
   const toggleSection = (key: string) => {
@@ -306,7 +335,7 @@ export function App() {
   };
 
   return (
-    <div className={`min-h-screen ${isDark ? 'dark bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'} flex flex-col font-sans transition-colors duration-300`}>
+    <div className={`min-h-screen ${isDark ? 'dark bg-slate-950 dark:text-slate-100 text-slate-900' : 'bg-slate-50 text-slate-900'} flex flex-col font-sans transition-colors duration-300`}>
       <Header
         state={state}
         onExportPdf={handleExportPdf}
@@ -387,7 +416,7 @@ export function App() {
                     >
                       <ChevronDown className="w-3.5 h-3.5" /> Expand All
                     </button>
-                    <span className="dark:text-slate-600 text-slate-300">|</span>
+                    <span className="dark:text-slate-600 dark:text-slate-300 text-slate-700">|</span>
                     <button
                       type="button"
                       onClick={() => setAllSections(false)}
@@ -475,12 +504,32 @@ export function App() {
                 {DASHBOARD_TABS.map((tab, index) => (
                   <button
                     key={tab.id}
+                    ref={(el) => { tabRefs.current[index] = el; }}
                     type="button"
                     role="tab"
                     title={`Alt+${index + 1}`}
+                    tabIndex={activeTab === tab.id ? 0 : -1}
                     aria-selected={activeTab === tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`px-3.5 py-1.5 rounded-lg font-bold transition-all ${activeTab === tab.id
+                    onKeyDown={(e) => {
+                      let nextIndex = index;
+                      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+                        nextIndex = (index + 1) % DASHBOARD_TABS.length;
+                      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                        nextIndex = (index - 1 + DASHBOARD_TABS.length) % DASHBOARD_TABS.length;
+                      } else if (e.key === 'Home') {
+                        nextIndex = 0;
+                      } else if (e.key === 'End') {
+                        nextIndex = DASHBOARD_TABS.length - 1;
+                      } else {
+                        return;
+                      }
+                      e.preventDefault();
+                      const nextTab = DASHBOARD_TABS[nextIndex].id;
+                      setActiveTab(nextTab);
+                      tabRefs.current[nextIndex]?.focus();
+                    }}
+                    className={`px-3.5 py-2.5 min-h-[44px] rounded-lg font-bold transition-all ${activeTab === tab.id
                         ? 'bg-blue-600 text-white shadow-glow'
                         : 'dark:text-slate-400 text-slate-500 hover:text-slate-200 dark:hover:bg-slate-800/60 hover:bg-slate-100'
                       }`}
@@ -497,11 +546,24 @@ export function App() {
 
             {/* Active Dashboard Tab Content */}
             {activeTab === 'chart' && (
-              <RetirementChart
-                yearlyProjections={simulationResult.yearlyProjections}
-                targetRetirementAge={state.targetRetirementAge}
-                onSelectSection={openSpecificSection}
-              />
+              <>
+                <label className="flex items-center gap-2 text-xs dark:text-slate-400 text-slate-600 cursor-pointer select-none px-1">
+                  <input
+                    type="checkbox"
+                    checked={showOverlays}
+                    onChange={(e) => setShowOverlays(e.target.checked)}
+                    className="w-4 h-4 accent-blue-600"
+                  />
+                  Overlay saved scenarios (up to 5)
+                </label>
+                <RetirementChart
+                  yearlyProjections={simulationResult.yearlyProjections}
+                  targetRetirementAge={state.targetRetirementAge}
+                  onSelectSection={openSpecificSection}
+                  overlayScenarios={overlayScenarios}
+                  longevityProbabilities={simulationResult.longevityProbabilities}
+                />
+              </>
             )}
 
             {activeTab === 'timeline' && (

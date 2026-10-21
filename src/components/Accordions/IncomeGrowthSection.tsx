@@ -33,8 +33,8 @@ export const IncomeGrowthSection: React.FC<Props> = ({
     >
       <div className="space-y-4 pt-2">
         {/* Household Income */}
-        <div className="bg-slate-800/40 p-5 rounded-xl border border-slate-700/50 space-y-4">
-          <label className="text-xs font-semibold text-slate-300 block">
+        <div className="dark:bg-slate-800/40 bg-slate-100 p-5 rounded-xl border dark:border-slate-700/50 border-slate-300/50 space-y-4">
+          <label className="text-xs font-semibold dark:text-slate-300 text-slate-700 block">
             Current Household Gross Annual Income
           </label>
           <div className="relative">
@@ -49,13 +49,13 @@ export const IncomeGrowthSection: React.FC<Props> = ({
                 if (Number.isFinite(v)) onChange({ currentAnnualIncome: Math.max(0, v) });
               }}
               aria-label="Current household gross annual income in dollars"
-              className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-9 pr-3 py-2 text-sm font-bold text-slate-100 focus:border-blue-500 focus:outline-none transition-colors"
+              className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg pl-9 pr-3 py-2 text-sm font-bold dark:text-slate-100 text-slate-900 focus:border-blue-500 focus:outline-none transition-colors"
             />
           </div>
 
           {/* Real Income Growth Trajectory Toggle */}
           <div className="pt-2 space-y-2">
-            <label className="text-xs font-medium text-slate-400 block mb-2">
+            <label className="text-xs font-medium dark:text-slate-400 text-slate-600 block mb-2">
               Career Trajectory & Real Salary Growth
             </label>
             <div className="grid grid-cols-3 gap-2.5">
@@ -71,7 +71,7 @@ export const IncomeGrowthSection: React.FC<Props> = ({
                   className={`p-2.5 rounded-xl text-center transition-all text-xs border font-medium shadow-sm ${
                     state.realIncomeGrowthMode === item.id
                       ? 'bg-blue-500/20 border-blue-500/50 text-blue-400 font-semibold'
-                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                      : 'dark:bg-slate-900 bg-white dark:border-slate-800 border-slate-200 dark:text-slate-400 text-slate-600 hover:text-slate-200 hover:bg-slate-800/60'
                   }`}
                 >
                   <div>{item.label}</div>
@@ -80,8 +80,8 @@ export const IncomeGrowthSection: React.FC<Props> = ({
             </div>
 
             {state.realIncomeGrowthMode === 'custom' && (
-              <div className="mt-3 bg-slate-900/60 p-3.5 rounded-xl border border-slate-800 space-y-2">
-                <div className="flex justify-between text-xs text-slate-300">
+              <div className="mt-3 dark:bg-slate-900/60 bg-slate-100 p-3.5 rounded-xl border dark:border-slate-800 border-slate-200 space-y-2">
+                <div className="flex justify-between text-xs dark:text-slate-300 text-slate-700">
                   <span>Custom Annual Real Growth</span>
                   <span className="font-bold text-blue-400">{state.customIncomeGrowthRate}%</span>
                 </div>
@@ -106,9 +106,9 @@ export const IncomeGrowthSection: React.FC<Props> = ({
         </div>
 
         {/* Savings Rate & Annual Contributions */}
-        <div className="bg-slate-800/40 p-5 rounded-xl border border-slate-700/50 space-y-4">
+        <div className="dark:bg-slate-800/40 bg-slate-100 p-5 rounded-xl border dark:border-slate-700/50 border-slate-300/50 space-y-4">
           <div className="flex justify-between items-center">
-            <label className="text-xs font-semibold text-slate-300">Annual Savings & Contributions</label>
+            <label className="text-xs font-semibold dark:text-slate-300 text-slate-700">Annual Savings & Contributions</label>
             <button
               type="button"
               onClick={() => onChange({ useFixedContribution: !state.useFixedContribution })}
@@ -120,7 +120,7 @@ export const IncomeGrowthSection: React.FC<Props> = ({
 
           {!state.useFixedContribution ? (
             <div className="space-y-3">
-              <div className="flex justify-between items-center text-xs text-slate-300">
+              <div className="flex justify-between items-center text-xs dark:text-slate-300 text-slate-700">
                 <span className="flex items-center gap-1.5">
                   <Percent className="w-4 h-4 text-emerald-400 shrink-0" /> Savings Rate (% of Income)
                   <InfoTip term="savingsRate" />
@@ -141,13 +141,13 @@ export const IncomeGrowthSection: React.FC<Props> = ({
                 }}
                 className="w-full cursor-pointer"
               />
-              <p className="text-xs text-slate-400 leading-relaxed">
+              <p className="text-xs dark:text-slate-400 text-slate-600 leading-relaxed">
                 Saves <strong className="text-emerald-400">${Math.round(calculatedSavingsAmount).toLocaleString()}</strong> / year out of ${state.currentAnnualIncome.toLocaleString()} salary.
               </p>
             </div>
           ) : (
             <div className="space-y-2">
-              <label className="text-xs text-slate-400 block">Fixed Annual Contribution ($)</label>
+              <label className="text-xs dark:text-slate-400 text-slate-600 block">Fixed Annual Contribution ($)</label>
               <div className="relative">
                 <span className="absolute left-3.5 top-2.5 text-sm text-slate-500 font-bold">$</span>
                 <input
@@ -160,7 +160,7 @@ export const IncomeGrowthSection: React.FC<Props> = ({
                     if (Number.isFinite(v)) onChange({ fixedAnnualContribution: Math.max(0, v) });
                   }}
                   aria-label="Fixed annual contribution in dollars"
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-9 pr-3 py-2 text-sm font-bold text-slate-100 focus:border-blue-500 focus:outline-none transition-colors"
+                  className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg pl-9 pr-3 py-2 text-sm font-bold dark:text-slate-100 text-slate-900 focus:border-blue-500 focus:outline-none transition-colors"
                 />
               </div>
             </div>
@@ -168,20 +168,20 @@ export const IncomeGrowthSection: React.FC<Props> = ({
 
           {/* Tax Bucket Split Slider */}
           <div className="pt-2 space-y-2">
-            <label className="text-xs font-medium text-slate-400 block">
+            <label className="text-xs font-medium dark:text-slate-400 text-slate-600 block">
               Contribution Split Across Tax Buckets
             </label>
             <div className="grid grid-cols-3 gap-2.5 text-xs">
-              <div className="bg-slate-900 p-2.5 rounded-xl border border-slate-800 text-center">
-                <span className="text-slate-400 block text-[11px]">Pre-Tax (401k)</span>
+              <div className="dark:bg-slate-900 bg-white p-2.5 rounded-xl border dark:border-slate-800 border-slate-200 text-center">
+                <span className="dark:text-slate-400 text-slate-600 block text-[11px]">Pre-Tax (401k)</span>
                 <span className="font-bold text-blue-400 text-sm">{state.contributionSplit.preTaxPct}%</span>
               </div>
-              <div className="bg-slate-900 p-2.5 rounded-xl border border-slate-800 text-center">
-                <span className="text-slate-400 block text-[11px]">Roth / HSA</span>
+              <div className="dark:bg-slate-900 bg-white p-2.5 rounded-xl border dark:border-slate-800 border-slate-200 text-center">
+                <span className="dark:text-slate-400 text-slate-600 block text-[11px]">Roth / HSA</span>
                 <span className="font-bold text-emerald-400 text-sm">{state.contributionSplit.postTaxPct}%</span>
               </div>
-              <div className="bg-slate-900 p-2.5 rounded-xl border border-slate-800 text-center">
-                <span className="text-slate-400 block text-[11px]">Taxable Brokerage</span>
+              <div className="dark:bg-slate-900 bg-white p-2.5 rounded-xl border dark:border-slate-800 border-slate-200 text-center">
+                <span className="dark:text-slate-400 text-slate-600 block text-[11px]">Taxable Brokerage</span>
                 <span className="font-bold text-purple-400 text-sm">{state.contributionSplit.taxablePct}%</span>
               </div>
             </div>

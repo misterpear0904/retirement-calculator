@@ -75,6 +75,11 @@ export function sanitizeRetirementState(state: RetirementState): RetirementState
       state.withdrawalStrategy === 'proportional' || state.withdrawalStrategy === 'guardrails'
         ? state.withdrawalStrategy
         : 'fixed_order',
+    spendingStrategy: oneOf(
+      state.spendingStrategy,
+      ['fixed_real', 'vpw', 'guyton_klinger', 'bernicke'] as const,
+      'fixed_real'
+    ),
     // Remaining union-typed enums. An unknown `housingType` falls through to the
     // rent branch in the engine and silently inflates lifetime housing costs, so
     // every one of these is pinned to a known member of its union.
@@ -168,9 +173,53 @@ export function sanitizeRetirementState(state: RetirementState): RetirementState
   };
 }
 
+/** Visible inline feedback for silent clamping (P3 task 23).
+ * Compares raw user updates against the sanitized result; returns a short
+ * notice like "Capped Annual income at $100,000,000" when the sanitizer
+ * moved the value, or null when nothing was clamped. */
+export function describeClamp(
+  updates: Partial<RetirementState>,
+  sanitized: RetirementState
+): string | null {
+  const labels: Record<string, { label: string; money: boolean }> = {
+    currentAnnualIncome: { label: 'Annual income', money: true },
+    fixedAnnualContribution: { label: 'Annual contribution', money: true },
+    liquidCash: { label: 'Cash savings', money: true },
+    taxableInvestments: { label: 'Taxable investments', money: true },
+    preTax401k: { label: 'Pre-tax savings', money: true },
+    postTaxRothHsa: { label: 'Roth/HSA savings', money: true },
+    essentialExpensesMonthly: { label: 'Essential spending', money: true },
+    discretionaryExpensesMonthly: { label: 'Discretionary spending', money: true },
+    mortgageBalance: { label: 'Mortgage balance', money: true },
+    mortgageMonthly: { label: 'Mortgage payment', money: true },
+    rentMonthly: { label: 'Rent', money: true },
+    savingsRatePct: { label: 'Savings rate', money: false },
+    stockPct: { label: 'Stock allocation', money: false },
+    currentAge: { label: 'Current age', money: false },
+    targetRetirementAge: { label: 'Retirement age', money: false },
+    lifeExpectancy: { label: 'Life expectancy', money: false },
+  };
+  for (const key of Object.keys(updates)) {
+    const meta = labels[key];
+    if (!meta) continue;
+    const raw = updates[key as keyof RetirementState];
+    if (typeof raw !== 'number') continue;
+    const final = sanitized[key as keyof RetirementState];
+    if (typeof final !== 'number') continue;
+    if (!Number.isFinite(raw) || raw !== final) {
+      const shown = meta.money
+        ? `$${Math.round(final).toLocaleString()}`
+        : `${final}%`;
+      return !Number.isFinite(raw)
+        ? `Invalid entry for ${meta.label} — reverted to ${shown}`
+        : `Capped ${meta.label} at ${shown}`;
+    }
+  }
+  return null;
+}
+
 /** Human-readable warnings for allocations that don't sum to 100%. */
-export function validateRetirementState(state: RetirementState): ValidationIssue[] {
-  const issues: ValidationIssue[] = [];
+export function validateRetirementState(state: RetirementState): ValidationIssue[] {  const issues: ValidationIssue[] = [];
   const allocSum = (state.stockPct ?? 0) + (state.bondPct ?? 0) + (state.cashPct ?? 0);
   if (Math.abs(allocSum - 100) > 0.01) {
     issues.push({

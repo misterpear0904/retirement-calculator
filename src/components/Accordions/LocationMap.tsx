@@ -86,7 +86,7 @@ function formatPop(p: number): string {
 
 function CityDetails({ city }: { city: LocationCOL }) {
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-4 space-y-3">
+    <div className="rounded-xl border dark:border-slate-800 border-slate-200 dark:bg-slate-900/70 bg-white/90 p-4 space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="text-sm font-extrabold dark:text-slate-100 text-slate-900">
           {city.flagEmoji} {city.name}
@@ -97,35 +97,35 @@ function CityDetails({ city }: { city: LocationCOL }) {
         </span>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-        <div className="rounded-lg bg-slate-800/60 border border-slate-700/60 px-3 py-2">
+        <div className="rounded-lg dark:bg-slate-800/60 bg-slate-200/60 border dark:border-slate-700/60 border-slate-300/60 px-3 py-2">
           <div className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Housing</div>
-          <div className="text-sm font-extrabold text-slate-200">{city.housingIndex}%</div>
+          <div className="text-sm font-extrabold dark:text-slate-200 text-slate-800">{city.housingIndex}%</div>
         </div>
-        <div className="rounded-lg bg-slate-800/60 border border-slate-700/60 px-3 py-2">
+        <div className="rounded-lg dark:bg-slate-800/60 bg-slate-200/60 border dark:border-slate-700/60 border-slate-300/60 px-3 py-2">
           <div className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Healthcare</div>
-          <div className="text-sm font-extrabold text-slate-200">{city.healthcareIndex}%</div>
+          <div className="text-sm font-extrabold dark:text-slate-200 text-slate-800">{city.healthcareIndex}%</div>
         </div>
         {city.isEstimate ? (
-          <div className="rounded-lg bg-slate-800/60 border border-slate-700/60 px-3 py-2">
+          <div className="rounded-lg dark:bg-slate-800/60 bg-slate-200/60 border dark:border-slate-700/60 border-slate-300/60 px-3 py-2">
             <div className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Size</div>
-            <div className="text-sm font-extrabold text-slate-200">
+            <div className="text-sm font-extrabold dark:text-slate-200 text-slate-800">
               {city.population ? formatPop(city.population) : '—'}
             </div>
           </div>
         ) : (
-          <div className="rounded-lg bg-slate-800/60 border border-slate-700/60 px-3 py-2">
+          <div className="rounded-lg dark:bg-slate-800/60 bg-slate-200/60 border dark:border-slate-700/60 border-slate-300/60 px-3 py-2">
             <div className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">State/local tax</div>
-            <div className="text-sm font-extrabold text-slate-200">{city.stateTaxPct}%</div>
+            <div className="text-sm font-extrabold dark:text-slate-200 text-slate-800">{city.stateTaxPct}%</div>
           </div>
         )}
-        <div className="rounded-lg bg-slate-800/60 border border-slate-700/60 px-3 py-2">
+        <div className="rounded-lg dark:bg-slate-800/60 bg-slate-200/60 border dark:border-slate-700/60 border-slate-300/60 px-3 py-2">
           <div className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Region</div>
-          <div className="text-sm font-extrabold text-slate-200 truncate" title={city.region}>
+          <div className="text-sm font-extrabold dark:text-slate-200 text-slate-800 truncate" title={city.region}>
             {city.region}
           </div>
         </div>
       </div>
-      <p className="text-xs text-slate-400 leading-relaxed">
+      <p className="text-xs dark:text-slate-400 text-slate-600 leading-relaxed">
         {city.description}
         {city.isEstimate && ' · Country-level estimate, fine-tune with the COL slider below.'}
       </p>
@@ -234,14 +234,14 @@ export const LocationMap: React.FC<Props> = ({
 
   return (
     <div className="space-y-2">
-      <div className="relative rounded-xl border border-slate-800 bg-[#0b1220] overflow-hidden">
+      <div className="relative rounded-xl border dark:border-slate-800 border-slate-200 bg-[#0b1220] overflow-hidden">
         {allowExpand && (
           <button
             type="button"
             onClick={() => setExpanded(true)}
             aria-label="Expand map fullscreen"
             title="Expand fullscreen"
-            className="absolute top-2 right-2 z-10 p-2 rounded-lg bg-slate-900/80 text-slate-300 hover:text-white hover:bg-slate-700 border border-slate-700 transition-colors"
+            className="absolute top-2 right-2 z-10 p-2 rounded-lg dark:bg-slate-900/80 bg-white/80 dark:text-slate-300 text-slate-700 hover:text-white hover:bg-slate-700 border dark:border-slate-700 border-slate-300 transition-colors"
           >
             <Expand className="w-4 h-4" />
           </button>
@@ -322,10 +322,10 @@ export const LocationMap: React.FC<Props> = ({
       {showDetails ? (
         <CityDetails city={preview} />
       ) : (
-        <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
+        <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] dark:text-slate-400 text-slate-600">
           <span>
             {hovered && hovered.id !== selected.id ? 'Nearest city: ' : 'Selected: '}
-            <strong className="text-slate-200">
+            <strong className="dark:text-slate-200 text-slate-800">
               {preview.flagEmoji} {preview.name}
             </strong>{' '}
             (COL {preview.colIndex}

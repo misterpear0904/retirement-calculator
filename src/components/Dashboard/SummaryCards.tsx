@@ -5,6 +5,7 @@ import { getRiskLabel, getRiskCardClasses } from '../../utils/risk';
 import { FINANCIAL_CONSTANTS, VALIDATION_LIMITS } from '../../utils/constants';
 import { DIE_WITH_ZERO_MIN_SUCCESS_RATE, calcDieWithZero } from '../../utils/dieWithZero';
 import { InfoTip } from '../InfoTip';
+import { formatCurrency } from '../../utils/formatCurrency';
 
 interface Props {
   result: SimulationResult;
@@ -15,6 +16,7 @@ interface Props {
 export const SummaryCards: React.FC<Props> = ({ result, state, onChange }) => {
   const {
     successRate,
+    historicalSuccessRate,
     targetRetirementNetWorth,
     fireAgeAchievable,
     coastFireAge,
@@ -32,10 +34,34 @@ export const SummaryCards: React.FC<Props> = ({ result, state, onChange }) => {
   const statusLabel = getRiskLabel(successRate);
   const statusClasses = getRiskCardClasses(successRate);
 
+  // Label + description follow the active return simulation mode (P1 #5).
+  const returnMode = state.returnMode ?? 'monte_carlo';
+  const modeLabel =
+    returnMode === 'deterministic'
+      ? 'Deterministic'
+      : returnMode === 'historical_real'
+        ? 'Historical Real'
+        : 'Monte Carlo';
+  const modeDescription =
+    returnMode === 'deterministic'
+      ? 'Calculated across 3 deterministic scenario paths (target, conservative, stress).'
+      : returnMode === 'historical_real'
+        ? 'Calculated by replaying historical market returns and inflation year by year.'
+        : `Calculated across ${FINANCIAL_CONSTANTS.MONTE_CARLO_TRIALS} stochastic market return & inflation trials.`;
+
   // Die with Zero: only suggest spending the leftover from a plan that's on
   // track — never from one that's already at risk.
   const dieWithZero =
     successRate >= DIE_WITH_ZERO_MIN_SUCCESS_RATE ? calcDieWithZero(state, result) : null;
+
+  // P1 #4: surface the (possibly capped) spending basis so the card reconciles.
+  const enteredMonthly =
+    (state.essentialExpensesMonthly ?? 0) +
+    (state.discretionaryExpensesMonthly ?? 0) +
+    (Array.isArray(state.customCategories)
+      ? state.customCategories.reduce((a, c) => a + (c.monthlyAmount ?? 0), 0)
+      : 0);
+  const sustainableMonthly = result.colMultiplier > 0 ? result.monthlyRetirementSpending / result.colMultiplier : result.monthlyRetirementSpending;
 
   return (
     <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 w-full">
@@ -43,7 +69,7 @@ export const SummaryCards: React.FC<Props> = ({ result, state, onChange }) => {
       <div className="xl:col-span-4 2xl:col-span-4 glass-panel p-6 sm:p-7 rounded-2xl relative overflow-hidden flex flex-col justify-between border-blue-500/30 shadow-glow">
         <div>
           <div className="flex justify-between items-start mb-3 gap-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+            <span className="text-xs font-bold uppercase tracking-wider dark:text-slate-400 text-slate-600 flex items-center gap-2">
               <ShieldCheck className="w-4 h-4 text-blue-400 shrink-0" /> Success Confidence Score
               <InfoTip term="successRate" />
             </span>
@@ -54,7 +80,10 @@ export const SummaryCards: React.FC<Props> = ({ result, state, onChange }) => {
 
           <div className="flex items-baseline gap-3 my-3">
             <span className="text-4xl sm:text-5xl font-black tracking-tight dark:text-white text-slate-900">{successRate}%</span>
-            <span className="text-xs dark:text-slate-400 text-slate-500 font-medium">Monte Carlo Confidence</span>
+            <span className="text-xs dark:text-slate-400 text-slate-500 font-medium">{modeLabel} Confidence</span>
+          </div>
+          <div className="text-[11px] dark:text-slate-400 text-slate-500 font-medium">
+            Historical: {historicalSuccessRate ?? 0}% of start years succeeded
           </div>
 
           {/* Progress Bar Meter */}
@@ -73,7 +102,7 @@ export const SummaryCards: React.FC<Props> = ({ result, state, onChange }) => {
         </div>
 
         <p className="text-xs dark:text-slate-400 text-slate-500 border-t dark:border-slate-800/80 border-slate-200 pt-3 mt-3 leading-relaxed">
-          Calculated across {FINANCIAL_CONSTANTS.MONTE_CARLO_TRIALS} stochastic market return & inflation trials.
+          {modeDescription}
         </p>
       </div>
 
@@ -112,7 +141,7 @@ export const SummaryCards: React.FC<Props> = ({ result, state, onChange }) => {
                     targetRetirementAge: Math.max(state.currentAge + 1, state.targetRetirementAge - 1),
                   })
                 }
-                className="w-8 h-8 flex items-center justify-center rounded-lg dark:bg-slate-800 bg-white hover:bg-blue-50 dark:hover:bg-slate-700 dark:text-slate-200 text-slate-700 font-bold border border-slate-200 dark:border-slate-700 transition-colors"
+                className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg dark:bg-slate-800 bg-white hover:bg-blue-50 dark:hover:bg-slate-700 dark:text-slate-200 text-slate-700 font-bold border border-slate-200 dark:border-slate-700 transition-colors"
               >
                 <Minus className="w-4 h-4" />
               </button>
@@ -124,7 +153,7 @@ export const SummaryCards: React.FC<Props> = ({ result, state, onChange }) => {
                     targetRetirementAge: Math.min(85, state.targetRetirementAge + 1),
                   })
                 }
-                className="w-8 h-8 flex items-center justify-center rounded-lg dark:bg-slate-800 bg-white hover:bg-blue-50 dark:hover:bg-slate-700 dark:text-slate-200 text-slate-700 font-bold border border-slate-200 dark:border-slate-700 transition-colors"
+                className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg dark:bg-slate-800 bg-white hover:bg-blue-50 dark:hover:bg-slate-700 dark:text-slate-200 text-slate-700 font-bold border border-slate-200 dark:border-slate-700 transition-colors"
               >
                 <Plus className="w-4 h-4" />
               </button>
@@ -144,10 +173,10 @@ export const SummaryCards: React.FC<Props> = ({ result, state, onChange }) => {
             <div className="my-3">
               {projAt65 != null ? (
                 <span className="text-3xl font-extrabold text-purple-400 tracking-tight">
-                  ${Math.round(projAt65).toLocaleString()}
+                  {formatCurrency(projAt65 ?? 0)}
                 </span>
               ) : (
-                <span className="text-sm font-semibold text-slate-400">
+                <span className="text-sm font-semibold dark:text-slate-400 text-slate-600">
                   N/A — 65 is outside the plan horizon
                 </span>
               )}
@@ -155,7 +184,12 @@ export const SummaryCards: React.FC<Props> = ({ result, state, onChange }) => {
           </div>
 
           <p className="text-xs dark:text-slate-400 text-slate-500 border-t dark:border-slate-800/80 border-slate-200 pt-3 mt-3 leading-relaxed">
-            Retirement Net Worth: <strong className="dark:text-slate-200 text-slate-800">${Math.round(targetRetirementNetWorth).toLocaleString()}</strong>
+            Retirement Net Worth: <strong className="dark:text-slate-200 text-slate-800">{formatCurrency(targetRetirementNetWorth)}</strong>
+            {targetRetirementNetWorth < 0 && (
+              <span className="block mt-1 text-red-400">
+                Plan can&apos;t fund retirement: debt at retirement exceeds the portfolio (see Yearly Schedule).
+              </span>
+            )}
           </p>
         </div>
 
@@ -164,22 +198,26 @@ export const SummaryCards: React.FC<Props> = ({ result, state, onChange }) => {
           <div>
             <span className="text-xs font-semibold dark:text-slate-300 text-slate-600 flex items-center gap-2">
               <DollarSign className="w-4 h-4 text-cyan-400 shrink-0" /> Monthly Retirement Spending
+              <InfoTip term="todaysDollars" />
             </span>
 
             <div className="my-3">
               <span className="text-3xl font-extrabold text-cyan-400 tracking-tight">
-                ${Math.round(monthlyRetirementSpending).toLocaleString()}
+                {formatCurrency(monthlyRetirementSpending)}
               </span>
-              <span className="text-xs text-slate-400 font-medium"> /mo</span>
+              <span className="text-xs dark:text-slate-400 text-slate-600 font-medium"> /mo</span>
               <span className="block text-[11px] font-bold text-cyan-300/80 mt-1 uppercase tracking-wide">
                 Today&apos;s $
               </span>
             </div>
           </div>
 
-          <p className="text-xs text-slate-400 flex items-center gap-1.5 border-t border-slate-800/80 pt-3 mt-3 leading-relaxed truncate" title={`Adjusted for ${targetLocationName} (${colMultiplier}x COL)`}>
+          <p className="text-xs dark:text-slate-400 text-slate-600 flex items-center gap-1.5 border-t dark:border-slate-800/80 border-slate-200/80 pt-3 mt-3 leading-relaxed truncate" title={`Entered: ${formatCurrency(enteredMonthly)}/mo × ${colMultiplier} = ${formatCurrency(enteredMonthly * colMultiplier)}/mo. Sustainable: ${formatCurrency(sustainableMonthly)}/mo × ${colMultiplier} = ${formatCurrency(sustainableMonthly * colMultiplier)}/mo.`}>
             <MapPin className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
             <span className="truncate">Adjusted for {targetLocationName} ({colMultiplier}x COL)</span>
+          </p>
+          <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
+            Sustainable spending at your target success rate
           </p>
         </div>
 
@@ -189,6 +227,7 @@ export const SummaryCards: React.FC<Props> = ({ result, state, onChange }) => {
             <div className="flex justify-between items-start gap-2">
               <span className="text-xs font-semibold dark:text-slate-300 text-slate-600 flex items-center gap-2">
                 <Flame className="w-4 h-4 text-amber-400 shrink-0" /> Savings Rate &amp; Spend Rate
+                <InfoTip term="swr" />
               </span>
               <span className="text-[11px] font-bold text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded border border-amber-500/20 shrink-0">
                 Spend Rate: {safeWithdrawalRatePct}%
@@ -196,12 +235,12 @@ export const SummaryCards: React.FC<Props> = ({ result, state, onChange }) => {
             </div>
 
             <div className="flex items-baseline gap-2 my-3">
-              <span className="text-3xl font-extrabold text-emerald-400">{state.savingsRatePct}%</span>
-              <span className="text-xs text-slate-400 font-medium">of salary saved</span>
+              <span className="text-3xl font-extrabold text-emerald-400">{state.savingsRatePct ?? 0}%</span>
+              <span className="text-xs dark:text-slate-400 text-slate-600 font-medium">of salary saved</span>
             </div>
             <p className="text-[11px] text-slate-500 leading-relaxed mt-1">
               Spend Rate = retirement-year expense ÷ retirement-year net worth (4% = 25× coverage).
-              Retirement spend: ${Math.round(retirementAnnualExpense).toLocaleString()}/yr (in retirement-year dollars).
+              Retirement spend: {formatCurrency(retirementAnnualExpense)}/yr (in retirement-year dollars).
             </p>
           </div>
 
@@ -213,7 +252,7 @@ export const SummaryCards: React.FC<Props> = ({ result, state, onChange }) => {
                 type="button"
                 aria-label="Decrease savings rate"
                 onClick={() => onChange({ savingsRatePct: Math.max(VALIDATION_LIMITS.MIN_SAVINGS_RATE_PCT, state.savingsRatePct - 1) })}
-                className="w-8 h-8 flex items-center justify-center rounded-lg dark:bg-slate-800 bg-white hover:bg-blue-50 dark:hover:bg-slate-700 dark:text-slate-200 text-slate-700 font-bold border border-slate-200 dark:border-slate-700 transition-colors"
+                className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg dark:bg-slate-800 bg-white hover:bg-blue-50 dark:hover:bg-slate-700 dark:text-slate-200 text-slate-700 font-bold border border-slate-200 dark:border-slate-700 transition-colors"
               >
                 <Minus className="w-4 h-4" />
               </button>
@@ -221,7 +260,7 @@ export const SummaryCards: React.FC<Props> = ({ result, state, onChange }) => {
                 type="button"
                 aria-label="Increase savings rate"
                 onClick={() => onChange({ savingsRatePct: Math.min(VALIDATION_LIMITS.MAX_SAVINGS_RATE_PCT, state.savingsRatePct + 1) })}
-                className="w-8 h-8 flex items-center justify-center rounded-lg dark:bg-slate-800 bg-white hover:bg-blue-50 dark:hover:bg-slate-700 dark:text-slate-200 text-slate-700 font-bold border border-slate-200 dark:border-slate-700 transition-colors"
+                className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg dark:bg-slate-800 bg-white hover:bg-blue-50 dark:hover:bg-slate-700 dark:text-slate-200 text-slate-700 font-bold border border-slate-200 dark:border-slate-700 transition-colors"
               >
                 <Plus className="w-4 h-4" />
               </button>
@@ -251,7 +290,7 @@ export const SummaryCards: React.FC<Props> = ({ result, state, onChange }) => {
                 </>
               ) : (
                 <>
-                  <span className="text-3xl font-extrabold text-slate-400 tracking-tight">
+                  <span className="text-3xl font-extrabold dark:text-slate-400 text-slate-600 tracking-tight">
                     Not yet
                   </span>
                   <span className="block text-[11px] dark:text-slate-400 text-slate-500 mt-1 leading-relaxed">
@@ -280,9 +319,9 @@ export const SummaryCards: React.FC<Props> = ({ result, state, onChange }) => {
 
               <div className="my-3">
                 <span className="text-3xl font-extrabold text-emerald-400 tracking-tight">
-                  ${dieWithZero.extraAnnualToday.toLocaleString()}
+                  {formatCurrency(dieWithZero.extraAnnualToday)}
                 </span>
-                <span className="text-xs text-slate-400 font-medium"> /yr more</span>
+                <span className="text-xs dark:text-slate-400 text-slate-600 font-medium"> /yr more</span>
                 <span className="block text-[11px] font-bold text-emerald-300/80 mt-1 uppercase tracking-wide">
                   Today&apos;s $
                 </span>
@@ -290,7 +329,7 @@ export const SummaryCards: React.FC<Props> = ({ result, state, onChange }) => {
             </div>
 
             <p className="text-xs dark:text-slate-400 text-slate-500 border-t dark:border-slate-800/80 border-slate-200 pt-3 mt-3 leading-relaxed">
-              On track to leave <strong className="dark:text-slate-200 text-slate-800">${dieWithZero.surplus.toLocaleString()}</strong> at age {dieWithZero.horizonAge} — spendable over {dieWithZero.retiredYears} retired years. Rough estimate; spending more lowers success.
+              On track to leave <strong className="dark:text-slate-200 text-slate-800">{formatCurrency(dieWithZero.surplus)}</strong> at age {dieWithZero.horizonAge} — spendable over {dieWithZero.retiredYears} retired years. Rough estimate; spending more lowers success.
             </p>
           </div>
         )}

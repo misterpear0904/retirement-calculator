@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Download, Share2, Sparkles, Check, RefreshCw, Sun, Moon, FileDown, FileUp, ShieldCheck } from 'lucide-react';
 import { RetirementState } from '../types/retirement';
 import { encodeStateToUrl, SHARE_URL_WARN_LENGTH } from '../utils/urlEncoder';
@@ -32,6 +32,7 @@ export const Header: React.FC<Props> = ({
 }) => {
   const [copied, setCopied] = useState(false);
   const [presetValue, setPresetValue] = useState('');
+  const presetSnapshotRef = useRef<string | null>(null);
 
   const handleShareUrl = async () => {
     const url = await encodeStateToUrl(state);
@@ -65,6 +66,19 @@ export const Header: React.FC<Props> = ({
 
   const badgeLabel = getRiskLabel(successRate);
   const badgeStyle = getRiskBadgeClasses(successRate);
+
+  useEffect(() => {
+    if (!presetValue || presetValue === 'custom') return;
+    const snap = JSON.stringify(state);
+    if (presetSnapshotRef.current === null) {
+      presetSnapshotRef.current = snap;
+      return;
+    }
+    if (presetSnapshotRef.current !== snap) {
+      setPresetValue('custom');
+      presetSnapshotRef.current = null;
+    }
+  }, [state, presetValue]);
 
   return (
     <header className="border-b dark:border-slate-800 border-slate-200 dark:bg-slate-950/80 bg-white/80 backdrop-blur-md sticky top-0 z-40 transition-colors shadow-sm">
@@ -104,15 +118,20 @@ export const Header: React.FC<Props> = ({
             id="preset-select"
             value={presetValue}
             onChange={(e) => {
-              if (e.target.value) {
+              if (e.target.value && e.target.value !== 'custom') {
                 onLoadPreset(e.target.value);
                 onTriggerToast(`Applied ${PRESET_LABELS[e.target.value as PresetName] || 'Preset'} Scenario!`);
-                setPresetValue('');
+                setPresetValue(e.target.value);
+                presetSnapshotRef.current = null;
+              } else if (e.target.value === 'custom') {
+                setPresetValue('custom');
+                presetSnapshotRef.current = null;
               }
             }}
             className="dark:bg-slate-900 bg-slate-100 dark:border-slate-700 border-slate-300 dark:text-slate-300 text-slate-700 font-medium rounded-xl px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors max-w-xs cursor-pointer"
           >
             <option value="" disabled>⚡ Load Preset Scenario</option>
+            <option value="custom">Custom</option>
             <option value="tech_worker_sf">Tech Worker (SF → Portugal)</option>
             <option value="family_texas">Young Family in Texas</option>
             <option value="fire_early">Aggressive FIRE at Age 45</option>
@@ -187,7 +206,7 @@ export const Header: React.FC<Props> = ({
             title="Reset Inputs"
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl dark:bg-slate-900 bg-slate-100 dark:text-slate-300 text-slate-700 font-medium border dark:border-slate-700 border-slate-300 hover:border-red-500/50 hover:text-red-400 transition-colors shadow-sm"
           >
-            <RefreshCw className="w-4 h-4 shrink-0 text-slate-400" />
+            <RefreshCw className="w-4 h-4 shrink-0 dark:text-slate-400 text-slate-600" />
             <span>Reset Inputs</span>
           </button>
         </div>

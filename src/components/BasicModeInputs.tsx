@@ -80,8 +80,8 @@ export const BasicModeInputs: React.FC<Props> = ({ state, onChange, onSwitchToAd
 
         <div className="px-6 pb-6 pt-2 border-t dark:border-slate-800/60 border-slate-200 space-y-4">
           {/* 1. Current Age */}
-          <div className="space-y-2 bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
-            <div className="flex justify-between items-center text-xs font-medium text-slate-300">
+          <div className="space-y-2 dark:bg-slate-800/40 bg-slate-100 p-4 rounded-xl border dark:border-slate-700/50 border-slate-300/50">
+            <div className="flex justify-between items-center text-xs font-medium dark:text-slate-300 text-slate-700">
               <span className="flex items-center gap-2">
                 <User className="w-4 h-4 text-blue-400 shrink-0" />
                 <label htmlFor="basic-age">Current age</label>
@@ -109,8 +109,8 @@ export const BasicModeInputs: React.FC<Props> = ({ state, onChange, onSwitchToAd
           </div>
 
           {/* 2. Target retirement age */}
-          <div className="space-y-2 bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
-            <div className="flex justify-between items-center text-xs font-medium text-slate-300">
+          <div className="space-y-2 dark:bg-slate-800/40 bg-slate-100 p-4 rounded-xl border dark:border-slate-700/50 border-slate-300/50">
+            <div className="flex justify-between items-center text-xs font-medium dark:text-slate-300 text-slate-700">
               <span className="flex items-center gap-2">
                 <Calendar className="w-4 h-4 text-emerald-400 shrink-0" />
                 <label htmlFor="basic-retire">Retire at age</label>
@@ -138,8 +138,8 @@ export const BasicModeInputs: React.FC<Props> = ({ state, onChange, onSwitchToAd
           </div>
 
           {/* 3. Life expectancy */}
-          <div className="space-y-2 bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
-            <div className="flex justify-between items-center text-xs font-medium text-slate-300">
+          <div className="space-y-2 dark:bg-slate-800/40 bg-slate-100 p-4 rounded-xl border dark:border-slate-700/50 border-slate-300/50">
+            <div className="flex justify-between items-center text-xs font-medium dark:text-slate-300 text-slate-700">
               <span className="flex items-center gap-2">
                 <User className="w-4 h-4 text-purple-400 shrink-0" />
                 <label htmlFor="basic-life">Plan until age</label>
@@ -163,15 +163,15 @@ export const BasicModeInputs: React.FC<Props> = ({ state, onChange, onSwitchToAd
           </div>
 
           {/* 4. Income */}
-          <div className="space-y-2 bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
-            <div className="flex justify-between items-center text-xs font-medium text-slate-300">
+          <div className="space-y-2 dark:bg-slate-800/40 bg-slate-100 p-4 rounded-xl border dark:border-slate-700/50 border-slate-300/50">
+            <div className="flex justify-between items-center text-xs font-medium dark:text-slate-300 text-slate-700">
               <span className="flex items-center gap-2">
                 <Briefcase className="w-4 h-4 text-blue-400 shrink-0" />
                 <label htmlFor="basic-income">Annual income</label>
               </span>
             </div>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 dark:text-slate-400 text-slate-600 text-sm">$</span>
               <input
                 id="basic-income"
                 type="number"
@@ -183,14 +183,14 @@ export const BasicModeInputs: React.FC<Props> = ({ state, onChange, onSwitchToAd
                   // Ignore empty / mid-typing input; keep the previous value.
                   if (Number.isFinite(v)) onChange({ currentAnnualIncome: Math.max(0, v) });
                 }}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-7 pr-3 py-2 text-sm font-bold text-slate-100 focus:border-blue-500 focus:outline-none"
+                className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg pl-7 pr-3 py-2 text-sm font-bold dark:text-slate-100 text-slate-900 focus:border-blue-500 focus:outline-none"
               />
             </div>
           </div>
 
           {/* 5. Savings rate */}
-          <div className="space-y-2 bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
-            <div className="flex justify-between items-center text-xs font-medium text-slate-300">
+          <div className="space-y-2 dark:bg-slate-800/40 bg-slate-100 p-4 rounded-xl border dark:border-slate-700/50 border-slate-300/50">
+            <div className="flex justify-between items-center text-xs font-medium dark:text-slate-300 text-slate-700">
               <span className="flex items-center gap-2">
                 <PiggyBank className="w-4 h-4 text-emerald-400 shrink-0" />
                 <label htmlFor="basic-save">Save rate</label>
@@ -217,15 +217,15 @@ export const BasicModeInputs: React.FC<Props> = ({ state, onChange, onSwitchToAd
           </div>
 
           {/* 6. Total current savings */}
-          <div className="space-y-2 bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
-            <div className="flex justify-between items-center text-xs font-medium text-slate-300">
+          <div className="space-y-2 dark:bg-slate-800/40 bg-slate-100 p-4 rounded-xl border dark:border-slate-700/50 border-slate-300/50">
+            <div className="flex justify-between items-center text-xs font-medium dark:text-slate-300 text-slate-700">
               <span className="flex items-center gap-2">
                 <Wallet className="w-4 h-4 text-cyan-400 shrink-0" />
                 <label htmlFor="basic-savings">Total saved so far</label>
               </span>
             </div>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 dark:text-slate-400 text-slate-600 text-sm">$</span>
               <input
                 id="basic-savings"
                 type="number"
@@ -236,22 +236,22 @@ export const BasicModeInputs: React.FC<Props> = ({ state, onChange, onSwitchToAd
                   const v = parseFloat(e.target.value);
                   if (Number.isFinite(v)) onChange(distributeTotalSavings(state, Math.max(0, v)));
                 }}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-7 pr-3 py-2 text-sm font-bold text-slate-100 focus:border-cyan-500 focus:outline-none"
+                className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg pl-7 pr-3 py-2 text-sm font-bold dark:text-slate-100 text-slate-900 focus:border-cyan-500 focus:outline-none"
               />
             </div>
             <p className="text-[11px] text-slate-500">Split across cash, taxable, 401k & Roth automatically.</p>
           </div>
 
           {/* 7. Monthly spending */}
-          <div className="space-y-2 bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
-            <div className="flex justify-between items-center text-xs font-medium text-slate-300">
+          <div className="space-y-2 dark:bg-slate-800/40 bg-slate-100 p-4 rounded-xl border dark:border-slate-700/50 border-slate-300/50">
+            <div className="flex justify-between items-center text-xs font-medium dark:text-slate-300 text-slate-700">
               <span className="flex items-center gap-2">
                 <Wallet className="w-4 h-4 text-amber-400 shrink-0" />
                 <label htmlFor="basic-spend">Monthly spending in retirement</label>
               </span>
             </div>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 dark:text-slate-400 text-slate-600 text-sm">$</span>
               <input
                 id="basic-spend"
                 type="number"
@@ -269,14 +269,14 @@ export const BasicModeInputs: React.FC<Props> = ({ state, onChange, onSwitchToAd
                     });
                   }
                 }}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-7 pr-3 py-2 text-sm font-bold text-slate-100 focus:border-amber-500 focus:outline-none"
+                className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg pl-7 pr-3 py-2 text-sm font-bold dark:text-slate-100 text-slate-900 focus:border-amber-500 focus:outline-none"
               />
             </div>
           </div>
 
           {/* 8. Investment mix */}
-          <div className="space-y-2 bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
-            <div className="flex justify-between items-center text-xs font-medium text-slate-300">
+          <div className="space-y-2 dark:bg-slate-800/40 bg-slate-100 p-4 rounded-xl border dark:border-slate-700/50 border-slate-300/50">
+            <div className="flex justify-between items-center text-xs font-medium dark:text-slate-300 text-slate-700">
               <span className="flex items-center gap-2">
                 <TrendingUp className="w-4 h-4 text-purple-400 shrink-0" />
                 <label htmlFor="basic-mix">Invested in stocks</label>

@@ -58,10 +58,10 @@ export function SolverTab({ state, onTriggerToast, onSelectRetirementAge }: Solv
   return (
     <div className="space-y-4" aria-label="Reverse solver">
       <div className="flex items-center gap-2">
-        <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400">Reverse Solver</h3>
+        <h3 className="text-sm font-bold uppercase tracking-wider dark:text-slate-400 text-slate-600">Reverse Solver</h3>
         <InfoTip term="sequenceRisk" />
       </div>
-      <p className="text-xs text-slate-400 max-w-2xl">
+      <p className="text-xs dark:text-slate-400 text-slate-600 max-w-2xl">
         Instead of asking what your plan produces, ask what plan hits your goal. The solver
         binary-searches the engine (Monte Carlo, ~300 trials per probe) for the
         earliest retirement age — or lowest savings rate — that still meets your
@@ -69,7 +69,7 @@ export function SolverTab({ state, onTriggerToast, onSelectRetirementAge }: Solv
       </p>
 
       <div className={cardCls}>
-        <label className="text-xs font-semibold text-slate-300 flex items-center justify-between" htmlFor="solve-target-rate">
+        <label className="text-xs font-semibold dark:text-slate-300 text-slate-700 flex items-center justify-between" htmlFor="solve-target-rate">
           Target success rate
           <span className="font-bold text-blue-400">{targetRate}%</span>
         </label>
@@ -87,9 +87,9 @@ export function SolverTab({ state, onTriggerToast, onSelectRetirementAge }: Solv
 
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
-            <div className="text-xs font-semibold text-slate-300">Earliest safe retirement age</div>
+            <div className="text-xs font-semibold dark:text-slate-300 text-slate-700">Earliest safe retirement age</div>
             {busy === 'age' ? (
-              <div className="text-sm text-slate-400" role="status">Searching…</div>
+              <div className="text-sm dark:text-slate-400 text-slate-600" role="status">Searching…</div>
             ) : ageResult === undefined ? (
               <div className="text-sm text-slate-500 italic">Not solved yet</div>
             ) : ageResult === null ? (
@@ -108,9 +108,9 @@ export function SolverTab({ state, onTriggerToast, onSelectRetirementAge }: Solv
           </div>
 
           <div className="space-y-2">
-            <div className="text-xs font-semibold text-slate-300">Minimum savings rate</div>
+            <div className="text-xs font-semibold dark:text-slate-300 text-slate-700">Minimum savings rate</div>
             {busy === 'savings' ? (
-              <div className="text-sm text-slate-400" role="status">Searching…</div>
+              <div className="text-sm dark:text-slate-400 text-slate-600" role="status">Searching…</div>
             ) : savingsResult === undefined ? (
               <div className="text-sm text-slate-500 italic">Not solved yet</div>
             ) : savingsResult === null ? (
