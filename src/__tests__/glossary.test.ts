@@ -55,7 +55,7 @@ describe('glossary', () => {
     expect(glossaryLabel('histReal')).toBe('historical real returns');
     expect(glossaryLabel('ssClaim')).toBe('Social Security claiming');
     expect(glossaryLabel('col')).toBe('COL (cost of living)');
-    expect(glossaryLabel('rmd')).toBe('an RMD');
+    expect(glossaryLabel('rmd')).toBe('an RMD (required minimum distribution)');
     expect(glossaryLabel('todaysDollars')).toBe("today's dollars");
   });
 });

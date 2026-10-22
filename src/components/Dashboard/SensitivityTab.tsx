@@ -129,7 +129,7 @@ export const SensitivityTab: React.FC<Props> = ({ state }) => {
           <p className="text-xs dark:text-slate-400 text-slate-500 mt-1 leading-relaxed">
             Which lever moves your success rate most? Each input is nudged while the rest freeze.
             {baseline != null && (
-              <> Baseline success: <strong className="dark:text-slate-200 text-slate-800">{baseline}%</strong> (150-trial quick estimate).</>
+              <> Baseline success (quick estimate): <strong className="dark:text-slate-200 text-slate-800">{baseline}%</strong>.</>
             )}
           </p>
         </div>

@@ -5,6 +5,7 @@ import { AccordionWrapper } from './AccordionWrapper';
 import { InfoTip } from '../InfoTip';
 import { runRetirementSimulation } from '../../utils/calculatorEngine';
 import { bracketFill, STANDARD_DEDUCTION } from '../../utils/taxEngine';
+import { scheduleAfterNativePopup } from '../../utils/scheduleAfterNativePopup';
 
 interface Props {
   state: RetirementState;
@@ -88,13 +89,24 @@ export const TaxStrategySection: React.FC<Props> = ({ state, onChange, isOpen, o
               )}
             </div>
             <div>
-              <span className="text-xs font-medium dark:text-slate-300 text-slate-700 block mb-1">
+              <span
+                id="withdrawal-strategy-label"
+                className="text-xs font-medium dark:text-slate-300 text-slate-700 block mb-1"
+              >
                 Withdrawal Strategy
                 <InfoTip term="guardrails" />
               </span>
               <select
+                aria-labelledby="withdrawal-strategy-label"
                 value={state.withdrawalStrategy}
-                onChange={(e) => onChange({ withdrawalStrategy: e.target.value as WithdrawalStrategy })}
+                onChange={(e) => {
+                  // Native dropdown teardown first (see scheduleAfterNativePopup):
+                  // a re-render started inside this `change` event overlaps the
+                  // popup close and has left the tab unresponsive on real mouse
+                  // input. This also reveals the guardrail slider below.
+                  const next = e.target.value as WithdrawalStrategy;
+                  scheduleAfterNativePopup(() => onChange({ withdrawalStrategy: next }));
+                }}
                 className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold dark:text-slate-100 text-slate-900 focus:border-blue-500 focus:outline-none cursor-pointer"
               >
                 <option value="fixed_order">Tax-efficient order (cash → taxable → pre-tax → Roth)</option>
@@ -105,12 +117,22 @@ export const TaxStrategySection: React.FC<Props> = ({ state, onChange, isOpen, o
           </div>
 
           <div>
-            <span className="text-xs font-medium dark:text-slate-300 text-slate-700 block mb-1">
+            <span
+              id="spending-strategy-label"
+              className="text-xs font-medium dark:text-slate-300 text-slate-700 block mb-1"
+            >
               Retirement Spending Strategy
             </span>
             <select
+              aria-labelledby="spending-strategy-label"
               value={state.spendingStrategy ?? 'fixed_real'}
-              onChange={(e) => onChange({ spendingStrategy: e.target.value as SpendingStrategy })}
+              onChange={(e) => {
+                // Defer until the native dropdown has finished closing — the
+                // freeze path is re-rendering during popup teardown, not the
+                // strategy math (see scheduleAfterNativePopup).
+                const next = e.target.value as SpendingStrategy;
+                scheduleAfterNativePopup(() => onChange({ spendingStrategy: next }));
+              }}
               className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold dark:text-slate-100 text-slate-900 focus:border-blue-500 focus:outline-none cursor-pointer"
             >
               <option value="fixed_real">Fixed real spending (inflation-adjusted)</option>
@@ -164,6 +186,7 @@ export const TaxStrategySection: React.FC<Props> = ({ state, onChange, isOpen, o
               type="button"
               role="switch"
               aria-checked={state.useRothConversions}
+              aria-label="Roth Conversions"
               onClick={() => onChange({ useRothConversions: !state.useRothConversions })}
               className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${
                 state.useRothConversions ? 'bg-purple-500' : 'dark:bg-slate-700 bg-slate-300'

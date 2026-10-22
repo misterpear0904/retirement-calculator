@@ -106,8 +106,11 @@ export const LocationColSection: React.FC<Props> = ({
               </span>
             </div>
 
-            <p className="text-[11px] text-slate-500 leading-relaxed" aria-label={`Fine-tune your cost of living within ${selectedLocation.name}. Slide left for more affordable neighborhoods, right for premium areas.`}>
-              Fine-tune your cost of living within {selectedLocation.name}. Slide left for more affordable neighborhoods, right for premium areas.
+            <p
+              className="text-[11px] text-slate-500 leading-relaxed"
+              aria-label={`Fine-tune your cost of living within ${selectedLocation.name}. Slide left for more affordable neighborhoods, right for premium areas.`}
+            >
+              {`Fine-tune your cost of living within ${selectedLocation.name}. Slide left for more affordable neighborhoods, right for premium areas.`}
             </p>
 
             <div className="space-y-1.5">

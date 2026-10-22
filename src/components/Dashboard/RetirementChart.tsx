@@ -47,6 +47,15 @@ const getSectionIdForCategory = (category: string) => {
 
 const fmt$ = (n: number) => formatCurrency(n);
 
+// Single-source chart zoom hint so the inline chart and the fullscreen modal
+// always show identical, accurate instructions (round-3 task 4).
+export const ZOOM_HINT = 'Ctrl+scroll to zoom · double-click to reset';
+
+// Shared palette for overlaid saved-scenario lines and their legend swatches
+// (round-3 task 5). One source so the legend always matches the line.
+export const OVERLAY_COLORS = ['#c084fc', '#f472b6'];
+const overlayColor = (idx: number) => OVERLAY_COLORS[idx % OVERLAY_COLORS.length];
+
 // Pure helper for the chart's y-axis domain. In focus mode the domain is
 // derived from the *working-years* data (ages currentAge..retirement) across
 // all three scenario bands, so the accumulation curve is not flattened by the
@@ -87,7 +96,9 @@ const CustomTooltip = React.memo(({ active, payload }: { active?: boolean; paylo
           </span>
           <span
             className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-              data.isRetired ? 'bg-purple-500/20 text-purple-300' : 'bg-blue-500/20 text-blue-300'
+              data.isRetired
+                ? 'dark:bg-purple-500/20 bg-purple-500/10 dark:text-purple-300 text-purple-700'
+                : 'dark:bg-blue-500/20 bg-blue-500/10 dark:text-blue-300 text-blue-700'
             }`}
           >
             {data.isRetired ? 'Retired' : 'Accumulating'}
@@ -98,7 +109,7 @@ const CustomTooltip = React.memo(({ active, payload }: { active?: boolean; paylo
         {data.milestones && data.milestones.length > 0 && (
           <div className="bg-blue-500/10 border border-blue-500/20 p-2 rounded-lg space-y-1">
             {data.milestones.map((m, i) => (
-              <div key={i} className="text-[11px] font-semibold text-blue-300">
+              <div key={i} className="text-[11px] font-semibold dark:text-blue-300 text-blue-700">
                 {m.title}
               </div>
             ))}
@@ -108,15 +119,15 @@ const CustomTooltip = React.memo(({ active, payload }: { active?: boolean; paylo
         <div className="space-y-1 pt-1">
           <div className="flex justify-between font-bold dark:text-slate-100 text-slate-900">
             <span>Net Worth (Target):</span>
-            <span className="text-cyan-400">{fmt$(data.netWorth50)}</span>
+            <span className="dark:text-cyan-400 text-cyan-600">{fmt$(data.netWorth50)}</span>
           </div>
           <div className="flex justify-between dark:text-slate-400 text-slate-600">
             <span>Conservative:</span>
-            <span className="text-emerald-400">{fmt$(data.netWorth95)}</span>
+            <span className="dark:text-emerald-400 text-emerald-600">{fmt$(data.netWorth95)}</span>
           </div>
           <div className="flex justify-between dark:text-slate-400 text-slate-600">
             <span>Stress Test:</span>
-            <span className="text-amber-400">{fmt$(data.netWorth10)}</span>
+            <span className="dark:text-amber-400 text-amber-600">{fmt$(data.netWorth10)}</span>
           </div>
         </div>
 
@@ -132,7 +143,7 @@ const CustomTooltip = React.memo(({ active, payload }: { active?: boolean; paylo
             </div>
           )}
           {data.childEducationExpenses > 0 && (
-            <div className="flex justify-between text-blue-300 font-semibold">
+            <div className="flex justify-between dark:text-blue-300 text-blue-700 font-semibold">
               <span>Child Tuition:</span>
               <span>{fmt$(data.childEducationExpenses)}</span>
             </div>
@@ -151,6 +162,42 @@ const CustomTooltip = React.memo(({ active, payload }: { active?: boolean; paylo
 });
 
 CustomTooltip.displayName = 'RetirementChartTooltip';
+
+// Human labels for the longevity-outlook chart's tooltip (round-3 task 7).
+// Internal data keys (`aliveWithMoney`, …) are never shown to the user.
+export const LONGEVITY_LABELS: Record<string, { label: string; valueClass: string }> = {
+  aliveWithMoney: { label: 'Alive with money', valueClass: 'dark:text-cyan-400 text-cyan-600' },
+  aliveBroke: { label: 'Alive, out of money', valueClass: 'dark:text-amber-400 text-amber-600' },
+  deceased: { label: 'Deceased', valueClass: 'dark:text-slate-400 text-slate-600' },
+};
+
+// Theme-aware tooltip for the Longevity Outlook mini-chart: light/dark styles
+// come from the same `dark:` classes the main chart tooltip uses, instead of a
+// hardcoded dark-navy inline style.
+const LongevityTooltip = React.memo(({ active, payload }: { active?: boolean; payload?: Array<{ payload?: { age?: number }; dataKey?: string | number; value?: number }> }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="dark:bg-slate-900 bg-white border dark:border-slate-700/80 border-slate-300/80 p-3 rounded-xl shadow-2xl text-xs space-y-1 min-w-[190px]">
+        <div className="font-extrabold text-center dark:text-slate-100 text-slate-900 border-b dark:border-slate-800 border-slate-200 pb-1.5 mb-1">
+          {`Age ${Number((payload[0].payload as { age?: number })?.age ?? (payload[0] as unknown as { label?: unknown }).label ?? '')}`}
+        </div>
+        {payload.map((entry, i) => {
+          const meta = entry.dataKey != null ? LONGEVITY_LABELS[String(entry.dataKey)] : undefined;
+          const label = meta?.label ?? String(entry.dataKey ?? '');
+          return (
+            <div key={i} className="flex justify-between gap-4 dark:text-slate-400 text-slate-600">
+              <span>{label}:</span>
+              <span className={`font-semibold ${meta?.valueClass ?? ''}`}>{Math.round(Number(entry.value ?? 0))}%</span>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+  return null;
+});
+
+LongevityTooltip.displayName = 'LongevityChartTooltip';
 
 export const RetirementChart: React.FC<Props> = React.memo(({
   yearlyProjections,
@@ -393,6 +440,21 @@ export const RetirementChart: React.FC<Props> = React.memo(({
           <span className="w-2.5 h-2.5 rounded-full bg-purple-500 shrink-0"></span>
           <span className="dark:text-slate-400 text-slate-600">Target Retirement Age ({targetRetirementAge})</span>
         </div>
+        {/* One legend entry per overlaid saved scenario: same color/dash used
+            by its chart line, appears/disappears with the overlay toggle. */}
+        {overlayScenarios.map((scn, idx) => (
+          <div
+            key={`overlay_legend_${idx}`}
+            className="flex items-center gap-2 border-l dark:border-slate-800 border-slate-200 pl-4"
+          >
+            <span
+              aria-hidden="true"
+              className="inline-block w-6 h-0 shrink-0"
+              style={{ borderTop: `2.5px dashed ${overlayColor(idx)}` }}
+            />
+            <span className="dark:text-slate-400 text-slate-600">{scn.name}</span>
+          </div>
+        ))}
       </div>
 
       {/* Chart Canvas Container */}
@@ -401,7 +463,7 @@ export const RetirementChart: React.FC<Props> = React.memo(({
         className="w-full pt-2"
         style={{ height: height + 20, minHeight: height + 20 }}
         onDoubleClick={resetZoom}
-        title={isFullscreen ? 'Scroll to zoom · double-click to reset' : 'Ctrl+scroll to zoom · double-click to reset'}
+        title={ZOOM_HINT}
       >
         <ResponsiveContainer width="100%" height={height} minHeight={height}>
           <ComposedChart
@@ -513,7 +575,7 @@ export const RetirementChart: React.FC<Props> = React.memo(({
                 type="monotone"
                 dataKey={`overlay_${idx}`}
                 name={scn.name}
-                stroke={idx % 2 === 0 ? '#c084fc' : '#f472b6'}
+                stroke={overlayColor(idx)}
                 strokeWidth={2}
                 strokeDasharray="6 4"
                 dot={false}
@@ -580,16 +642,14 @@ export const RetirementChart: React.FC<Props> = React.memo(({
         </ResponsiveContainer>
       </div>
       <p className="text-[11px] dark:text-slate-400 text-slate-600">
-        {isFullscreen ? 'Scroll over the chart to zoom' : 'Ctrl+scroll to zoom'}{isZoomed && viewRange ? (
+        {ZOOM_HINT}{isZoomed && viewRange ? (
           <>
             {' '}· zoomed to ages {viewRange[0]}–{viewRange[1]} ·{' '}
-            <button type="button" onClick={resetZoom} className="text-blue-400 hover:underline font-semibold min-h-[44px] inline-flex items-center">
+            <button type="button" onClick={resetZoom} className="text-blue-600 hover:underline font-semibold min-h-[44px] inline-flex items-center dark:text-blue-400">
               Show full horizon
             </button>
           </>
-        ) : (
-          ' · double-click to reset'
-        )}
+        ) : null}
       </p>
 
       {longevityProbabilities.length > 0 && (
@@ -603,10 +663,13 @@ export const RetirementChart: React.FC<Props> = React.memo(({
                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
                 <XAxis dataKey="age" stroke="#64748b" tick={{ fontSize: 10, fill: '#94a3b8' }} />
                 <YAxis stroke="#64748b" tick={{ fontSize: 10, fill: '#94a3b8' }} domain={[0, 100]} unit="%" />
-                <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: 12, fontSize: 12 }} />
-                <Area type="monotone" dataKey="aliveWithMoney" stackId="1" stroke="#38bdf8" fill="#38bdf8" fillOpacity={0.5} />
-                <Area type="monotone" dataKey="aliveBroke" stackId="1" stroke="#f59e0b" fill="#f59e0b" fillOpacity={0.5} />
-                <Area type="monotone" dataKey="deceased" stackId="1" stroke="#64748b" fill="#64748b" fillOpacity={0.5} />
+                <Tooltip
+                  content={<LongevityTooltip />}
+                  cursor={{ stroke: '#64748b', strokeWidth: 1, strokeDasharray: '3 3' }}
+                />
+                <Area name="Alive with money" type="monotone" dataKey="aliveWithMoney" stackId="1" stroke="#38bdf8" fill="#38bdf8" fillOpacity={0.5} />
+                <Area name="Alive, out of money" type="monotone" dataKey="aliveBroke" stackId="1" stroke="#f59e0b" fill="#f59e0b" fillOpacity={0.5} />
+                <Area name="Deceased" type="monotone" dataKey="deceased" stackId="1" stroke="#64748b" fill="#64748b" fillOpacity={0.5} />
               </AreaChart>
             </ResponsiveContainer>
           </div>

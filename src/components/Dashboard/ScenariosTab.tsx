@@ -16,6 +16,11 @@ interface Props {
 
 /** Matches the hard cap inside utils/scenarios.ts (slice(-20)). */
 const SCENARIO_LIMIT = 20;
+
+/** True when the app is in dark mode (Tailwind `dark` class on <html>). */
+function isDarkChartTheme(): boolean {
+  return typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
+}
 const STORAGE_ERROR_MSG =
   'Save failed (localStorage full or blocked) — try deleting old scenarios or use Export';
 
@@ -253,7 +258,7 @@ export const ScenariosTab: React.FC<Props> = ({ state, currentResult, onLoadStat
               <div className="flex-1 min-w-[160px]">
                 <div className="text-xs font-bold dark:text-slate-100 text-slate-900">{s.name}</div>
                 <div className="text-[10px] text-slate-500">
-                  Saved {new Date(s.savedAt).toLocaleDateString()} · retire {s.state.targetRetirementAge} · save {s.state.savingsRatePct}%
+                  {`Saved ${new Date(s.savedAt).toLocaleDateString()} · retire ${s.state.targetRetirementAge} · save ${s.state.savingsRatePct}%`}
                 </div>
               </div>
               <button
@@ -356,7 +361,17 @@ export const ScenariosTab: React.FC<Props> = ({ state, currentResult, onLoadStat
                   }}
                 />
                 <Tooltip
-                  contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: 12, fontSize: 12 }}
+                  // Theme-aware (round-3 task 7): match the theme instead of a
+                  // hardcoded dark-navy popover. App re-renders on theme
+                  // toggle, so re-reading the `dark` root class is safe.
+                  contentStyle={{
+                    backgroundColor: isDarkChartTheme() ? '#0f172a' : '#ffffff',
+                    border: isDarkChartTheme() ? '1px solid #334155' : '1px solid #cbd5e1',
+                    borderRadius: 12,
+                    fontSize: 12,
+                  }}
+                  labelStyle={{ color: isDarkChartTheme() ? '#e2e8f0' : '#334155', fontWeight: 700 }}
+                  itemStyle={{ color: isDarkChartTheme() ? '#cbd5e1' : '#475569' }}
                   labelFormatter={(age) => `Age ${age}`}
                   formatter={(value: unknown, label: unknown) => [`$${Math.round(Number(value)).toLocaleString()}`, String(label) === 'current' ? 'Current (A)' : `${compareName} (B)`]}
                 />

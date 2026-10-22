@@ -28,6 +28,18 @@ export function loadStateFromStorage(): Partial<RetirementState> | null {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as StoredPayload | Partial<RetirementState>;
+    // Apply exactly one versioned snapshot: a payload stamped with a version we
+    // don't understand (e.g. a newer build in a shared profile) must never be
+    // blindly spread onto live state. Legacy unversioned payloads are still
+    // accepted so upgrades restore.
+    if (
+      parsed !== null &&
+      typeof parsed === 'object' &&
+      'v' in (parsed as StoredPayload) &&
+      (parsed as StoredPayload).v !== 1
+    ) {
+      return null;
+    }
     const candidate =
       parsed !== null &&
       typeof parsed === 'object' &&

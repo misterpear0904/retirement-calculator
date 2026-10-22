@@ -3,6 +3,7 @@ import { TrendingUp, Percent } from 'lucide-react';
 import { RetirementState, RealIncomeGrowthMode } from '../../types/retirement';
 import { AccordionWrapper } from './AccordionWrapper';
 import { InfoTip } from '../InfoTip';
+import { NumberField } from '../NumberField';
 
 interface Props {
   state: RetirementState;
@@ -37,21 +38,13 @@ export const IncomeGrowthSection: React.FC<Props> = ({
           <label className="text-xs font-semibold dark:text-slate-300 text-slate-700 block">
             Current Household Gross Annual Income
           </label>
-          <div className="relative">
-            <span className="absolute left-3.5 top-2.5 text-sm text-slate-500 font-bold">$</span>
-            <input
-              type="number"
-              min={0}
-              step={5000}
-              value={state.currentAnnualIncome}
-              onChange={(e) => {
-                const v = parseFloat(e.target.value);
-                if (Number.isFinite(v)) onChange({ currentAnnualIncome: Math.max(0, v) });
-              }}
-              aria-label="Current household gross annual income in dollars"
-              className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg pl-9 pr-3 py-2 text-sm font-bold dark:text-slate-100 text-slate-900 focus:border-blue-500 focus:outline-none transition-colors"
-            />
-          </div>
+          <NumberField
+            id="advanced-income"
+            value={state.currentAnnualIncome}
+            onChange={(v) => onChange({ currentAnnualIncome: Math.max(0, v) })}
+            ariaLabel="Current household gross annual income in dollars"
+            prefix="$"
+          />
 
           {/* Real Income Growth Trajectory Toggle */}
           <div className="pt-2 space-y-2">
@@ -148,21 +141,13 @@ export const IncomeGrowthSection: React.FC<Props> = ({
           ) : (
             <div className="space-y-2">
               <label className="text-xs dark:text-slate-400 text-slate-600 block">Fixed Annual Contribution ($)</label>
-              <div className="relative">
-                <span className="absolute left-3.5 top-2.5 text-sm text-slate-500 font-bold">$</span>
-                <input
-                  type="number"
-                  min={0}
-                  step={1000}
-                  value={state.fixedAnnualContribution}
-                  onChange={(e) => {
-                    const v = parseFloat(e.target.value);
-                    if (Number.isFinite(v)) onChange({ fixedAnnualContribution: Math.max(0, v) });
-                  }}
-                  aria-label="Fixed annual contribution in dollars"
-                  className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg pl-9 pr-3 py-2 text-sm font-bold dark:text-slate-100 text-slate-900 focus:border-blue-500 focus:outline-none transition-colors"
-                />
-              </div>
+              <NumberField
+                id="fixed-annual-contribution"
+                value={state.fixedAnnualContribution}
+                onChange={(v) => onChange({ fixedAnnualContribution: Math.max(0, v) })}
+                ariaLabel="Fixed annual contribution in dollars"
+                prefix="$"
+              />
             </div>
           )}
 

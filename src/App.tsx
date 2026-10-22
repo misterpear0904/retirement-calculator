@@ -196,12 +196,16 @@ export function App() {
     );
 
     const apply = () => {
-      setState((prev) => {
-        const next = sanitizeRetirementState({ ...prev, ...mergedUpdates });
-        const notice = describeClamp(mergedUpdates, next);
-        if (notice) setToastMessage(notice);
-        return next;
-      });
+      // Note: the clamp notice is derived OUTSIDE the state updater. Calling
+      // setToastMessage from inside an updater makes a render trigger another
+      // update (the classic "cyclic re-rendering" hazard in React 18) and was
+      // part of the re-render churn behind the strategy-switch freeze.
+      const notice = describeClamp(
+        mergedUpdates,
+        sanitizeRetirementState({ ...state, ...mergedUpdates })
+      );
+      setState((prev) => sanitizeRetirementState({ ...prev, ...mergedUpdates }));
+      if (notice) setToastMessage(notice);
     };
 
     if (hasSpendingStrategy) {

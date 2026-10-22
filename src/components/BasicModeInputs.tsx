@@ -89,7 +89,7 @@ export const BasicModeInputs: React.FC<Props> = ({ state, onChange, onSwitchToAd
                 <User className="w-4 h-4 text-blue-400 shrink-0" />
                 <label htmlFor="basic-age">Current age</label>
               </span>
-              <span className="text-sm font-bold text-blue-400">{state.currentAge} yrs</span>
+              <span className="text-sm font-bold text-blue-400">{`${state.currentAge} yrs`}</span>
             </div>
             <input
               id="basic-age"
@@ -118,7 +118,7 @@ export const BasicModeInputs: React.FC<Props> = ({ state, onChange, onSwitchToAd
                 <Calendar className="w-4 h-4 text-emerald-400 shrink-0" />
                 <label htmlFor="basic-retire">Retire at age</label>
               </span>
-              <span className="text-sm font-bold text-emerald-400">{state.targetRetirementAge} yrs</span>
+              <span className="text-sm font-bold text-emerald-400">{`${state.targetRetirementAge} yrs`}</span>
             </div>
             <input
               id="basic-retire"
@@ -147,7 +147,7 @@ export const BasicModeInputs: React.FC<Props> = ({ state, onChange, onSwitchToAd
                 <User className="w-4 h-4 text-purple-400 shrink-0" />
                 <label htmlFor="basic-life">Plan until age</label>
               </span>
-              <span className="text-sm font-bold text-purple-400">{state.lifeExpectancy} yrs</span>
+              <span className="text-sm font-bold text-purple-400">{`${state.lifeExpectancy} yrs`}</span>
             </div>
             <input
               id="basic-life"

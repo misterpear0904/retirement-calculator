@@ -2,6 +2,7 @@ import React from 'react';
 import { Wallet, Plus, Trash2, ShieldAlert } from 'lucide-react';
 import { RetirementState, DebtItem } from '../../types/retirement';
 import { AccordionWrapper } from './AccordionWrapper';
+import { NumberField } from '../NumberField';
 
 interface Props {
   state: RetirementState;
@@ -68,21 +69,13 @@ export const BaselineAssetsSection: React.FC<Props> = ({
             <label className="text-xs font-medium dark:text-slate-300 text-slate-700 block">
               Liquid Cash & Emergency Fund
             </label>
-            <div className="relative">
-              <span className="absolute left-3 top-2.5 text-xs dark:text-slate-400 text-slate-600 font-bold">$</span>
-              <input
-                type="number"
-                min={0}
-                step={1000}
-                value={state.liquidCash}
-                onChange={(e) => {
-                  const v = parseFloat(e.target.value);
-                  if (Number.isFinite(v)) onChange({ liquidCash: Math.max(0, v) });
-                }}
-                aria-label="Liquid cash and emergency fund in dollars"
-                className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg pl-7 pr-2 py-2 text-sm font-bold dark:text-slate-100 text-slate-900 focus:border-blue-500 focus:outline-none transition-colors"
-              />
-            </div>
+            <NumberField
+              id="liquid-cash"
+              value={state.liquidCash}
+              onChange={(v) => onChange({ liquidCash: v })}
+              ariaLabel="Liquid cash and emergency fund in dollars"
+              prefix="$"
+            />
           </div>
 
           {/* Taxable Investments */}
@@ -90,21 +83,13 @@ export const BaselineAssetsSection: React.FC<Props> = ({
             <label className="text-xs font-medium dark:text-slate-300 text-slate-700 block">
               Taxable Brokerage / Stocks
             </label>
-            <div className="relative">
-              <span className="absolute left-3 top-2.5 text-xs dark:text-slate-400 text-slate-600 font-bold">$</span>
-              <input
-                type="number"
-                min={0}
-                step={5000}
-                value={state.taxableInvestments}
-                onChange={(e) => {
-                  const v = parseFloat(e.target.value);
-                  if (Number.isFinite(v)) onChange({ taxableInvestments: Math.max(0, v) });
-                }}
-                aria-label="Taxable brokerage investments in dollars"
-                className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg pl-7 pr-2 py-2 text-sm font-bold dark:text-slate-100 text-slate-900 focus:border-blue-500 focus:outline-none transition-colors"
-              />
-            </div>
+            <NumberField
+              id="taxable-investments"
+              value={state.taxableInvestments}
+              onChange={(v) => onChange({ taxableInvestments: v })}
+              ariaLabel="Taxable brokerage investments in dollars"
+              prefix="$"
+            />
           </div>
 
           {/* Pre-Tax Accounts */}
@@ -112,21 +97,13 @@ export const BaselineAssetsSection: React.FC<Props> = ({
             <label className="text-xs font-medium dark:text-slate-300 text-slate-700 block">
               Pre-Tax (401k / Trad IRA)
             </label>
-            <div className="relative">
-              <span className="absolute left-3 top-2.5 text-xs dark:text-slate-400 text-slate-600 font-bold">$</span>
-              <input
-                type="number"
-                min={0}
-                step={5000}
-                value={state.preTax401k}
-                onChange={(e) => {
-                  const v = parseFloat(e.target.value);
-                  if (Number.isFinite(v)) onChange({ preTax401k: Math.max(0, v) });
-                }}
-                aria-label="Pre-tax 401k and traditional IRA balance in dollars"
-                className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg pl-7 pr-2 py-2 text-sm font-bold dark:text-slate-100 text-slate-900 focus:border-blue-500 focus:outline-none transition-colors"
-              />
-            </div>
+            <NumberField
+              id="pre-tax-401k"
+              value={state.preTax401k}
+              onChange={(v) => onChange({ preTax401k: v })}
+              ariaLabel="Pre-tax 401k and traditional IRA balance in dollars"
+              prefix="$"
+            />
           </div>
 
           {/* Post-Tax Accounts */}
@@ -134,21 +111,13 @@ export const BaselineAssetsSection: React.FC<Props> = ({
             <label className="text-xs font-medium dark:text-slate-300 text-slate-700 block">
               Post-Tax (Roth IRA / HSA)
             </label>
-            <div className="relative">
-              <span className="absolute left-3 top-2.5 text-xs dark:text-slate-400 text-slate-600 font-bold">$</span>
-              <input
-                type="number"
-                min={0}
-                step={5000}
-                value={state.postTaxRothHsa}
-                onChange={(e) => {
-                  const v = parseFloat(e.target.value);
-                  if (Number.isFinite(v)) onChange({ postTaxRothHsa: Math.max(0, v) });
-                }}
-                aria-label="Post-tax Roth and HSA balance in dollars"
-                className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg pl-7 pr-2 py-2 text-sm font-bold dark:text-slate-100 text-slate-900 focus:border-blue-500 focus:outline-none transition-colors"
-              />
-            </div>
+            <NumberField
+              id="post-tax-roth-hsa"
+              value={state.postTaxRothHsa}
+              onChange={(v) => onChange({ postTaxRothHsa: v })}
+              ariaLabel="Post-tax Roth and HSA balance in dollars"
+              prefix="$"
+            />
           </div>
         </div>
       </div>
@@ -190,46 +159,32 @@ export const BaselineAssetsSection: React.FC<Props> = ({
                 </div>
                 <div>
                   <label className="text-[11px] dark:text-slate-400 text-slate-600 block mb-1">Balance ($)</label>
-                  <input
-                    type="number"
-                    min={0}
+                  <NumberField
+                    id={`debt-balance-${debt.id}`}
                     value={debt.balance}
-                    onChange={(e) => {
-                      const v = parseFloat(e.target.value);
-                      if (Number.isFinite(v)) handleDebtChange(debt.id, 'balance', Math.max(0, v));
-                    }}
-                    aria-label={`Balance for ${debt.name || 'liability'}`}
-                    className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg px-2.5 py-1.5 text-xs dark:text-slate-100 text-slate-900 font-medium"
+                    onChange={(v) => handleDebtChange(debt.id, 'balance', v)}
+                    ariaLabel={`Balance for ${debt.name || 'liability'}`}
+                    prefix="$"
                   />
                 </div>
                 <div>
                   <label className="text-[11px] dark:text-slate-400 text-slate-600 block mb-1">Interest Rate (%)</label>
-                  <input
-                    type="number"
-                    min={0}
-                    step={0.1}
+                  <NumberField
+                    id={`debt-rate-${debt.id}`}
                     value={debt.interestRate}
-                    onChange={(e) => {
-                      const v = parseFloat(e.target.value);
-                      if (Number.isFinite(v)) handleDebtChange(debt.id, 'interestRate', v);
-                    }}
-                    aria-label={`Interest rate percentage for ${debt.name || 'liability'}`}
-                    className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg px-2.5 py-1.5 text-xs dark:text-slate-100 text-slate-900 font-medium"
+                    onChange={(v) => handleDebtChange(debt.id, 'interestRate', v)}
+                    ariaLabel={`Interest rate percentage for ${debt.name || 'liability'}`}
                   />
                 </div>
                 <div className="flex items-end gap-2">
                   <div className="flex-1">
                     <label className="text-[11px] dark:text-slate-400 text-slate-600 block mb-1">Monthly ($)</label>
-                    <input
-                      type="number"
-                      min={0}
+                    <NumberField
+                      id={`debt-payment-${debt.id}`}
                       value={debt.monthlyPayment}
-                      onChange={(e) => {
-                        const v = parseFloat(e.target.value);
-                        if (Number.isFinite(v)) handleDebtChange(debt.id, 'monthlyPayment', Math.max(0, v));
-                      }}
-                      aria-label={`Monthly payment for ${debt.name || 'liability'}`}
-                      className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg px-2.5 py-1.5 text-xs dark:text-slate-100 text-slate-900 font-medium"
+                      onChange={(v) => handleDebtChange(debt.id, 'monthlyPayment', v)}
+                      ariaLabel={`Monthly payment for ${debt.name || 'liability'}`}
+                      prefix="$"
                     />
                   </div>
                   <button

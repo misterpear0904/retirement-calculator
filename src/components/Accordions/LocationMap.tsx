@@ -339,13 +339,12 @@ export const LocationMap: React.FC<Props> = ({
         <CityDetails city={preview} />
       ) : (
         <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] dark:text-slate-400 text-slate-600">
-          <span>
+          <span
+            aria-label={`${hovered && hovered.id !== selected.id ? 'Nearest city: ' : 'Selected: '}${preview.flagEmoji} ${preview.name} (COL ${preview.colIndex}${preview.isEstimate ? ', est.' : ''})`}
+          >
             {hovered && hovered.id !== selected.id ? 'Nearest city: ' : 'Selected: '}
-            <strong className="dark:text-slate-200 text-slate-800">
-              {preview.flagEmoji} {preview.name}
-            </strong>{' '}
-            (COL {preview.colIndex}
-            {preview.isEstimate ? ', est.' : ''})
+            <strong className="dark:text-slate-200 text-slate-800">{`${preview.flagEmoji} ${preview.name}`}</strong>
+            {` (COL ${preview.colIndex}${preview.isEstimate ? ', est.' : ''})`}
           </span>
           <span>Click anywhere — snaps to the nearest city of 1M+ people.</span>
         </div>

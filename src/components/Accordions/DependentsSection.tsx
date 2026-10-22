@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Baby, Plus, Trash2, GraduationCap } from 'lucide-react';
 import { RetirementState, ChildItem, SchoolType, CollegeTier } from '../../types/retirement';
 import { AccordionWrapper } from './AccordionWrapper';
+import NumberField from '../NumberField';
 
 interface Props {
   state: RetirementState;
@@ -116,12 +117,14 @@ export const DependentsSection: React.FC<Props> = ({
                       type="text"
                       value={child.name}
                       onChange={(e) => handleUpdateChild(child.id, 'name', e.target.value)}
+                      aria-label={`Child profile name for ${child.name || 'unnamed child'}`}
                       className="dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg px-3 py-1 text-xs font-bold dark:text-slate-100 text-slate-900 focus:border-blue-500 focus:outline-none"
                     />
                   </div>
                   <button
                     type="button"
                     onClick={() => handleRemoveChild(child.id)}
+                    aria-label={`Remove ${child.name || 'child profile'}`}
                     className="dark:text-slate-400 text-slate-600 hover:text-red-400 p-1.5 transition-colors rounded-lg hover:bg-red-500/10"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -132,24 +135,24 @@ export const DependentsSection: React.FC<Props> = ({
                   {/* Current Age */}
                   <div>
                     <label className="text-[11px] dark:text-slate-400 text-slate-600 block mb-1">Current Child Age</label>
-                    <input
-                      type="number"
-                      min={0}
-                      max={25}
+                    <NumberField
+                      id={`child-age-${child.id}`}
                       value={child.currentAge}
-                      onChange={(e) => {
-                        const v = parseInt(e.target.value, 10);
-                        if (Number.isFinite(v)) handleUpdateChild(child.id, 'currentAge', v);
-                      }}
-                      aria-label={`Current age for ${child.name || 'child'}`}
-                      className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg px-3 py-2 dark:text-slate-100 text-slate-900 font-semibold focus:border-blue-500 focus:outline-none"
+                      onChange={(v) => handleUpdateChild(child.id, 'currentAge', Math.round(v))}
+                      ariaLabel={`Current age for ${child.name || 'child'}`}
                     />
                   </div>
 
                   {/* K-12 School Type */}
                   <div>
-                    <label className="text-[11px] dark:text-slate-400 text-slate-600 block mb-1">K-12 Schooling</label>
+                    <label
+                      htmlFor={`${child.id}-school-type`}
+                      className="text-[11px] dark:text-slate-400 text-slate-600 block mb-1"
+                    >
+                      K-12 Schooling
+                    </label>
                     <select
+                      id={`${child.id}-school-type`}
                       value={child.schoolType}
                       onChange={(e) => handleUpdateChild(child.id, 'schoolType', e.target.value as SchoolType)}
                       className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg px-3 py-2 dark:text-slate-100 text-slate-900 focus:border-blue-500 focus:outline-none cursor-pointer"
@@ -161,8 +164,14 @@ export const DependentsSection: React.FC<Props> = ({
 
                   {/* College Tier */}
                   <div>
-                    <label className="text-[11px] dark:text-slate-400 text-slate-600 block mb-1">Higher Ed Tier</label>
+                    <label
+                      htmlFor={`${child.id}-college-tier`}
+                      className="text-[11px] dark:text-slate-400 text-slate-600 block mb-1"
+                    >
+                      Higher Ed Tier
+                    </label>
                     <select
+                      id={`${child.id}-college-tier`}
                       value={child.collegeTier}
                       onChange={(e) => {
                         const tier = e.target.value as CollegeTier;

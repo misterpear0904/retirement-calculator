@@ -6,7 +6,7 @@ import { InfoTip } from '../InfoTip';
 const POLISHED: Array<[string, string]> = [
   ['fireAge', 'FIRE age'],
   ['swr', 'SWR (safe withdrawal rate)'],
-  ['rmd', 'an RMD'],
+  ['rmd', 'an RMD (required minimum distribution)'],
   ['todaysDollars', "today's dollars"],
   ['ssClaim', 'Social Security claiming'],
   ['col', 'COL (cost of living)'],

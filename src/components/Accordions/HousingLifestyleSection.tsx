@@ -3,19 +3,13 @@ import { Home, ShoppingBag, Plus, Trash2, HeartPulse, Waves, ChevronDown } from 
 import { RetirementState, HousingType, LifestyleTier, CustomExpenseCategory } from '../../types/retirement';
 import { AccordionWrapper } from './AccordionWrapper';
 import { InfoTip } from '../InfoTip';
+import { NumberField } from '../NumberField';
 
 interface Props {
   state: RetirementState;
   onChange: (updates: Partial<RetirementState>) => void;
   isOpen: boolean;
   onToggle: () => void;
-}
-
-/** Guard for number inputs: empty / mid-typing strings must never reach state as NaN. */
-function parseNumberInput(raw: string, fallback: number): number {
-  if (raw === '') return fallback;
-  const v = parseFloat(raw);
-  return Number.isFinite(v) ? v : fallback;
 }
 
 export const HousingLifestyleSection: React.FC<Props> = ({
@@ -95,70 +89,57 @@ export const HousingLifestyleSection: React.FC<Props> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1 animate-fade-in text-xs">
               <div>
                 <label className="text-xs font-medium dark:text-slate-300 text-slate-700 block mb-1">Mortgage Balance ($)</label>
-                <input
-                  type="number"
-                  step={10000}
-                  value={state.mortgageBalance}
-                  onChange={(e) =>
-                    onChange({ mortgageBalance: parseNumberInput(e.target.value, state.mortgageBalance) })}
-                  aria-label="Mortgage balance in dollars"
-                  className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg px-3 py-2 font-bold dark:text-slate-100 text-slate-900 focus:border-blue-500 focus:outline-none"
-                />
+                <NumberField
+                id="mortgage-balance"
+                value={state.mortgageBalance}
+                onChange={(v) => onChange({ mortgageBalance: v })}
+                ariaLabel="Mortgage balance in dollars"
+                prefix="$"
+              />
               </div>
 
               <div>
                 <label className="text-xs font-medium dark:text-slate-300 text-slate-700 block mb-1">Monthly Payment (P&I+Tax+Ins)</label>
-                <input
-                  type="number"
-                  step={100}
-                  value={state.mortgageMonthly}
-                  onChange={(e) =>
-                    onChange({ mortgageMonthly: parseNumberInput(e.target.value, state.mortgageMonthly) })}
-                  aria-label="Monthly mortgage payment"
-                  className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg px-3 py-2 font-bold dark:text-slate-100 text-slate-900 focus:border-blue-500 focus:outline-none"
-                />
+                <NumberField
+                id="mortgage-monthly"
+                value={state.mortgageMonthly}
+                onChange={(v) => onChange({ mortgageMonthly: v })}
+                ariaLabel="Monthly mortgage payment"
+                prefix="$"
+              />
               </div>
 
               <div className="sm:col-span-2">
                 <label className="text-xs font-medium dark:text-slate-300 text-slate-700 block mb-1">Remaining Term (Years)</label>
-                <input
-                  type="number"
-                  min={1}
-                  max={30}
-                  value={state.mortgageRemainingYears}
-                  onChange={(e) =>
-                    onChange({ mortgageRemainingYears: Math.max(1, Math.round(parseNumberInput(e.target.value, state.mortgageRemainingYears))) })}
-                  aria-label="Mortgage remaining term in years"
-                  className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg px-3 py-2 font-bold dark:text-slate-100 text-slate-900 focus:border-blue-500 focus:outline-none"
-                />
+                <NumberField
+                id="mortgage-years"
+                value={state.mortgageRemainingYears}
+                onChange={(v) => onChange({ mortgageRemainingYears: Math.max(1, Math.round(v)) })}
+                ariaLabel="Mortgage remaining term in years"
+              />
               </div>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1 animate-fade-in text-xs">
               <div>
                 <label className="text-xs font-medium dark:text-slate-300 text-slate-700 block mb-1">Monthly Rent ($)</label>
-                <input
-                  type="number"
-                  step={100}
-                  value={state.rentMonthly}
-                  onChange={(e) =>
-                    onChange({ rentMonthly: parseNumberInput(e.target.value, state.rentMonthly) })}
-                  aria-label="Monthly rent in dollars"
-                  className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg px-3 py-2 font-bold dark:text-slate-100 text-slate-900 focus:border-blue-500 focus:outline-none"
-                />
+                <NumberField
+                id="rent-monthly"
+                value={state.rentMonthly}
+                onChange={(v) => onChange({ rentMonthly: v })}
+                ariaLabel="Monthly rent in dollars"
+                prefix="$"
+              />
               </div>
 
               <div>
                 <label className="text-xs font-medium dark:text-slate-300 text-slate-700 block mb-1">Est. Annual Rent Inflation (%)</label>
-                <input
-                  type="number"
-                  step={0.5}
-                  value={state.rentInflationPct}
-                  onChange={(e) =>
-                    onChange({ rentInflationPct: parseNumberInput(e.target.value, state.rentInflationPct) })}
-                  aria-label="Annual rent inflation percentage"
-                  className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg px-3 py-2 font-bold dark:text-slate-100 text-slate-900 focus:border-blue-500 focus:outline-none"
-                />
+                <NumberField
+                id="rent-inflation"
+                value={state.rentInflationPct}
+                onChange={(v) => onChange({ rentInflationPct: v })}
+                ariaLabel="Annual rent inflation percentage"
+              />
               </div>
             </div>
           )}
@@ -196,27 +177,23 @@ export const HousingLifestyleSection: React.FC<Props> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
             <div>
               <label className="text-[11px] dark:text-slate-400 text-slate-600 block mb-1">Essential Living ($/month)</label>
-              <input
-                type="number"
-                step={250}
+              <NumberField
+                id="essential-expenses"
                 value={state.essentialExpensesMonthly}
-                onChange={(e) =>
-                  onChange({ essentialExpensesMonthly: parseNumberInput(e.target.value, state.essentialExpensesMonthly) })}
-                aria-label="Essential living expenses per month"
-                className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg px-3 py-2 font-semibold dark:text-slate-100 text-slate-900 focus:border-blue-500 focus:outline-none"
+                onChange={(v) => onChange({ essentialExpensesMonthly: v })}
+                ariaLabel="Essential living expenses per month"
+                prefix="$"
               />
             </div>
 
             <div>
               <label className="text-[11px] dark:text-slate-400 text-slate-600 block mb-1">Discretionary / Fun ($/month)</label>
-              <input
-                type="number"
-                step={250}
+              <NumberField
+                id="discretionary-expenses"
                 value={state.discretionaryExpensesMonthly}
-                onChange={(e) =>
-                  onChange({ discretionaryExpensesMonthly: parseNumberInput(e.target.value, state.discretionaryExpensesMonthly) })}
-                aria-label="Discretionary expenses per month"
-                className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg px-3 py-2 font-semibold dark:text-slate-100 text-slate-900 focus:border-blue-500 focus:outline-none"
+                onChange={(v) => onChange({ discretionaryExpensesMonthly: v })}
+                ariaLabel="Discretionary expenses per month"
+                prefix="$"
               />
             </div>
           </div>
@@ -245,14 +222,12 @@ export const HousingLifestyleSection: React.FC<Props> = ({
                   />
                   <div className="flex items-center gap-1">
                     <span className="text-slate-500 font-bold">$</span>
-                    <input
-                      type="number"
-                      step={50}
+                    <NumberField
+                      id={`custom-cat-${cat.id}`}
                       value={cat.monthlyAmount}
-                      onChange={(e) =>
-                        handleUpdateCustomCategory(cat.id, 'monthlyAmount', parseNumberInput(e.target.value, cat.monthlyAmount))}
-                      aria-label={`Monthly amount for ${cat.name || 'custom category'}`}
-                      className="w-24 bg-slate-950 border dark:border-slate-700 border-slate-300 rounded-lg px-2 py-1.5 dark:text-slate-100 text-slate-900 font-bold"
+                      onChange={(v) => handleUpdateCustomCategory(cat.id, 'monthlyAmount', v)}
+                      ariaLabel={`Monthly amount for ${cat.name || 'custom category'}`}
+                      className="w-24"
                     />
                     <span className="dark:text-slate-400 text-slate-600">/mo</span>
                   </div>
@@ -278,39 +253,30 @@ export const HousingLifestyleSection: React.FC<Props> = ({
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
             <div>
               <label className="text-[11px] dark:text-slate-400 text-slate-600 block mb-1">Monthly Cost at 65 ($)</label>
-              <input
-                type="number"
-                step={50}
+              <NumberField
+                id="healthcare-monthly"
                 value={state.healthcareMonthlyAt65}
-                onChange={(e) =>
-                  onChange({ healthcareMonthlyAt65: parseNumberInput(e.target.value, state.healthcareMonthlyAt65) })}
-                aria-label="Healthcare monthly cost at 65"
-                className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg px-3 py-2 font-bold dark:text-slate-100 text-slate-900 focus:border-rose-500 focus:outline-none"
+                onChange={(v) => onChange({ healthcareMonthlyAt65: v })}
+                ariaLabel="Healthcare monthly cost at 65"
+                prefix="$"
               />
             </div>
             <div>
               <label className="text-[11px] dark:text-slate-400 text-slate-600 block mb-1">Medical Inflation (%/yr)</label>
-              <input
-                type="number"
-                step={0.5}
+              <NumberField
+                id="healthcare-inflation"
                 value={state.healthcareInflationPct}
-                onChange={(e) =>
-                  onChange({ healthcareInflationPct: parseNumberInput(e.target.value, state.healthcareInflationPct) })}
-                aria-label="Medical inflation percentage per year"
-                className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg px-3 py-2 font-bold dark:text-slate-100 text-slate-900 focus:border-rose-500 focus:outline-none"
+                onChange={(v) => onChange({ healthcareInflationPct: v })}
+                ariaLabel="Medical inflation percentage per year"
               />
             </div>
             <div>
               <label className="text-[11px] dark:text-slate-400 text-slate-600 block mb-1">Starts at Age</label>
-              <input
-                type="number"
-                min={40}
-                max={90}
+              <NumberField
+                id="healthcare-start-age"
                 value={state.healthcareStartAge}
-                onChange={(e) =>
-                  onChange({ healthcareStartAge: Math.round(parseNumberInput(e.target.value, state.healthcareStartAge)) })}
-                aria-label="Healthcare costs start age"
-                className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg px-3 py-2 font-bold dark:text-slate-100 text-slate-900 focus:border-rose-500 focus:outline-none"
+                onChange={(v) => onChange({ healthcareStartAge: Math.round(v) })}
+                ariaLabel="Healthcare costs start age"
               />
             </div>
           </div>

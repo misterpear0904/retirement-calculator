@@ -3,6 +3,7 @@ import { Calendar, User, Clock, Users } from 'lucide-react';
 import { RetirementState } from '../../types/retirement';
 import { AccordionWrapper } from './AccordionWrapper';
 import { InfoTip } from '../InfoTip';
+import { NumberField } from '../NumberField';
 
 interface Props {
   state: RetirementState;
@@ -37,7 +38,7 @@ export const DemographicsSection: React.FC<Props> = ({
             <span className="flex items-center gap-2">
               <Clock className="w-4 h-4 text-blue-400 shrink-0" /> Current Age
             </span>
-            <span className="text-sm font-bold text-blue-400">{state.currentAge} yrs</span>
+            <span className="text-sm font-bold text-blue-400">{`${state.currentAge} yrs`}</span>
           </div>
           <input
             type="range"
@@ -82,7 +83,7 @@ export const DemographicsSection: React.FC<Props> = ({
             <span className="flex items-center gap-2">
               <Calendar className="w-4 h-4 text-emerald-400 shrink-0" /> Target Retirement Age
             </span>
-            <span className="text-sm font-bold text-emerald-400">{state.targetRetirementAge} yrs</span>
+            <span className="text-sm font-bold text-emerald-400">{`${state.targetRetirementAge} yrs`}</span>
           </div>
           <input
             type="range"
@@ -115,7 +116,7 @@ export const DemographicsSection: React.FC<Props> = ({
             className="w-full cursor-pointer min-h-[44px]"
           />
           <div className="flex justify-between text-xs text-slate-500 font-medium pt-0.5">
-            <span>{state.currentAge + 1} yrs</span>
+            <span>{`${state.currentAge + 1} yrs`}</span>
             <span>65 yrs</span>
             <span>85 yrs</span>
           </div>
@@ -127,7 +128,7 @@ export const DemographicsSection: React.FC<Props> = ({
             <span className="flex items-center gap-2">
               <User className="w-4 h-4 text-purple-400 shrink-0" /> Life Expectancy
             </span>
-            <span className="text-sm font-bold text-purple-400">{state.lifeExpectancy} yrs</span>
+            <span className="text-sm font-bold text-purple-400">{`${state.lifeExpectancy} yrs`}</span>
           </div>
           <input
             type="range"
@@ -154,7 +155,7 @@ export const DemographicsSection: React.FC<Props> = ({
             className="w-full cursor-pointer min-h-[44px]"
           />
           <div className="flex justify-between text-xs text-slate-500 font-medium pt-0.5">
-            <span>{state.targetRetirementAge + 1} yrs</span>
+            <span>{`${state.targetRetirementAge + 1} yrs`}</span>
             <span>90 yrs</span>
             <span>110 yrs</span>
           </div>
@@ -162,12 +163,18 @@ export const DemographicsSection: React.FC<Props> = ({
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3 p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl text-xs dark:text-slate-300 text-slate-700 mt-3 leading-relaxed">
-        <div aria-label={`Accumulation Window: ${yearsToRetire} years (Age ${state.currentAge} to ${state.targetRetirementAge})`}>
-          Accumulation Window: <strong className="text-blue-400">{yearsToRetire} years</strong> (Age {state.currentAge} → {state.targetRetirementAge})
-        </div>
-        <div aria-label={`Decumulation Horizon: ${yearsInRetirement} years (Age ${state.targetRetirementAge} to ${state.lifeExpectancy})`}>
-          Decumulation Horizon: <strong className="text-emerald-400">{yearsInRetirement} years</strong> (Age {state.targetRetirementAge} → {state.lifeExpectancy})
-        </div>
+          <div
+            aria-label={`Accumulation Window: ${yearsToRetire} years (Age ${state.currentAge} to ${state.targetRetirementAge})`}
+          >
+            Accumulation Window: <strong className="text-blue-400">{`${yearsToRetire} years`}</strong>
+            {` (Age ${state.currentAge} → ${state.targetRetirementAge})`}
+          </div>
+          <div
+            aria-label={`Decumulation Horizon: ${yearsInRetirement} years (Age ${state.targetRetirementAge} to ${state.lifeExpectancy})`}
+          >
+            Decumulation Horizon: <strong className="text-emerald-400">{`${yearsInRetirement} years`}</strong>
+            {` (Age ${state.targetRetirementAge} → ${state.lifeExpectancy})`}
+          </div>
       </div>
 
       {/* Partner / household */}
@@ -206,60 +213,40 @@ export const DemographicsSection: React.FC<Props> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs animate-fade-in">
             <div>
               <label className="text-[11px] dark:text-slate-400 text-slate-600 block mb-1">Partner&apos;s Current Age</label>
-              <input
-                type="number"
-                min={18}
-                max={100}
+              <NumberField
+                id="partner-current-age"
                 value={state.partner.currentAge}
-                onChange={(e) => {
-                  const v = parseInt(e.target.value);
-                  if (Number.isFinite(v)) onChange({ partner: { ...state.partner, currentAge: v } });
-                }}
-                aria-label="Partner's current age"
-                className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg px-3 py-2 font-bold dark:text-slate-100 text-slate-900 focus:border-pink-500 focus:outline-none"
+                onChange={(v) => onChange({ partner: { ...state.partner, currentAge: Math.round(v) } })}
+                ariaLabel="Partner's current age"
               />
             </div>
             <div>
               <label className="text-[11px] dark:text-slate-400 text-slate-600 block mb-1">Partner&apos;s Annual Income ($)</label>
-              <input
-                type="number"
-                step={1000}
+              <NumberField
+                id="partner-income"
                 value={state.partner.annualIncome}
-                onChange={(e) => {
-                  const v = parseFloat(e.target.value);
-                  if (Number.isFinite(v)) onChange({ partner: { ...state.partner, annualIncome: Math.max(0, v) } });
-                }}
-                aria-label="Partner's annual income in dollars"
-                className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg px-3 py-2 font-bold dark:text-slate-100 text-slate-900 focus:border-pink-500 focus:outline-none"
+                onChange={(v) => onChange({ partner: { ...state.partner, annualIncome: Math.max(0, v) } })}
+                ariaLabel="Partner's annual income in dollars"
+                prefix="$"
               />
             </div>
             <div>
               <label className="text-[11px] dark:text-slate-400 text-slate-600 block mb-1">Partner&apos;s Life Expectancy</label>
-              <input
-                type="number"
-                min={30}
-                max={110}
+              <NumberField
+                id="partner-life-expectancy"
                 value={state.partner.lifeExpectancy}
-                onChange={(e) => {
-                  const v = parseInt(e.target.value);
-                  if (Number.isFinite(v)) onChange({ partner: { ...state.partner, lifeExpectancy: v } });
-                }}
-                aria-label="Partner's life expectancy"
-                className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg px-3 py-2 font-bold dark:text-slate-100 text-slate-900 focus:border-pink-500 focus:outline-none"
+                onChange={(v) => onChange({ partner: { ...state.partner, lifeExpectancy: Math.round(v) } })}
+                ariaLabel="Partner's life expectancy"
               />
             </div>
             <div>
               <label className="text-[11px] dark:text-slate-400 text-slate-600 block mb-1">Partner&apos;s SS at 67 ($/mo)</label>
-              <input
-                type="number"
-                step={100}
+              <NumberField
+                id="partner-ss-monthly"
                 value={state.partner.ssMonthlyAt67}
-                onChange={(e) => {
-                  const v = parseFloat(e.target.value);
-                  if (Number.isFinite(v)) onChange({ partner: { ...state.partner, ssMonthlyAt67: Math.max(0, v) } });
-                }}
-                aria-label="Partner's monthly Social Security benefit at 67"
-                className="w-full dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-300 rounded-lg px-3 py-2 font-bold dark:text-slate-100 text-slate-900 focus:border-pink-500 focus:outline-none"
+                onChange={(v) => onChange({ partner: { ...state.partner, ssMonthlyAt67: Math.max(0, v) } })}
+                ariaLabel="Partner's monthly Social Security benefit at 67"
+                prefix="$"
               />
             </div>
             <div className="sm:col-span-2" aria-label={`Partner's Social Security claiming age ${state.partner.ssStartAge}`}>

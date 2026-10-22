@@ -4,6 +4,7 @@ import { RetirementState } from '../types/retirement';
 import { encodeStateToUrl, SHARE_URL_WARN_LENGTH } from '../utils/urlEncoder';
 import { getRiskLabel, getRiskBadgeClasses } from '../utils/risk';
 import { PRESET_LABELS, PresetName } from '../data/presets';
+import { scheduleAfterNativePopup } from '../utils/scheduleAfterNativePopup';
 
 interface Props {
   onExportPdf: () => void;
@@ -118,15 +119,22 @@ export const Header: React.FC<Props> = ({
             id="preset-select"
             value={presetValue}
             onChange={(e) => {
-              if (e.target.value && e.target.value !== 'custom') {
-                onLoadPreset(e.target.value);
-                onTriggerToast(`Applied ${PRESET_LABELS[e.target.value as PresetName] || 'Preset'} Scenario!`);
-                setPresetValue(e.target.value);
-                presetSnapshotRef.current = null;
-              } else if (e.target.value === 'custom') {
+              // Runs after the native dropdown popup closes (see
+              // scheduleAfterNativePopup) so applying a preset never re-renders
+              // the whole app mid-popup-teardown (observed freeze path).
+              const next = e.target.value;
+              if (next === 'custom') {
                 setPresetValue('custom');
                 presetSnapshotRef.current = null;
+                return;
               }
+              if (!next) return;
+              scheduleAfterNativePopup(() => {
+                onLoadPreset(next);
+                onTriggerToast(`Applied ${PRESET_LABELS[next as PresetName] || 'Preset'} Scenario!`);
+                setPresetValue(next);
+                presetSnapshotRef.current = null;
+              });
             }}
             className="dark:bg-slate-900 bg-slate-100 dark:border-slate-700 border-slate-300 dark:text-slate-300 text-slate-700 font-medium rounded-xl px-3 py-2 focus:border-blue-500 focus:outline-none transition-colors max-w-xs cursor-pointer"
           >
@@ -137,15 +145,16 @@ export const Header: React.FC<Props> = ({
             <option value="fire_early">Aggressive FIRE at Age 45</option>
           </select>
 
-          {/* Theme Toggle Button */}
+          {/* Theme Toggle Button (names the destination, not the current state) */}
           <button
             type="button"
             onClick={onToggleTheme}
+            aria-label={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
             className="px-3 py-2 rounded-xl dark:bg-slate-900 bg-slate-100 dark:border-slate-700 border-slate-300 dark:text-slate-300 text-slate-700 hover:text-blue-600 border transition-colors flex items-center gap-1.5 font-medium shadow-sm"
             title="Toggle Light / Dark Mode"
           >
             {isDark ? <Sun className="w-4 h-4 text-amber-400 shrink-0" /> : <Moon className="w-4 h-4 text-blue-500 shrink-0" />}
-            <span className="text-xs px-0.5">{isDark ? 'Dark' : 'Light'}</span>
+            <span className="text-xs px-0.5">{isDark ? 'Switch to Light' : 'Switch to Dark'}</span>
           </button>
 
           {/* Share Scenario Button */}
